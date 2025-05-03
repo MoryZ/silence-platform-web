@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景圆环 -->
+    <circle cx="64" cy="64" r="60" stroke="url(#logo-gradient)" stroke-width="4" fill="none"/>
+    
+    <!-- 内部图形 -->
+    <g transform="translate(32, 32)">
+        <!-- 六边形背景 -->
+        <path d="M32 0L64 18.5L64 55.5L32 74L0 55.5L0 18.5L32 0Z" fill="url(#logo-gradient)" opacity="0.2"/>
+        
+        <!-- 中心圆形 -->
+        <circle cx="32" cy="37" r="16" fill="url(#logo-gradient)"/>
+        
+        <!-- 装饰线条 -->
+        <path d="M32 10L48 18.5V34.5" stroke="url(#logo-gradient)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M32 10L16 18.5V34.5" stroke="url(#logo-gradient)" stroke-width="3" stroke-linecap="round"/>
+        
+        <!-- 动态点 -->
+        <circle cx="48" cy="34.5" r="4" fill="#36D1DC">
+            <animate
+                attributeName="opacity"
+                values="1;0.5;1"
+                dur="2s"
+                repeatCount="indefinite"
+            />
+        </circle>
+        <circle cx="16" cy="34.5" r="4" fill="#36D1DC">
+            <animate
+                attributeName="opacity"
+                values="0.5;1;0.5"
+                dur="2s"
+                repeatCount="indefinite"
+            />
+        </circle>
+    </g>
+    
+    <!-- 渐变定义 -->
+    <defs>
+        <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#36D1DC"/>
+            <stop offset="100%" stop-color="#5B86E5"/>
+        </linearGradient>
+    </defs>
+    
+    <!-- 光晕效果 -->
+    <circle cx="64" cy="64" r="58" stroke="url(#logo-gradient)" stroke-width="2" opacity="0.5">
+        <animate
+            attributeName="r"
+            values="58;62;58"
+            dur="3s"
+            repeatCount="indefinite"
+        />
+        <animate
+            attributeName="opacity"
+            values="0.5;0.2;0.5"
+            dur="3s"
+            repeatCount="indefinite"
+        />
+    </circle>
+</svg> 
