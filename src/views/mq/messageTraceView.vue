@@ -233,7 +233,7 @@ watch(activeTab, () => {
     </a-table>
 
     <a-modal
-      v-model:visible="showDetailDialog"
+      v-model:open="showDetailDialog"
       title=""
       width="900px"
       :footer="null"

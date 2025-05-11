@@ -5,3 +5,5 @@ export const TOKEN = "TOKEN";
 export const USER_INFO = "USER_INFO";
 export const MENUS = "MENUS";
 
+export const RECENT_VISITED_PRODUCTS = 'RECENT_VISITED_PRODUCTS'
+export const FAVORITE_PRODUCTS = 'FAVORITE_PRODUCTS'

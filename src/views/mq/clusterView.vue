@@ -212,7 +212,7 @@ const handleConfigDialogOpen = () => {
 
     <!-- 状态对话框 -->
     <a-modal
-      v-model:visible="statusDialogVisible"
+      v-model:open="statusDialogVisible"
       title="Broker状态"
       width="800px"
       @ok="statusDialogVisible = false"
@@ -236,7 +236,7 @@ const handleConfigDialogOpen = () => {
 
     <!-- 配置对话框 -->
     <a-modal
-      v-model:visible="configDialogVisible"
+      v-model:open="configDialogVisible"
       :title="currentBrokerDetail?.brokerName + '[' + currentBrokerDetail?.index + ']'"
       width="800px"
       @cancel="configDialogVisible = false"

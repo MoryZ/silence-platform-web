@@ -44,7 +44,7 @@
     </a-card>
 
     <!-- 菜单编辑对话框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk" @cancel="modalVisible = false" width="700px">
+    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk" @cancel="modalVisible = false" width="700px">
       <a-form ref="formRef" :model="formState" :rules="rules" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
         <a-form-item label="上级菜单" name="parentId">
           <a-tree-select

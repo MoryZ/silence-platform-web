@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import Antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
+import { setupI18n } from './locales';
 import { piniaPluginPersist } from './stores/config'
 
 // 引入样式
@@ -24,6 +25,7 @@ app.use(router)
 // 初始化 Ant Design Vue
 app.use(Antd)
 
+setupI18n(app);
 
 // 挂载应用
 app.mount('#app') 

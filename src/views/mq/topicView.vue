@@ -925,7 +925,7 @@ onMounted(async () => {
 
     <!-- Add/Update Topic Dialog -->
     <a-modal
-      v-model:visible="showAddDialog"
+      v-model:open="showAddDialog"
       title="创建Topic"
       :width="500"
       @ok="handleSubmit(false)"
@@ -980,7 +980,7 @@ onMounted(async () => {
 
     <!-- Update Topic Dialog -->
     <a-modal
-      v-model:visible="showUpdateDialog"
+      v-model:open="showUpdateDialog"
       title="更新Topic"
       :width="500"
       @ok="handleSubmit(true)"
@@ -1025,7 +1025,7 @@ onMounted(async () => {
 
     <!-- Topic Stats Dialog -->
     <a-modal
-      v-model:visible="showStatsDialog"
+      v-model:open="showStatsDialog"
       :title="`${currentTopic.topicName || 'Topic'}状态`"
       :width="800"
       @ok="showStatsDialog = false"
@@ -1059,7 +1059,7 @@ onMounted(async () => {
 
     <!-- Topic Consumers Dialog -->
     <a-modal
-      v-model:visible="showConsumerDialog"
+      v-model:open="showConsumerDialog"
       :title="`${currentTopic.topicName || 'Topic'}消费者管理`"
       :width="900"
       :footer="null"
@@ -1098,7 +1098,7 @@ onMounted(async () => {
 
     <!-- Topic Route Dialog -->
     <a-modal
-      v-model:visible="showRouteDialog"
+      v-model:open="showRouteDialog"
       :title="`${currentTopic.topicName || 'Topic'}路由`"
       :width="700"
       :footer="null"
@@ -1211,7 +1211,7 @@ onMounted(async () => {
 
     <!-- Topic Config Dialog -->
     <a-modal
-      v-model:visible="showTopicConfigDialog"
+      v-model:open="showTopicConfigDialog"
       title="修改主题"
       :width="800"
       @ok="handleConfigSubmit"
@@ -1274,7 +1274,7 @@ onMounted(async () => {
 
     <!-- Send Message Dialog -->
     <a-modal
-      v-model:visible="showSendMessageDialog"
+      v-model:open="showSendMessageDialog"
       :title="`发送[${messageInfo.topic}]消息`"
       :width="700"
       :confirmLoading="loading"
@@ -1307,7 +1307,7 @@ onMounted(async () => {
 
     <!-- Reset Offset Dialog -->
     <a-modal
-      v-model:visible="showResetOffsetDialog"
+      v-model:open="showResetOffsetDialog"
       title="重置位点"
       :width="700"
       :confirmLoading="loading"

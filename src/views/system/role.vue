@@ -67,7 +67,7 @@
 
     <!-- 角色表单弹窗 -->
     <a-modal
-      v-model:visible="showModal"
+      v-model:open="showModal"
       :title="modalTitle"
       ok-text="确定"
       cancel-text="取消"
@@ -98,7 +98,7 @@
 
     <!-- 权限设置弹窗 -->
     <a-modal
-      v-model:visible="showPermissionModal"
+      v-model:open="showPermissionModal"
       title="权限设置"
       ok-text="确定"
       cancel-text="取消"

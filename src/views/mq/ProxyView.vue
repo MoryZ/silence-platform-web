@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { message } from 'ant-design-vue'
 import type { ProxyNode, ProxyConfig, ProxyStats, ProxyConnection } from '@/types/proxy'
 
 // State
@@ -41,10 +41,10 @@ const loadProxyNodes = async () => {
       proxyNodes.value = data.data
       totalItems.value = data.data.length
     } else {
-      ElMessage.error('Error loading proxy nodes: ' + data.errMsg)
+      message.error('Error loading proxy nodes: ' + data.errMsg)
     }
   } catch (error) {
-    ElMessage.error('Error loading proxy nodes: ' + error.message)
+    message.error('Error loading proxy nodes: ' + error.message)
   }
 }
 
@@ -56,10 +56,10 @@ const loadProxyStats = async () => {
       proxyStats.value = data.data
       totalItems.value = data.data.length
     } else {
-      ElMessage.error('Error loading proxy stats: ' + data.errMsg)
+      message.error('Error loading proxy stats: ' + data.errMsg)
     }
   } catch (error) {
-    ElMessage.error('Error loading proxy stats: ' + error.message)
+    message.error('Error loading proxy stats: ' + error.message)
   }
 }
 
@@ -71,10 +71,10 @@ const loadProxyConfig = async (proxyAddr: string) => {
       proxyConfig.value = data.data
       showConfigDialog.value = true
     } else {
-      ElMessage.error('Error loading proxy config: ' + data.errMsg)
+      message.error('Error loading proxy config: ' + data.errMsg)
     }
   } catch (error) {
-    ElMessage.error('Error loading proxy config: ' + error.message)
+    message.error('Error loading proxy config: ' + error.message)
   }
 }
 
@@ -86,10 +86,10 @@ const loadConnections = async (proxyAddr: string) => {
       connections.value = data.data
       showConnectionsDialog.value = true
     } else {
-      ElMessage.error('Error loading connections: ' + data.errMsg)
+      message.error('Error loading connections: ' + data.errMsg)
     }
   } catch (error) {
-    ElMessage.error('Error loading connections: ' + error.message)
+    message.error('Error loading connections: ' + error.message)
   }
 }
 
@@ -107,10 +107,10 @@ const updateProxyConfig = async () => {
       showConfigDialog.value = false
       await loadProxyNodes()
     } else {
-      ElMessage.error('Error updating proxy config: ' + data.errMsg)
+      message.error('Error updating proxy config: ' + data.errMsg)
     }
   } catch (error) {
-    ElMessage.error('Error updating proxy config: ' + error.message)
+    message.error('Error updating proxy config: ' + error.message)
   }
 }
 
@@ -168,142 +168,142 @@ onUnmounted(() => {
 
 <template>
   <div class="proxy-page">
-    <el-card class="header-card" v-loading="loading">
+    <a-card class="header-card" v-loading="loading">
       <template #header>
         <div class="header">
           <h2>Proxy Management</h2>
           <div class="refresh-control">
-            <el-select v-model="refreshInterval" placeholder="Select Refresh Interval" @change="startAutoRefresh">
-              <el-option :value="0" label="Manual Refresh" />
-              <el-option :value="10" label="Refresh every 10s" />
-              <el-option :value="30" label="Refresh every 30s" />
-              <el-option :value="60" label="Refresh every 1m" />
-            </el-select>
-            <el-button type="primary" @click="refreshData">
+            <a-select v-model="refreshInterval" placeholder="Select Refresh Interval" @change="startAutoRefresh">
+              <a-option :value="0" label="Manual Refresh" />
+              <a-option :value="10" label="Refresh every 10s" />
+              <a-option :value="30" label="Refresh every 30s" />
+              <a-option :value="60" label="Refresh every 1m" />
+            </a-select>
+            <a-button type="primary" @click="refreshData">
               Refresh Now
-            </el-button>
+            </a-button>
           </div>
         </div>
       </template>
-    </el-card>
+    </a-card>
 
-    <el-card class="data-section" v-loading="loading">
+    <a-card class="data-section" v-loading="loading">
       <template #header>
         <h4>Proxy Nodes</h4>
       </template>
-      <el-table :data="proxyNodes" border stripe :default-sort="{prop: 'proxyName', order: 'ascending'}">
-        <el-table-column label="Name" prop="proxyName" sortable />
-        <el-table-column label="Address" prop="proxyAddr" sortable />
-        <el-table-column label="Version" prop="version" sortable />
-        <el-table-column label="Status" :class-name="getStatusClass" />
-        <el-table-column label="Start Time" :formatter="formatDate" />
-        <el-table-column label="Last Update" :formatter="formatDate" />
-        <el-table-column label="Actions">
+      <a-table :data="proxyNodes" border stripe :default-sort="{prop: 'proxyName', order: 'ascending'}">
+        <a-table-column label="Name" prop="proxyName" sortable />
+        <a-table-column label="Address" prop="proxyAddr" sortable />
+        <a-table-column label="Version" prop="version" sortable />
+        <a-table-column label="Status" :class-name="getStatusClass" />
+        <a-table-column label="Start Time" :formatter="formatDate" />
+        <a-table-column label="Last Update" :formatter="formatDate" />
+        <a-table-column label="Actions">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="loadProxyConfig(row.proxyAddr)">
+            <a-button type="primary" size="small" @click="loadProxyConfig(row.proxyAddr)">
               Config
-            </el-button>
-            <el-button type="info" size="small" @click="loadConnections(row.proxyAddr)">
+            </a-button>
+            <a-button type="info" size="small" @click="loadConnections(row.proxyAddr)">
               Connections
-            </el-button>
+            </a-button>
           </template>
-        </el-table-column>
-      </el-table>
-      <el-pagination
+        </a-table-column>
+      </a-table>
+      <a-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
         :total="totalItems"
         layout="total, prev, pager, next"
         @current-change="refreshData"
       />
-    </el-card>
+    </a-card>
 
-    <el-card class="data-section" v-loading="loading">
+    <a-card class="data-section" v-loading="loading">
       <template #header>
         <h4>Performance Statistics</h4>
       </template>
-      <el-table :data="proxyStats" border stripe :default-sort="{prop: 'proxyAddr', order: 'ascending'}">
-        <el-table-column label="Proxy" prop="proxyAddr" sortable />
-        <el-table-column label="Connections" prop="connections" sortable />
-        <el-table-column label="TPS" :formatter="formatTps" sortable />
-        <el-table-column label="Requests" :formatter="formatNumber" sortable />
-        <el-table-column label="Failures" :formatter="formatNumber" sortable />
-        <el-table-column label="Avg Latency" :formatter="formatLatency" sortable />
-        <el-table-column label="Max Latency" :formatter="formatLatency" sortable />
-        <el-table-column label="CPU Usage" :formatter="formatPercent" sortable />
-        <el-table-column label="Memory Usage" :formatter="formatPercent" sortable />
-        <el-table-column label="Threads" prop="threadCount" sortable />
-      </el-table>
-      <el-pagination
+      <a-table :data="proxyStats" border stripe :default-sort="{prop: 'proxyAddr', order: 'ascending'}">
+        <a-table-column label="Proxy" prop="proxyAddr" sortable />
+        <a-table-column label="Connections" prop="connections" sortable />
+        <a-table-column label="TPS" :formatter="formatTps" sortable />
+        <a-table-column label="Requests" :formatter="formatNumber" sortable />
+        <a-table-column label="Failures" :formatter="formatNumber" sortable />
+        <a-table-column label="Avg Latency" :formatter="formatLatency" sortable />
+        <a-table-column label="Max Latency" :formatter="formatLatency" sortable />
+        <a-table-column label="CPU Usage" :formatter="formatPercent" sortable />
+        <a-table-column label="Memory Usage" :formatter="formatPercent" sortable />
+        <a-table-column label="Threads" prop="threadCount" sortable />
+      </a-table>
+      <a-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
         :total="totalItems"
         layout="total, prev, pager, next"
         @current-change="refreshData"
       />
-    </el-card>
+    </a-card>
 
     <!-- Config Dialog -->
-    <el-dialog v-model="showConfigDialog" title="Proxy Configuration">
-      <el-form @submit.prevent="updateProxyConfig">
-        <el-form-item label="Proxy Name">
-          <el-input v-model="proxyConfig.proxyName" required />
-        </el-form-item>
-        <el-form-item label="Listen Port">
-          <el-input-number v-model="proxyConfig.listenPort" required />
-        </el-form-item>
-        <el-form-item label="Virtual Host">
-          <el-input v-model="proxyConfig.virtualHost" required />
-        </el-form-item>
-        <el-form-item label="Enable Access Log">
-          <el-switch v-model="proxyConfig.accessLog" />
-        </el-form-item>
-        <el-form-item label="MQ Mode">
-          <el-select v-model="proxyConfig.mqMode">
-            <el-option value="CLUSTER" label="Cluster" />
-            <el-option value="BROADCAST" label="Broadcast" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Thread Pool Size">
-          <el-input-number v-model="proxyConfig.threadPoolSize" required />
-        </el-form-item>
-        <el-form-item label="Max Connections">
-          <el-input-number v-model="proxyConfig.maxConns" required />
-        </el-form-item>
-        <el-form-item label="Connect Timeout (ms)">
-          <el-input-number v-model="proxyConfig.connectTimeout" required />
-        </el-form-item>
-        <el-form-item label="Socket Timeout (ms)">
-          <el-input-number v-model="proxyConfig.socketTimeout" required />
-        </el-form-item>
-        <el-form-item label="Heartbeat Interval (ms)">
-          <el-input-number v-model="proxyConfig.heartbeatInterval" required />
-        </el-form-item>
-        <el-form-item label="Heartbeat Timeout (ms)">
-          <el-input-number v-model="proxyConfig.heartbeatTimeout" required />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="updateProxyConfig">Save Changes</el-button>
-          <el-button @click="showConfigDialog = false">Cancel</el-button>
-        </el-form-item>
-      </el-form>
-    </el-dialog>
+    <a-dialog v-model="showConfigDialog" title="Proxy Configuration">
+      <a-form @submit.prevent="updateProxyConfig">
+        <a-form-item label="Proxy Name">
+          <a-input v-model="proxyConfig.proxyName" required />
+        </a-form-item>
+        <a-form-item label="Listen Port">
+          <a-input-number v-model="proxyConfig.listenPort" required />
+        </a-form-item>
+        <a-form-item label="Virtual Host">
+          <a-input v-model="proxyConfig.virtualHost" required />
+        </a-form-item>
+        <a-form-item label="Enable Access Log">
+          <a-switch v-model="proxyConfig.accessLog" />
+        </a-form-item>
+        <a-form-item label="MQ Mode">
+          <a-select v-model="proxyConfig.mqMode">
+            <a-option value="CLUSTER" label="Cluster" />
+            <a-option value="BROADCAST" label="Broadcast" />
+          </a-select>
+        </a-form-item>
+        <a-form-item label="Thread Pool Size">
+          <a-input-number v-model="proxyConfig.threadPoolSize" required />
+        </a-form-item>
+        <a-form-item label="Max Connections">
+          <a-input-number v-model="proxyConfig.maxConns" required />
+        </a-form-item>
+        <a-form-item label="Connect Timeout (ms)">
+          <a-input-number v-model="proxyConfig.connectTimeout" required />
+        </a-form-item>
+        <a-form-item label="Socket Timeout (ms)">
+          <a-input-number v-model="proxyConfig.socketTimeout" required />
+        </a-form-item>
+        <a-form-item label="Heartbeat Interval (ms)">
+          <a-input-number v-model="proxyConfig.heartbeatInterval" required />
+        </a-form-item>
+        <a-form-item label="Heartbeat Timeout (ms)">
+          <a-input-number v-model="proxyConfig.heartbeatTimeout" required />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" @click="updateProxyConfig">Save Changes</a-button>
+          <a-button @click="showConfigDialog = false">Cancel</a-button>
+        </a-form-item>
+      </a-form>
+    </a-dialog>
 
     <!-- Connections Dialog -->
-    <el-dialog v-model="showConnectionsDialog" title="Client Connections">
-      <el-table :data="connections" border stripe>
-        <el-table-column label="Client ID" prop="clientId" />
-        <el-table-column label="Address" prop="clientAddr" />
-        <el-table-column label="Language" prop="language" />
-        <el-table-column label="Version" prop="version" />
-        <el-table-column label="Connect Time" :formatter="formatDate" />
-        <el-table-column label="Last Heartbeat" :formatter="formatDate" />
-        <el-table-column label="Requests" :formatter="formatNumber" />
-      </el-table>
+    <a-dialog v-model="showConnectionsDialog" title="Client Connections">
+      <a-table :data="connections" border stripe>
+        <a-table-column label="Client ID" prop="clientId" />
+        <a-table-column label="Address" prop="clientAddr" />
+        <a-table-column label="Language" prop="language" />
+        <a-table-column label="Version" prop="version" />
+        <a-table-column label="Connect Time" :formatter="formatDate" />
+        <a-table-column label="Last Heartbeat" :formatter="formatDate" />
+        <a-table-column label="Requests" :formatter="formatNumber" />
+      </a-table>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="showConnectionsDialog = false">Close</el-button>
+        <a-button @click="showConnectionsDialog = false">Close</a-button>
       </span>
-    </el-dialog>
+    </a-dialog>
   </div>
 </template>
 

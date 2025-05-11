@@ -1,9 +1,9 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     :title="title"
     :width="1200"
-    @update:visible="(val) => emit('update:visible', val)"
+    @update:open="(val: boolean) => emit('update:visible', val)"
     @ok="handleOk"
     @cancel="handleCancel"
     :okButtonProps="{ disabled: readOnly }"
@@ -64,7 +64,7 @@
 
       <!-- 历史详情弹窗 -->
       <a-modal
-        v-model:visible="showHistoryDetail"
+        v-model:open="showHistoryDetail"
         title="发布详情"
         :width="1000"
         :footer="null"
@@ -98,6 +98,7 @@ import { ref, onMounted, watch, nextTick } from 'vue';
 import * as monaco from 'monaco-editor';
 import { ClockCircleOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
+import { ConfigItemHistory } from '@/api/config/configItemHistories';
 
 interface ReleaseHistory {
   id: number;
@@ -113,7 +114,7 @@ interface ReleaseHistory {
 }
 
 const props = defineProps({
-  visible: {
+  open: {
     type: Boolean,
     required: true
   },
@@ -134,7 +135,7 @@ const props = defineProps({
     default: ''
   },
   historyList: {
-    type: Array as () => ReleaseHistory[],
+    type: Array as () => ConfigItemHistory[],
     default: () => []
   }
 });
@@ -286,8 +287,8 @@ const handleCancel = () => {
 };
 
 // 监听可见性变化
-watch(() => props.visible, async (newVisible) => {
-  if (newVisible) {
+watch(() => props.open, async (newOpen) => {
+  if (newOpen) {
     await nextTick();
     initEditor();
   } else if (editor) {
@@ -308,7 +309,7 @@ watch(() => props.content, (newContent) => {
 
 // 组件卸载时清理
 onMounted(() => {
-  if (props.visible) {
+  if (props.open) {
     nextTick(() => {
       initEditor();
     });

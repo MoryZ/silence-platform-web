@@ -354,7 +354,7 @@ const messageTypes = [
 
     <!-- Send Message Dialog -->
     <a-modal
-      v-model:visible="showSendDialog"
+      v-model:open="showSendDialog"
       title="发送消息"
       width="600px"
     >
@@ -407,7 +407,7 @@ const messageTypes = [
 
     <!-- Message Detail Dialog -->
     <a-modal
-      v-model:visible="showMessageDetailDialog"
+      v-model:open="showMessageDetailDialog"
       title="消息详情"
       width="800px"
     >

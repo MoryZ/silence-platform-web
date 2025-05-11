@@ -359,7 +359,7 @@ const onClusterChange = (val: string[]) => {
 
     <!-- 运行信息弹窗 -->
     <a-modal
-      v-model:visible="showRunningInfoDialog"
+      v-model:open="showRunningInfoDialog"
       :title="`[${currentConnectionGroupName}]消费详情`"
       width="1000px"
       :footer="null"
@@ -406,7 +406,7 @@ const onClusterChange = (val: string[]) => {
 
     <!-- 连接信息弹窗 -->
     <a-modal
-      v-model:visible="showConnectionDialog"
+      v-model:open="showConnectionDialog"
       :title="`[${currentConnectionGroupName}]终端`"
       width="900px"
       :footer="null"
@@ -456,7 +456,7 @@ const onClusterChange = (val: string[]) => {
 
     <!-- 配置弹窗 -->
     <a-modal
-      v-model:visible="showConfigDialog"
+      v-model:open="showConfigDialog"
       title="修改订阅"
       width="700px"
       @cancel="showConfigDialog = false"
@@ -527,7 +527,7 @@ const onClusterChange = (val: string[]) => {
 
     <!-- 客户端属性弹窗 -->
     <a-modal
-      v-model:visible="showClientPropsDialog"
+      v-model:open="showClientPropsDialog"
       :title="clientIdForProps"
       width="700px"
       @cancel="showClientPropsDialog = false"

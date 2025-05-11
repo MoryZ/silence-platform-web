@@ -1,13 +1,9 @@
 <template>
   <div class="side-menu-container">
-    <div class="logo">
-      <img src="/logo.svg" alt="Logo" />
-      <h1 v-show="!collapsed">Silence Platform</h1>
-    </div>
-    
     <a-menu
       mode="inline"
       theme="dark"
+      :inline-collapsed="collapsed"
       :selectedKeys="[activeKey]"
       :openKeys="openKeys"
       @openChange="onOpenChange"
@@ -69,24 +65,30 @@ import {
   AppstoreOutlined,
   BarsOutlined
 } from '@ant-design/icons-vue';
-import { ref, computed, onMounted, watch, inject, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MENUS } from '@/utils/constant';
 import { ls } from '@/utils/stoarge';
 import { MenuItem } from '@/types/menu';
 
 // 接收来自父组件的折叠状态
-const collapsedFromParent = inject('collapsed', ref(false));
 const props = defineProps({
   collapsed: {
     type: Boolean,
     default: false
+  },
+  menuList: {
+    type: Array as () => MenuItem[],
+    default: []
+  },
+  menuKey: {
+    type: String,
+    default: ''
   }
 });
 
 const router = useRouter();
 const route = useRoute();
-const menuList = ref<MenuItem[]>([]);
 
 // 计算当前激活的菜单项
 const activeKey = computed(() => route.path);
@@ -137,69 +139,45 @@ const isActive = (path?: string, parentPath?: string): boolean => {
   return route.path === targetPath;
 };
 
-// 当前展开的子菜单
+// 获取当前激活菜单的父级 openKey
+function getOpenKeysByPath(path: string) {
+  // 只展开一级父菜单
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length > 1) {
+    return [`submenu-/${segments[0]}`];
+  }
+  // 如果是一级菜单（如 /dashboard），不展开任何子菜单
+  return [];
+}
+
 const openKeys = ref<string[]>([]);
 
-// 自动计算路径的父级路径，用于自动展开菜单
-const calculateParentPaths = (path: string) => {
-  const parts = path.split('/');
-  const result = [];
-  
-  for (let i = 1; i < parts.length; i++) {
-    const parentPath = '/' + parts.slice(1, i + 1).join('/');
-    if (parentPath) {
-      result.push(parentPath);
+// 路由变化时只展开当前父菜单
+watch(
+  () => route.path,
+  (newPath) => {
+    if (!props.collapsed) {
+      openKeys.value = getOpenKeysByPath(newPath);
     }
-  }
-  
-  return result;
-};
+  },
+  { immediate: true }
+);
 
-// 获取子菜单的父菜单键值
-const getParentMenuKey = (path: string): string | null => {
-  // 查找包含当前路径的子菜单的父菜单
-  for (const menu of menuList.value) {
-    if (menu.children && menu.children.length > 0) {
-      for (const subMenu of menu.children) {
-        if (subMenu.path === path) {
-          return `submenu-${menu.path || menu.key}`;
-        }
-      }
+// 折叠时收起所有菜单，展开时恢复当前父菜单
+watch(
+  () => props.collapsed,
+  (val) => {
+    if (val) {
+      openKeys.value = [];
+    } else {
+      openKeys.value = getOpenKeysByPath(route.path);
     }
-  }
-  return null;
-};
+  },
+  { immediate: true }
+);
 
-// 处理子菜单展开状态变化
 const onOpenChange = (keys: string[]) => {
   openKeys.value = keys;
-};
-
-// 确保当前路径的父菜单被展开
-const updateOpenKeys = () => {
-  // 获取当前路径的所有父路径
-  const parentPaths = calculateParentPaths(route.path);
-  
-  // 转换成菜单需要的key格式
-  const parentKeys = parentPaths.map(path => {
-    for (const menu of menuList.value) {
-      if (menu.path === path) {
-        return `submenu-${menu.path || menu.key}`;
-      }
-    }
-    return null;
-  }).filter(Boolean) as string[];
-  
-  // 查找当前路径所在的子菜单的父菜单
-  const parentMenuKey = getParentMenuKey(route.path);
-  if (parentMenuKey && !parentKeys.includes(parentMenuKey)) {
-    parentKeys.push(parentMenuKey);
-  }
-  
-  // 更新展开的菜单项
-  if (parentKeys.length > 0) {
-    openKeys.value = [...new Set([...openKeys.value, ...parentKeys])];
-  }
 };
 
 // 根据菜单图标字符串获取对应的图标组件
@@ -220,21 +198,9 @@ const getIcon = (icon?: string) => {
 const loadMenus = () => {
   try {
     const storedMenus = ls.get<MenuItem[]>(MENUS);
-    
-    if (storedMenus && Array.isArray(storedMenus) && storedMenus.length > 0) {
-      // 过滤掉不需要显示的菜单项
-      menuList.value = storedMenus.filter(menu => !menu.meta?.show === false);
-      
-      // 初始化展开的菜单
-      nextTick(() => {
-        updateOpenKeys();
-      });
-    } else {
+    // 只做本地菜单数据校验和警告，不再赋值 props.menuList
+    if (!(storedMenus && Array.isArray(storedMenus) && storedMenus.length > 0)) {
       console.warn('菜单数据不存在或格式不正确');
-      
-      // 当本地没有菜单数据时，保持菜单状态为空数组
-      menuList.value = [];
-      
       // 如果页面正在系统相关页面，但没有菜单数据，重定向到首页
       if (route.path.includes('/system') && !route.path.includes('/dashboard')) {
         router.replace('/dashboard');
@@ -242,43 +208,15 @@ const loadMenus = () => {
     }
   } catch (error) {
     console.error('加载菜单数据出错:', error);
-    // 保持菜单为空
-    menuList.value = [];
   }
 };
 
-// 确保在组件创建时加载菜单
 onMounted(() => {
   loadMenus();
-});
-
-// 在路由变化时重新加载菜单数据并更新选中状态
-watch(
-  () => route.path,
-  (newPath) => {
-    // 确保菜单数据存在
-    if (menuList.value.length === 0) {
-      loadMenus();
-    } else {
-      // 更新展开的菜单
-      updateOpenKeys();
-    }
-  },
-  { immediate: true }
-);
-
-// 监听折叠状态变化，折叠时清空展开的菜单
-watch(
-  () => props.collapsed,
-  (isCollapsed) => {
-    if (isCollapsed) {
-      openKeys.value = [];
-    } else {
-      // 展开时恢复展开的菜单
-      updateOpenKeys();
-    }
+  if (!props.collapsed) {
+    openKeys.value = getOpenKeysByPath(route.path);
   }
-);
+});
 
 // 导航函数
 const navigateTo = (path: string, parentPath?: string) => {
@@ -329,6 +267,7 @@ const navigateTo = (path: string, parentPath?: string) => {
   
   router.push(targetPath);
 };
+
 </script>
 
 <style lang="scss" scoped>
@@ -463,5 +402,45 @@ const navigateTo = (path: string, parentPath?: string) => {
       width: 4px;
     }
   }
+}
+
+:deep(.ant-menu-item-selected),
+.active-menu-item {
+  background-color: #1677ff !important;
+  color: #fff !important;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.08);
+}
+
+.layout-container {
+  min-height: 100vh;
+  height: 100vh;
+}
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh;
+}
+.layout-content {
+  flex: 1;
+  padding: 24px;
+  background: #f6fbfa;
+  min-height: 0;
+}
+.layout-footer {
+  width: 100%;
+  text-align: center;
+  color: #222;
+  font-size: 14px;
+  opacity: 0.7;
+  padding: 16px 0 8px 0;
+  background: transparent;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+.layout-sider {
+  background: #001529;
 }
 </style>

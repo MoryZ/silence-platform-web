@@ -9,10 +9,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import zhCN from 'ant-design-vue/es/locale/zh_CN';
-
+import { useThemeStore } from './stores/theme';
 const locale = ref(zhCN);
+const themeStore = useThemeStore();
+const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefined));
+
 </script>
 
 <style>

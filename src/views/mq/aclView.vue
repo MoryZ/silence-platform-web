@@ -281,7 +281,7 @@ onMounted(() => {
 
     <!-- Create Account Dialog -->
     <a-modal
-      v-model:visible="showCreateDialog"
+      v-model:open="showCreateDialog"
       title="新增"
       :width="700"
       :footer="null"

@@ -25,30 +25,30 @@
           <div class="card-header">配置中心CC</div>
           <div class="stats-content">
             <div class="stats-item">
-              <div class="stats-value">72</div>
+              <div class="stats-value">{{ statistics?.configCenter?.namespaceCount ?? '-' }}</div>
               <div class="stats-label">命名空间</div>
             </div>
             <div class="stats-item">
-              <div class="stats-value">796</div>
+              <div class="stats-value">{{ statistics?.configCenter?.listenerInstanceCount ?? '-' }}</div>
               <div class="stats-label">监听实例</div>
             </div>
             <div class="stats-item">
-              <div class="stats-value">26</div>
+              <div class="stats-value">{{ statistics?.configCenter?.componentCount ?? '-' }}</div>
               <div class="stats-label">组件</div>
             </div>
           </div>
         </div>
 
-        <!-- 任务调度Snail -->
+        <!-- 任务调度SilenceJob -->
         <div class="stats-card">
-          <div class="card-header">任务调度Snail</div>
+          <div class="card-header">任务调度SilenceJob</div>
           <div class="stats-content">
             <div class="stats-item">
-              <div class="stats-value">0</div>
+              <div class="stats-value">{{ statistics?.jobCenter?.localJobCount ?? '-' }}</div>
               <div class="stats-label">本地任务</div>
             </div>
             <div class="stats-item">
-              <div class="stats-value">27</div>
+              <div class="stats-value">{{ statistics?.jobCenter?.remoteJobCount ?? '-' }}</div>
               <div class="stats-label">远程任务</div>
             </div>
           </div>
@@ -59,26 +59,11 @@
           <div class="card-header">消息队列RocketMQ</div>
           <div class="stats-content">
             <div class="stats-item">
-              <div class="stats-value">27</div>
+              <div class="stats-value">{{ statistics?.mqCenter?.topicCount ?? '-' }}</div>
               <div class="stats-label">Topic</div>
             </div>
             <div class="stats-item">
-              <div class="stats-value">43</div>
-              <div class="stats-label">发布关系</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 消息队列Kafka -->
-        <div class="stats-card">
-          <div class="card-header">消息队列Kafka</div>
-          <div class="stats-content">
-            <div class="stats-item">
-              <div class="stats-value">0</div>
-              <div class="stats-label">Topic</div>
-            </div>
-            <div class="stats-item">
-              <div class="stats-value">0</div>
+              <div class="stats-value">{{ statistics?.mqCenter?.publishRelationCount ?? '-' }}</div>
               <div class="stats-label">发布关系</div>
             </div>
           </div>
@@ -142,7 +127,9 @@ import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
-
+import { ls } from '@/utils/stoarge'
+import { RECENT_VISITED_PRODUCTS } from '@/utils/constant'
+import { getStatistics, Statistics } from '@/api/dashboard'
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
 
@@ -150,23 +137,29 @@ const router = useRouter();
 const recentVisited = ref<any[]>([]);
 const selectedEnv = ref('3');
 const selectedProduct = ref('all');
+const statistics = ref<Statistics>()
+
+const emit = defineEmits(['selectModule'])
 
 // 加载最近访问记录
 const loadRecentVisited = () => {
-  const recent = localStorage.getItem('recentVisited');
+  const recent = ls.get(RECENT_VISITED_PRODUCTS)
   if (recent) {
-    recentVisited.value = JSON.parse(recent);
+    recentVisited.value = recent
   }
 };
 
 // 处理最近访问项点击
 const handleRecentClick = (item: any) => {
-  router.push(item.path);
+  emit('selectModule', item)
+  router.push(item.path)
 };
 
 // 组件挂载时加载最近访问记录
-onMounted(() => {
+onMounted(async () => {
   loadRecentVisited();
+  const res = await getStatistics();
+  statistics.value = res;
 });
 </script>
 
@@ -231,9 +224,10 @@ onMounted(() => {
 
         .card-header {
           padding: 12px 16px;
-          background: #722ed1;
-          color: #fff;
+          background: #e6f7ff;
+          color: #1677ff;
           font-weight: 500;
+          border-radius: 4px 4px 0 0;
         }
 
         .stats-content {
