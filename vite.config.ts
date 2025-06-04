@@ -17,12 +17,11 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
+      '/api/v1': {
         target: 'http://127.0.0.1:8098',
         changeOrigin: true,
-        //rewrite: (path) => path.replace(/^\/api/, ''), // 路径重写
-        secure: false,
-      },
+        //rewrite: (path) => path.replace(/^\/api\/v1/, ''), // 路径重写
+      }
     },
   },
   optimizeDeps: {

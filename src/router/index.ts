@@ -42,7 +42,7 @@ const constantRoutes: RouteRecordRaw[] = [
       {
         path: 'notification',
         name: 'Notification',
-        component: () => import('@/views/notification/notice.vue'),
+        component: () => import('@/views/system/notice.vue'),
         meta: {
           title: '通知管理',
           requiresAuth: true

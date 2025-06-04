@@ -279,8 +279,8 @@ const roleOptions = ref<Role[]>([]);
 // 方法定义
 const handleSearch = () => {
   getUserList(searchForm).then((res) => {
-    tableData.value = res.data.data;
-    pagination.total = res.data.total;
+    tableData.value = res.data;
+    pagination.total = res.data;
   });
 };
 
