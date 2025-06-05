@@ -81,7 +81,7 @@ function handleRefresh() {
   // 这里应重新拉取数据
 }
 
-function handlePageChange(page, pageSize) {
+function handlePageChange(page: number, pageSize: number) {
   pagination.value.current = page;
   pagination.value.pageSize = pageSize;
 }

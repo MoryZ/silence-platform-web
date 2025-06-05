@@ -3,6 +3,7 @@ import { $t } from '@/locales';
 import { translateOptions } from '@/utils/common';
 import { enableStatusNumberOptions } from '@/constants/business';
 import SelectGroup from '@/components/common/select-group.vue';
+import { JobSearchParams } from '@/api/job/job';
 
 defineOptions({
   name: 'JobTaskSearch'
@@ -15,7 +16,7 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const model = defineModel<Api.Job.JobSearchParams>('model', { required: true });
+const model = defineModel<JobSearchParams>('model', { required: true });
 
 function reset() {
   emit('reset');

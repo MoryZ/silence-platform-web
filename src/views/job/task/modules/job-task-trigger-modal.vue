@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import { FormInstance, InputNumber } from 'ant-design-vue';
-import { useFormRules } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { fetchTriggerJobParams } from '@/service/api';
+import { triggerJob, TriggerJobParams } from '@/api/job/job';
 import CodeMirror from '@/components/common/code-mirror.vue';
 import { isNotNull } from '@/utils/common';
 
@@ -36,7 +35,7 @@ const shardNum = ref(0);
 const customformRef = ref<FormInstance | null>(null);
 const { defaultRequiredRule } = useFormRules();
 
-type Model = Api.Job.TriggerJobParams;
+type Model = TriggerJobParams;
 
 const model: Model = reactive(createDefaultModel());
 

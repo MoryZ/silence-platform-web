@@ -9,14 +9,14 @@ import {
   taskTypeRecord,
   triggerTypeRecord
 } from '@/constants/business';
-
+import { Job } from '@/api/job/job';
 defineOptions({
   name: 'JobTaskDetailDrawer'
 });
 
 interface Props {
   /** row data */
-  rowData?: Api.Job.Job | null;
+  rowData?: Job | null;
 }
 defineProps<Props>();
 

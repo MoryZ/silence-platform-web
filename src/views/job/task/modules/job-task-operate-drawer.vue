@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import { FormInstance, InputNumber } from 'ant-design-vue';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import OperateDrawer from '@/components/common/operate-drawer.vue';
 import { $t } from '@/locales';
 import { enableStatusNumberOptions } from '@/constants/business';
