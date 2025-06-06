@@ -1,33 +1,26 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import {
-  getNamespaces,
-  createNamespace,
-  updateNamespace,
-  NameSpace
-} from '@/api/job/namespace';
-import { getGroupList } from '@/api/job/group';
+import { getJobPage, Job } from '@/api/job/job';
 import { v4 as uuidv4 } from 'uuid';
 import { formatDate } from '@/utils/common';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import Draggable from 'vuedraggable';
 import { Checkbox as ACheckbox } from 'ant-design-vue';
-import { optionOptions } from 'ant-design-vue/es/vc-mentions/src/Option';
 
 const drawerVisible = ref(false);
-const editingData = ref<Partial<NameSpace> | null>(null);
+const editingData = ref<Partial<Job> | null>(null);
 const isEdit = ref(false);
 const loading = ref(false);
-const data = ref<NameSpace[]>([]);
+const data = ref<Job[]>([]);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
-const searchForm = ref({ name: '', uniqueId: '' });
+const searchForm = ref({ groupName: '', jobName: '', executorName: '', jobStatus: undefined, executorId: ''  });
 const fields = [
-  { key: 'groupName', type: 'select' as const, placeholder: '请选择组名称', options: optionOptions },
-  { key: 'taskName', type: 'input' as const, placeholder: '请输入任务名称' },
+  { key: 'groupName', type: 'select' as const, placeholder: '请选择组名称', options: [{ label: '启用', value: '1' }, { label: '禁用', value: '0' }]  },
+  { key: 'jobName', type: 'input' as const, placeholder: '请输入任务名称' },
   { key: 'executorName', type: 'input' as const, placeholder: '请输入执行器名称' },
-  { key: 'taskStatus', type: 'select' as const, placeholder: '请选择任务状态', options: [{ label: '启用', value: '1' }, { label: '禁用', value: '0' }] },
+  { key: 'jobStatus', type: 'select' as const, placeholder: '请选择任务状态', options: [{ label: '启用', value: '1' }, { label: '禁用', value: '0' }] },
   { key: 'executorId', type: 'select' as const, placeholder: '请选择负责人' },
 ];
 
@@ -49,12 +42,15 @@ async function fetchData() {
   loading.value = true;
   try {
     const params = {
-      name: searchForm.value.name,
-      uniqueId: searchForm.value.uniqueId,
+      groupName: searchForm.value.groupName,
+      jobName: searchForm.value.jobName,
+      executorName: searchForm.value.executorName,
+      jobStatus: searchForm.value.jobStatus,
+      executorId: searchForm.value.executorId,
       pageNo: pagination.current,
       pageSize: pagination.pageSize
     };
-    const res = await getNamespaces(params);
+    const res = await getJobPage(params);
     if (Array.isArray(res)) {
       data.value = res;
       pagination.total = res.length;

@@ -46,7 +46,7 @@ export interface GroupConfigUpdateVO {
 }
 
 /** get groupConfig list */
-export function getGroupPage(params?:GroupConfigSearchParams) {
+export function getGroupPage(params:GroupConfigSearchParams) {
   return request.get<GroupConfigResponseVO>('/api/v1/groupConfigs', { params });
 
 }
@@ -71,10 +71,14 @@ export function updateGroup(id:string, data:GroupConfigRequestVO) {
   return request.post(`/api/v1/groupConfigs/${id}`, data);
 }
 
-export function updateGroupStatus(data:GroupConfigUpdateVO) {
-  return request.put('/api/v1/groupConfigs/status', data);
+export function enableGroup(data:GroupConfigUpdateVO) {
+  return request.put('/api/v1/groupConfigs/enable', data);
 }
 
+
+export function disableGroup(data:GroupConfigUpdateVO) {
+  return request.put('/api/v1/groupConfigs/disable', data);
+}
 
 /** get all group config list */
 export function getAllGroupConfigListByNameSpaceIdIn(data: string[]) {

@@ -27,7 +27,6 @@
             <a-input
               v-model:value="localForm[field.key]"
               :allow-clear="true"
-              :placeholder="field.placeholder"
               :style="field.style || 'width: 200px'"
             />
           </a-form-item>
@@ -36,7 +35,6 @@
               v-model:value="localForm[field.key]"
               :options="field.options"
               :allow-clear="true"
-              :placeholder="field.placeholder"
               :style="field.style || 'width: 160px'"
             />
           </a-form-item>
@@ -54,6 +52,7 @@
   
   interface FieldConfig {
     key: string;
+    label: string;
     type: 'input' | 'select';
     placeholder?: string;
     options?: Array<{ label: string; value: string }>;

@@ -3,8 +3,10 @@ import { ref, reactive, computed } from 'vue';
 import { message, Tag } from 'ant-design-vue';
 import {
   getGroupPage,
+  disableGroup,
+  enableGroup,
   GroupConfig,
-  GroupConfigResponseVO,
+  GroupConfigResponseVO
 
 } from '@/api/job/group';
 import { formatDate } from '@/utils/common';
@@ -187,6 +189,20 @@ fetchData();
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'index'">
             {{ index + 1 }}
+          </template>
+          <template v-else-if="column.key === 'groupName'">
+            <a @click="showDetail(record)">{{ record.groupName }}</a>
+          </template>
+          <template v-else-if="column.key === 'groupStatus'">
+            <a-switch
+              v-model:checked="record.groupStatus"
+              @change="(checked) => handleStatusChange(record, checked)"
+            />
+          </template>
+          <template v-else-if="column.key === 'initScene'">
+            <Tag :color="record.initScene ? 'blue' : 'red'">
+              {{ record.initScene ? '是' : '否' }}
+            </Tag>
           </template>
           <template v-else-if="column.key === 'operation'">
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
