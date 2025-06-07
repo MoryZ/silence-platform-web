@@ -23,19 +23,31 @@
         class="search-form"
       >
         <template v-for="field in fields" :key="field.key">
-          <a-form-item v-if="field.type === 'input'">
+          <a-form-item v-if="field.type === 'input'" :label="field.label">
             <a-input
               v-model:value="localForm[field.key]"
               :allow-clear="true"
               :style="field.style || 'width: 200px'"
+              :placeholder="field.placeholder"
             />
           </a-form-item>
-          <a-form-item v-else-if="field.type === 'select'">
+          <a-form-item v-else-if="field.type === 'select'" :label="field.label">
             <a-select
               v-model:value="localForm[field.key]"
-              :options="field.options"
+              :options="field._options"
               :allow-clear="true"
               :style="field.style || 'width: 160px'"
+              :placeholder="field.placeholder"
+            />
+          </a-form-item>
+          <a-form-item v-else-if="field.type === 'tree'" :label="field.label">
+            <a-tree-select
+              v-model:value="localForm[field.key]"
+              :tree-data="field._treeData"
+              :allow-clear="true"
+              :style="field.style || 'width: 200px'"
+              :placeholder="field.placeholder"
+              tree-default-expand-all
             />
           </a-form-item>
         </template>
@@ -48,15 +60,21 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, watch } from 'vue';
+  import { ref, watch, onMounted } from 'vue';
+  // @ts-ignore
+  import { TreeSelect } from 'ant-design-vue';
   
   interface FieldConfig {
     key: string;
     label: string;
-    type: 'input' | 'select';
+    type: 'input' | 'select' | 'tree';
     placeholder?: string;
-    options?: Array<{ label: string; value: string }>;
+    options?: Array<{ label: string; value: string }> | (() => Promise<Array<{ label: string; value: string }>>);
+    treeData?: Array<any> | (() => Promise<Array<any>>);
     style?: string;
+    // 内部扩展属性
+    _options?: Array<{ label: string; value: string }>;
+    _treeData?: Array<any>;
   }
   
   const props = defineProps<{
@@ -67,6 +85,34 @@
   
   const collapsed = ref(false);
   const localForm = ref({ ...props.modelValue });
+  
+  // 处理异步 options/treeData
+  async function initFieldData() {
+    for (const field of props.fields) {
+      if (field.type === 'select') {
+        if (typeof field.options === 'function') {
+          field._options = await field.options();
+        } else {
+          field._options = field.options || [];
+        }
+      } else if (field.type === 'tree') {
+        if (typeof field.treeData === 'function') {
+          field._treeData = await field.treeData();
+        } else {
+          field._treeData = field.treeData || [];
+        }
+      }
+    }
+  }
+  
+  onMounted(() => {
+    initFieldData();
+  });
+  
+  // 监听 fields 变化，重新初始化 options/treeData
+  watch(() => props.fields, () => {
+    initFieldData();
+  }, { deep: true });
   
   watch(() => props.modelValue, (val) => {
     localForm.value = { ...val };

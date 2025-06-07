@@ -24,16 +24,18 @@ export interface Job {
   id: string;
   groupName: string;
   jobName: string;
-  jobStatus: string;
-  argString: string;
+  jobStatus: boolean;
+  argsStr: string;
   argsType: number;
   routeKey: number;
   executorType: number;
   executorInfo: string;
-  triggerInterval: string;
+  triggerType: number;
+  triggerInterval: number;
   blockStrategy: number;
   executorTimeout: number;
   maxRetryTimes: number;
+  retryInterval: number;
   taskType: number;
   parallelNum: number;
   description: string;
@@ -54,7 +56,7 @@ export interface JobNameListSearchParams {
 
 /** get Job page */
 export function getJobPage(params?: JobSearchParams) {
-  return request.get('/job/page/list', { params });
+  return request.get('/api/v1/jobs/', { params });
 }
 
 /** get Job list */
@@ -78,7 +80,7 @@ export function getJobTaskTree(params?: JobTaskSearchParams) {
 }
 
 /** add Job */
-export function addJob(data: Job) {
+export function createJob(data: Job) {
   return request.post('/job', data);
 }
 

@@ -1,187 +1,134 @@
 <template>
   <a-drawer
-    :visible="visible"
-    :title="title"
-    placement="right"
-    :width="width"
-    @close="onClose"
+    :open="visible"
+    :title="title || '详情'"
+    width="700"
+    :footer="null"
+    @close="$emit('update:visible', false)"
+    class="detail-drawer"
   >
     <div class="detail-table">
-      <div 
-        v-for="field in fields" 
-        :key="field.key" 
-        class="detail-row"
-      >
-        <div class="detail-label">{{ field.label }}</div>
-        <div class="detail-value">
-          <!-- 复制类型 -->
-          <template v-if="field.type === 'copy'">
-            <div class="token-wrapper">
-              <span class="token-text">{{ getFieldValue(field.key) || '-' }}</span>
-              <button
-                v-if="getFieldValue(field.key)"
-                class="custom-copy-btn"
-                @click="copyText(getFieldValue(field.key))"
-              >
-                <span class="copy-icon">📋</span> 复制
-              </button>
-            </div>
-          </template>
-
-          <!-- 状态类型 -->
-          <template v-else-if="field.type === 'status'">
-            <span
-              class="status-tag"
-              :class="getFieldValue(field.key) ? 'status-enabled' : 'status-disabled'"
-            >
-              {{ field.format ? field.format(getFieldValue(field.key)) : (getFieldValue(field.key) ? '是' : '否') }}
-            </span>
-          </template>
-
-          <!-- 默认文本类型 -->
-          <template v-else>
-            {{ field.format ? field.format(getFieldValue(field.key)) : (getFieldValue(field.key) || '-') }}
-          </template>
+      <div v-for="(row, idx) in rows" :key="idx" class="detail-row">
+        <div v-if="row[0]" class="detail-col">
+          <div class="detail-label">{{ row[0].label }}</div>
+          <div class="detail-value">
+            <DetailCell :value="row[0].value" :column="row[0].column" :enums="enums" />
+          </div>
         </div>
+        <div v-if="row[1]" class="detail-col">
+          <div class="detail-label">{{ row[1].label }}</div>
+          <div class="detail-value">
+            <DetailCell :value="row[1].value" :column="row[1].column" :enums="enums" />
+          </div>
+        </div>
+        <div class="detail-divider" />
       </div>
     </div>
   </a-drawer>
 </template>
 
 <script setup lang="ts">
-import { message } from 'ant-design-vue';
+import { computed, PropType } from 'vue';
+import DetailCell from './DetailCell.vue';
 
-interface Field {
-  key: string;
-  label: string;
-  type?: 'text' | 'copy' | 'status';
-  format?: (value: any) => string;
+interface ColumnType {
+  title: string;
+  dataIndex: string;
+  type?: string;
+  enumMap?: Record<string | number, { label: string; color: string }>;
 }
 
-interface Props {
-  visible: boolean;
-  title?: string;
-  width?: number | string;
-  detail: Record<string, any>;
-  fields: Field[];
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  title: '详情',
-  width: 520,
+const props = defineProps({
+  visible: Boolean,
+  record: {
+    type: Object as PropType<Record<string, any> | null>,
+    default: null
+  },
+  columns: {
+    type: Array as PropType<ColumnType[]>,
+    default: () => []
+  },
+  enums: {
+    type: Object as PropType<Record<string, any>>,
+    default: () => ({})
+  },
+  title: String
 });
 
-const emit = defineEmits(['update:visible', 'close']);
-
-const onClose = () => {
-  emit('update:visible', false);
-  emit('close');
-};
-
-const getFieldValue = (key: string) => {
-  return props.detail?.[key];
-};
-
-const copyText = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    message.success('复制成功');
-  } catch (err) {
-    message.error('复制失败，请手动复制');
+const showColumns = computed(() => (props.columns || []).filter(col => col.dataIndex && col.dataIndex !== 'operation'));
+const rows = computed(() => {
+  const arr: Array<any[]> = [];
+  for (let i = 0; i < showColumns.value.length; i += 2) {
+    const col1 = showColumns.value[i];
+    const col2 = showColumns.value[i + 1];
+    arr.push([
+      col1
+        ? {
+            label: col1.title,
+            value: props.record ? props.record[col1.dataIndex] : undefined,
+            column: col1
+          }
+        : null,
+      col2
+        ? {
+            label: col2.title,
+            value: props.record ? props.record[col2.dataIndex] : undefined,
+            column: col2
+          }
+        : null
+    ]);
   }
-};
+  return arr;
+});
 </script>
 
 <style scoped>
+.detail-drawer >>> .ant-drawer-body {
+  padding: 24px 32px 24px 32px;
+}
 .detail-table {
   width: 100%;
-  border: 1px solid #e8e8e8;
-  border-radius: 4px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-
 .detail-row {
   display: flex;
-  border-bottom: 1px solid #e8e8e8;
+  flex-direction: row;
+  margin-bottom: 0;
+  align-items: stretch;
+  position: relative;
 }
-
-.detail-row:last-child {
-  border-bottom: none;
+.detail-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 14px 0 14px 0;
 }
-
 .detail-label {
-  width: 120px;
-  padding: 12px 16px;
-  background: #f0f5ff;
-  font-weight: 500;
-  color: #1d39c4;
-  border-right: 1px solid #d6e4ff;
-  flex-shrink: 0;
+  width: 110px;
+  min-width: 110px;
+  color: #222;
+  font-weight: 600;
+  text-align: left;
+  padding-right: 12px;
+  line-height: 22px;
 }
-
 .detail-value {
   flex: 1;
-  padding: 12px 16px;
-  min-height: 44px;
-  line-height: 20px;
-  color: #262626;
-  background: #fff;
-}
-
-.token-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.token-text {
-  flex: 1;
+  color: #666;
   word-break: break-all;
+  line-height: 22px;
 }
-
-.custom-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  background: #f0f5ff;
-  border: 1px solid #d6e4ff;
-  border-radius: 4px;
-  color: #2f54eb;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.custom-copy-btn:hover {
-  background: #d6e4ff;
-  color: #1d39c4;
-}
-
-.copy-icon {
-  margin-right: 4px;
-  font-size: 14px;
-}
-
-.status-tag {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 13px;
-  line-height: 20px;
-}
-
-.status-enabled {
-  background-color: #e6f7ff;
-  border: 1px solid #91d5ff;
-  color: #1890ff;
-}
-
-.status-disabled {
-  background-color: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  color: #8c8c8c;
+.detail-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: #f0f0f0;
+  content: '';
 }
 </style>
