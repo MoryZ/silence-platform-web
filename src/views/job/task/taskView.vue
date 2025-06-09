@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { createJob, getJobPage, Job, updateJob } from '@/api/job/job';
 import { getAllGroupConfigs } from '@/api/job/group';
+import { fetchSystemUser } from '@/api/job/systemUser';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import Draggable from 'vuedraggable';
@@ -116,7 +117,7 @@ function handleAdd() {
     routeKey: 1,
     executorType: 1,
     blockStrategy: 1,
-    triggerType: 1,
+    triggerType: 2,
     triggerInterval: 60,
     executorTimeout: 60,
     maxRetryTimes: 3,
@@ -172,14 +173,17 @@ function onCheckColumn(key: string, checked: boolean) {
   }
 }
 
+const groupOptions = ref<any[]>([]);
+const ownerOptions = ref<any[]>([]);
+
 // 新增/编辑弹窗表单字段配置
-const formFields = [
+const formFields: any[] = [
   { key: 'jobName', label: '任务名称', type: 'input', required: true, placeholder: '请输入任务名称' },
-  { key: 'groupName', label: '组名称', type: 'select', required: true, placeholder: '请输入组名称', options: [] },
-  { key: 'ownerId', label: '负责人', type: 'select', required: true, placeholder: '请选择负责人', options: [] },
-  { key: 'jobStatus', label: '状态', type: 'select', required: true, options: jobStatusOptions },
+  { key: 'groupName', label: '组名称', type: 'select', required: true, placeholder: '请输入组名称', options: groupOptions.value },
+  { key: 'ownerId', label: '负责人', type: 'select', required: true, placeholder: '请选择负责人', options: ownerOptions.value },
+  { key: 'jobStatus', label: '状态', type: 'radio', required: true, options: jobStatusOptions },
   { key: 'taskType', label: '任务类型', type: 'select', required: true, options: Object.entries(taskTypeEnum).map(([value, { label }]) => ({ label, value: Number(value) })) },
-  { key: 'executorType', label: '执行器类型', type: 'select', required: true, options: [{ label: 'Java', value: 1 }, { label: 'Python', value: 2 }] },
+  { key: 'executorType', label: '执行器类型', type: 'select', required: true, options: [{ label: 'Java', value: 1 }, { label: 'Python', value: 2 }, { label: 'Go', value: 3 }] },
   { key: 'executorInfo', label: '执行器名称', type: 'input', required: true, placeholder: '请输入执行器名称' },
   { key: 'argsStr', label: '方法参数', type: 'input', required: false, placeholder: '请输入方法参数' },
   { key: 'routeKey', label: '路由策略', type: 'select', required: true, options: [{ label: '轮询', value: 1 }] },
@@ -191,6 +195,24 @@ const formFields = [
   { key: 'retryInterval', label: '重试间隔', type: 'number', required: true, min: 1, step: 1, placeholder: '秒' },
   { key: 'description', label: '描述', type: 'textarea', placeholder: '请输入描述' }
 ];
+
+watch(groupOptions, (val) => {
+  const groupField = formFields.find(f => f.key === 'groupName');
+  if (groupField) groupField.options = val;
+});
+
+watch(ownerOptions, (val) => {
+  const ownerField = formFields.find(f => f.key === 'ownerId');
+  if (ownerField) ownerField.options = val;
+});
+
+onMounted(async () => {
+  const res = await getAllGroupConfigs();
+  groupOptions.value = res || [];
+
+  const userRes = await fetchSystemUser();
+  ownerOptions.value = userRes || [];
+});
 
 // 初始化加载
 fetchData();

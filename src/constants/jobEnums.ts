@@ -5,7 +5,10 @@ export const jobStatusOptions = [
 
 export const taskTypeEnum = {
   1: { label: '集群', color: 'blue' },
-  2: { label: '单机', color: 'green' }
+  2: { label: '广播', color: 'green' },
+  3: { label: '静态分片', color: 'green' },
+  4: { label: 'Map', color: 'green' },
+  5: { label: 'MapReduce', color: 'green' }
 };
 
 export const triggerTypeEnum = {
