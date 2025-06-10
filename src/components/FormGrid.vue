@@ -4,23 +4,41 @@
       <div class="form-label">
         <span v-if="field.required" class="form-required">*</span>{{ field.label }}
       </div>
-      <div class="form-control">
-        <component
-          v-if="field.type !== 'radio'"
-          :is="getComponent(field)"
-          v-model:value="model[field.key]"
-          v-bind="getComponentProps(field)"
-          :placeholder="field.placeholder"
-          :options="field.options"
-          :rows="field.type === 'textarea' ? 3 : undefined"
-          @change="(val: any) => handleFieldChange(field, val)"
-        />
-        <a-radio-group
-          v-else
-          v-model:value="model[field.key]"
-          :options="field.options"
-          @change="(val: any) => handleFieldChange(field, val)"
-        />
+      <div class="form-control form-control-with-addon" :class="{ 'has-addon': field.renderAddon }">
+        <template v-if="field.renderAddon && field.type === 'input'">
+          <div class="input-with-addon">
+            <component
+              :is="getComponent(field)"
+              v-model:value="model[field.key]"
+              v-bind="getComponentProps(field)"
+              :placeholder="field.placeholder"
+              :options="field.options"
+              :rows="field.type === 'textarea' ? 3 : undefined"
+              @change="(val: any) => handleFieldChange(field, val)"
+            />
+            <span class="addon-slot">
+              <slot :name="field.renderAddon" />
+            </span>
+          </div>
+        </template>
+        <template v-else>
+          <component
+            v-if="field.type !== 'radio'"
+            :is="getComponent(field)"
+            v-model:value="model[field.key]"
+            v-bind="getComponentProps(field)"
+            :placeholder="field.placeholder"
+            :options="field.options"
+            :rows="field.type === 'textarea' ? 3 : undefined"
+            @change="(val: any) => handleFieldChange(field, val)"
+          />
+          <a-radio-group
+            v-else
+            v-model:value="model[field.key]"
+            :options="field.options"
+            @change="(val: any) => handleFieldChange(field, val)"
+          />
+        </template>
       </div>
       <div class="form-divider" />
     </div>
@@ -41,6 +59,7 @@ interface FieldConfig {
   min?: number;
   max?: number;
   step?: number;
+  renderAddon?: string;
 }
 
 const props = defineProps({
@@ -131,6 +150,15 @@ function handleFieldChange(field: FieldConfig, val: any) {
   color: #333;
   word-break: break-all;
   line-height: 22px;
+}
+.input-with-addon {
+  display: flex;
+  align-items: center;
+}
+.addon-slot {
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
 }
 .form-divider {
   width: 100%;

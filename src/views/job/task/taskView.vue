@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
 import { createJob, getJobPage, Job, updateJob } from '@/api/job/job';
 import { getAllGroupConfigs } from '@/api/job/group';
@@ -8,9 +8,10 @@ import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import Draggable from 'vuedraggable';
 import { Checkbox as ACheckbox } from 'ant-design-vue';
-import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum } from '@/constants/jobEnums';
+import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, executorNameOptions, executorTypeEnum } from '@/constants/jobEnums';
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import FormGrid from '@/components/FormGrid.vue';
+import { h } from 'vue';
 
 const drawerVisible = ref(false);
 const editingData = ref<Partial<Job> | null>(null);
@@ -176,6 +177,23 @@ function onCheckColumn(key: string, checked: boolean) {
 const groupOptions = ref<any[]>([]);
 const ownerOptions = ref<any[]>([]);
 
+const showArgsEditor = ref(false);
+const argsEditorValue = ref('');
+
+function openArgsEditor() {
+  argsEditorValue.value = editingData.value?.argsStr || '';
+  showArgsEditor.value = true;
+  nextTick(() => {
+    // 可选：聚焦或其它操作
+  });
+}
+function handleArgsEditorOk() {
+  if (editingData.value) {
+    editingData.value.argsStr = argsEditorValue.value;
+  }
+  showArgsEditor.value = false;
+}
+
 // 新增/编辑弹窗表单字段配置
 const formFields: any[] = [
   { key: 'jobName', label: '任务名称', type: 'input', required: true, placeholder: '请输入任务名称' },
@@ -183,9 +201,9 @@ const formFields: any[] = [
   { key: 'ownerId', label: '负责人', type: 'select', required: true, placeholder: '请选择负责人', options: ownerOptions.value },
   { key: 'jobStatus', label: '状态', type: 'radio', required: true, options: jobStatusOptions },
   { key: 'taskType', label: '任务类型', type: 'select', required: true, options: Object.entries(taskTypeEnum).map(([value, { label }]) => ({ label, value: Number(value) })) },
-  { key: 'executorType', label: '执行器类型', type: 'select', required: true, options: [{ label: 'Java', value: 1 }, { label: 'Python', value: 2 }, { label: 'Go', value: 3 }] },
-  { key: 'executorInfo', label: '执行器名称', type: 'input', required: true, placeholder: '请输入执行器名称' },
-  { key: 'argsStr', label: '方法参数', type: 'input', required: false, placeholder: '请输入方法参数' },
+  { key: 'executorType', label: '执行器类型', type: 'select', required: true, options: Object.entries(executorTypeEnum).map(([value, { label }]) => ({ label, value: Number(value) })) },
+  { key: 'executorInfo', label: '执行器名称', type: 'radio', required: true, placeholder: '请输入执行器名称', options: executorNameOptions },
+  { key: 'argsStr', label: '方法参数', type: 'input', required: false, placeholder: '请输入方法参数', renderAddon: 'argsStrAddon' },
   { key: 'routeKey', label: '路由策略', type: 'select', required: true, options: [{ label: '轮询', value: 1 }] },
   { key: 'blockStrategy', label: '阻塞策略', type: 'select', required: true, options: Object.entries(blockStrategyEnum).map(([value, { label }]) => ({ label, value: Number(value) })) },
   { key: 'triggerType', label: '触发类型', type: 'select', required: true, options: Object.entries(triggerTypeEnum).map(([value, { label }]) => ({ label, value: Number(value) })) },
@@ -289,7 +307,7 @@ fetchData();
       v-model:visible="detailDrawerVisible"
       :record="detailRecord"
       :columns="(tableColumns as any)"
-          :enums="{ taskTypeEnum, triggerTypeEnum, blockStrategyEnum, jobStatusOptions }"
+      :enums="{ taskTypeEnum, triggerTypeEnum, blockStrategyEnum, jobStatusOptions }"
     />
     <a-drawer
       v-model:open="drawerVisible"
@@ -298,11 +316,26 @@ fetchData();
       :footer="null"
       @close="handleDrawerClose"
     >
-      <FormGrid v-if="editingData" :fields="formFields" :model="editingData" />
+      <FormGrid
+        v-if="editingData"
+        :fields="formFields"
+        :model="editingData"
+      >
+        <template #argsStrAddon>
+          <a-button type="text" @click="openArgsEditor" style="margin-left:8px;">
+            <template #icon>
+              <svg t="1717130000000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1234" width="18" height="18"><path d="M896 128H128c-35.2 0-64 28.8-64 64v640c0 35.2 28.8 64 64 64h768c35.2 0 64-28.8 64-64V192c0-35.2-28.8-64-64-64z m0 704H128V192h768v640z m-384-96c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32z m0-128c-17.6 0-32-14.4-32-32V320c0-17.6 14.4-32 32-32s32 14.4 32 32v256c0 17.6-14.4 32-32 32z" p-id="1235" fill="#888"/></svg>
+            </template>
+          </a-button>
+        </template>
+      </FormGrid>
       <div style="text-align:right;margin-top:24px;">
         <a-button @click="handleDrawerClose" style="margin-right:8px;">取消</a-button>
         <a-button type="primary" @click="handleDrawerSave">保存</a-button>
       </div>
+      <a-modal v-model:open="showArgsEditor" title="编辑方法参数" width="60%" @ok="handleArgsEditorOk" @cancel="showArgsEditor=false">
+        <a-textarea v-model:value="argsEditorValue" :rows="16" placeholder="请输入方法参数（支持多行）" />
+      </a-modal>
     </a-drawer>
   </div>
 </template>

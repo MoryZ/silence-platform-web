@@ -22,3 +22,14 @@ export const blockStrategyEnum = {
   2: { label: '覆盖', color: 'green' },
   3: { label: '并行', color: 'green' }
 };
+
+export const executorTypeEnum = {
+  1: { label: 'Java', color: 'blue' },
+  2: { label: 'Python', color: 'green' },
+  3: { label: 'Go', color: 'green' }
+};
+
+export const executorNameOptions = [
+    { label: '自定义执行器', value: '1' },
+    { label: '内置执行器', value: '2' },
+  ];
