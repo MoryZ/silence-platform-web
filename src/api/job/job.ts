@@ -45,7 +45,6 @@ export interface Job {
 
 export interface TriggerJobParams {
   tmpArgsStr: string;
-  jobId: string;
 }
 
 export interface JobNameListSearchParams {
@@ -54,6 +53,13 @@ export interface JobNameListSearchParams {
   jobId: number;
 }
 
+export interface ExportJobParams {
+    jobIds: string[];
+    groupName: string;
+    jobName: string;
+    jobStatus: boolean;
+  }
+
 /** get Job page */
 export function getJobPage(params?: JobSearchParams) {
   return request.get('/api/v1/jobs/', { params });
@@ -61,57 +67,62 @@ export function getJobPage(params?: JobSearchParams) {
 
 /** get Job list */
 export function getJobList(params?: JobSearchParams) {
-  return request.get('/job/list', { params });
+  return request.get('/api/v1/jobs/list', { params });
 }
 
 /** get Job list */
 export function getJobDetail(id: string) {
-  return request.get(`/job/${id}`);
+  return request.get(`/api/v1/jobs/${id}`);
 }
 
 /** get Job Task list */
 export function getJobTaskList(params?: JobTaskSearchParams) {
-  return request.get('/job/task/list', { params });
+  return request.get('/api/v1/jobs/task/list', { params });
 }
 
 /** get Job Task Tree */
 export function getJobTaskTree(params?: JobTaskSearchParams) {
-  return request.get('/job/task/tree/list', { params });
+  return request.get('/api/v1/jobs/task/tree/list', { params });
 }
 
 /** add Job */
 export function createJob(data: Job) {
-  return request.post('/job', data);
+  return request.post('/api/v1/jobs', data);
 }
 
 /** update Job */
 export function updateJob(id: string, data: Job) {
-  return request.put(`/job/${id}`, data);
+  return request.put(`/api/v1/jobs/${id}`, data);
 }
 
 /** update Job status */
 export function runJob(id: string) {
-  return request.put(`/job/${id}/run`);
+  return request.put(`/api/v1/jobs/${id}/run`);
 }
 
 /** update Job status */
 export function stopJob(id: string) {
-  return request.put(`/job/${id}/stop`);
+  return request.put(`/api/v1/jobs/${id}/stop`);
 }
 
 
 /** batch delete Job by id */
 export function deleteJob(data: string[]) {
-  return request.delete('/job/ids', { data });
+  return request.delete('/api/v1/jobs', { data });
 }
 
 /** trigger Job by id */
 export function triggerJob(jobId: string, data: TriggerJobParams) {
-  return request.post(`/job/trigger/${jobId}`, data);
+  return request.post(`/api/v1/jobs/${jobId}/trigger`, data);
 }
 
 
-/** job name list */
-export function getJobNameList(params?: JobNameListSearchParams) {
-  return request.get('/job/job-name/list', { params });
+export function importJob(data: File) {
+    return request.post(`/api/v1/jobs/import`, data);
 }
+
+export function exportJob(data: ExportJobParams) {
+    return request.post(`/api/v1/jobs/export`, data);
+}
+
+
