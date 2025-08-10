@@ -10,8 +10,6 @@ import Draggable from 'vuedraggable';
 import { Checkbox as ACheckbox } from 'ant-design-vue';
 import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, executorNameOptions, executorTypeEnum, routeKeyEnum } from '@/constants/jobEnums';
 import DetailDrawer from '@/components/DetailDrawer.vue';
-import FormGrid from '@/components/FormGrid.vue';
-import { h } from 'vue';
 import { DownOutlined } from '@ant-design/icons-vue';
 
 const drawerVisible = ref(false);

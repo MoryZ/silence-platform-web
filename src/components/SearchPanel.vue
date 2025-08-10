@@ -50,6 +50,16 @@
               tree-default-expand-all
             />
           </a-form-item>
+          <a-form-item v-else-if="field.type === 'date-picker'" :label="field.label">
+            <a-range-picker
+              v-model:value="localForm[field.key]"
+              :show-time="field.dateConfig?.showTime"
+              :format="field.dateConfig?.format || 'YYYY-MM-DD HH:mm:ss'"
+              :style="field.style || 'width: 360px'"
+              :placeholder="[field.placeholder || '开始时间', field.placeholder || '结束时间']"
+              @change="handleDateChange(field)"
+            />
+          </a-form-item>
         </template>
         <a-form-item>
           <a-button type="primary" @click="emitSearch">搜索</a-button>
@@ -61,17 +71,24 @@
   
   <script setup lang="ts">
   import { ref, watch, onMounted } from 'vue';
+  import dayjs from 'dayjs';
   // @ts-ignore
   import { TreeSelect } from 'ant-design-vue';
   
   interface FieldConfig {
     key: string;
     label: string;
-    type: 'input' | 'select' | 'tree';
+    type: 'input' | 'select' | 'tree' | 'date-picker';
     placeholder?: string;
     options?: Array<{ label: string; value: string }> | (() => Promise<Array<{ label: string; value: string }>>);
     treeData?: Array<any> | (() => Promise<Array<any>>);
     style?: string;
+    // 日期选择器配置
+    dateConfig?: {
+      showTime?: boolean;
+      format?: string;
+      defaultRange?: [number, number]; // 默认时间间距（小时）
+    };
     // 内部扩展属性
     _options?: Array<{ label: string; value: string }>;
     _treeData?: Array<any>;
@@ -105,8 +122,24 @@
     }
   }
   
+  // 处理日期变化
+  function handleDateChange(field: FieldConfig) {
+    if (field.dateConfig?.defaultRange && !localForm.value[field.key]) {
+      const [start, end] = field.dateConfig.defaultRange;
+      const now = dayjs();
+      localForm.value[field.key] = [now.subtract(start, 'hour'), now.add(end, 'hour')];
+    }
+  }
+  
+  // 初始化时设置默认日期范围
   onMounted(() => {
     initFieldData();
+    // 设置默认日期范围
+    props.fields.forEach(field => {
+      if (field.type === 'date-picker' && field.dateConfig?.defaultRange && !localForm.value[field.key]) {
+        handleDateChange(field);
+      }
+    });
   });
   
   // 监听 fields 变化，重新初始化 options/treeData

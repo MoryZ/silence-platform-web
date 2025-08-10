@@ -1,322 +1,369 @@
-<script setup lang="tsx">
-import { Button, Popconfirm, Tag, Table, Card, Divider, Tooltip } from 'ant-design-vue';
-import { useBoolean } from '@sa/hooks';
-import { ref } from 'vue';
-import dayjs from 'dayjs';
-import {
-  fetchBatchDeleteJobBatch,
-  fetchDeleteJobBatch,
-  fetchGetJobBatchList,
-  fetchJobBatchRetry,
-  fetchJobBatchStop
-} from '@/service/api';
-import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
-import { operationReasonRecord, taskBatchStatusRecord, taskTypeRecord } from '@/constants/business';
-import { tagColor, weekRangeISO8601 } from '@/utils/common';
-import SvgIcon from '@/components/custom/svg-icon.vue';
-import JobBatchSearch from './modules/job-batch-search.vue';
-import JobBatchDetailDrawer from './modules/job-batch-detail-drawer.vue';
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
+import { message } from 'ant-design-vue';
+import { getJobBatchPage, findById, retryJobBatch, batchDeleteJobBatch, JobBatch, JobBatchSearchParams } from '@/api/job/job-batch';
+import { getAllGroupConfigs } from '@/api/job/group';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
+import { Checkbox as ACheckbox } from 'ant-design-vue';
+import { taskBatchStatusRecordOptions, operationReasonOptions } from '@/constants/business';
+import DetailDrawer from '@/components/DetailDrawer.vue';
+import { DownOutlined } from '@ant-design/icons-vue';
 
-const appStore = useAppStore();
-/** 详情页属性数据 */
-const detailData = ref<Api.JobBatch.JobBatch | null>();
-/** 详情页可见状态 */
-const { bool: detailVisible, setTrue: openDetail } = useBoolean(false);
-const { bool: detailLog, setBool: setDetailLog } = useBoolean(false);
-const jobName = history.state.jobName;
-const jobId = history.state.jobId;
-const taskBatchStatus = history.state.taskBatchStatus ? [history.state.taskBatchStatus] : [];
-
-const { columnChecks, columns, data, getData, loading, mobilePagination, searchParams, resetSearchParams } = useTable({
-  apiFn: fetchGetJobBatchList,
-  apiParams: {
-    page: 1,
-    size: 10,
-    groupName: null,
-    jobName: null,
-    taskBatchStatus: null,
-    jobId: null,
-    datetimeRange: weekRangeISO8601()
-  },
-  searchParams: {
-    jobId,
-    jobName,
-    taskBatchStatus
-  },
-  columns: () => [
-    {
-      type: 'selection',
-      width: 30
-    },
-    {
-      key: 'id',
-      align: 'center',
-      width: 60,
-      title: () => {
-        return (
-          <div class="flex-center">
-            <span>{$t('page.jobBatch.jobTask.id')}</span>
-            <Tooltip title={$t('common.idDetailTip')}>
-              <span class="mb-2px ml-5px text-16px">
-                <SvgIcon icon="ant-design:info-circle-outlined" />
-              </span>
-            </Tooltip>
-          </div>
-        );
-      },
-      render: row => {
-        function showDetailDrawer() {
-          detailData.value = row;
-          setDetailLog(false);
-          openDetail();
-        }
-
-        return (
-          <Button type="link" onClick={showDetailDrawer}>
-            {row.id}
-          </Button>
-        );
-      }
-    },
-    {
-      key: 'groupName',
-      title: $t('page.jobBatch.groupName'),
-      align: 'left',
-      width: 120
-    },
-    {
-      key: 'taskType',
-      title: $t('page.jobBatch.taskType'),
-      align: 'center',
-      width: 120,
-      render: row => {
-        if (row.taskType === null) {
-          return null;
-        }
-        const tagMap: Record<Api.Common.TaskType, string> = {
-          1: 'blue',
-          2: 'green',
-          3: 'red',
-          4: 'purple',
-          5: 'orange'
-        };
-        const label = $t(taskTypeRecord[row.taskType!]);
-
-        return <Tag color={tagMap[row.taskType!]}>{label}</Tag>;
-      }
-    },
-    {
-      key: 'jobName',
-      title: $t('page.jobBatch.jobName'),
-      align: 'center',
-      width: 120
-    },
-    {
-      key: 'executionAt',
-      title: $t('page.jobBatch.executionAt'),
-      align: 'center',
-      width: 120
-    },
-    {
-      key: 'duration',
-      title: $t('page.jobBatch.duration'),
-      align: 'center',
-      width: 120,
-      render: row => {
-        if (row.taskBatchStatus === 3) {
-          return Math.round(dayjs(row.updateDt).diff(dayjs(row.executionAt)) / 1000);
-        }
-        return null;
-      }
-    },
-    {
-      key: 'taskBatchStatus',
-      title: $t('page.jobBatch.taskBatchStatus'),
-      align: 'center',
-      width: 120,
-      render: row => {
-        if (row.taskBatchStatus === null) {
-          return null;
-        }
-        const label = $t(taskBatchStatusRecord[row.taskBatchStatus!]);
-        const tagMap: Record<number, string> = {
-          1: 'blue',
-          2: 'blue',
-          3: 'blue',
-          4: 'red',
-          5: 'red',
-          6: 'red'
-        };
-        return <Tag color={tagMap[row.taskBatchStatus!]}>{label}</Tag>;
-      }
-    },
-    {
-      key: 'operationReason',
-      title: $t('page.jobBatch.operationReason'),
-      align: 'center',
-      width: 120,
-      render: row => {
-        if (row.operationReason === null) {
-          return null;
-        }
-        const label = $t(operationReasonRecord[row.operationReason!]);
-
-        return <Tag color={tagColor(row.operationReason!)}>{label}</Tag>;
-      }
-    },
-    {
-      key: 'createDt',
-      title: $t('common.createDt'),
-      align: 'center',
-      width: 120
-    },
-    {
-      key: 'operation',
-      title: $t('common.operation'),
-      align: 'center',
-      width: 160,
-      render: row => {
-        const stopBtn = () => {
-          if (row.taskBatchStatus === 1 || row.taskBatchStatus === 2) {
-            return (
-              <>
-                <Divider type="vertical" />
-                <Popconfirm
-                  title={$t('common.confirmStop')}
-                  onConfirm={() => handleStopJob(row.id!)}
-                >
-                  <Button type="link" danger>
-                    {$t('common.stop')}
-                  </Button>
-                </Popconfirm>
-              </>
-            );
-          }
-          return null;
-        };
-
-        return (
-          <div class="flex-center gap-8px">
-            <Button type="link" onClick={() => handleRetryJob(row.id!)}>
-              {$t('common.retry')}
-            </Button>
-            {stopBtn()}
-            <Divider type="vertical" />
-            <Popconfirm
-              title={$t('common.deleteConfirm')}
-              onConfirm={() => handleDeleteJob(row.id!)}
-            >
-              <Button type="link" danger>
-                {$t('common.delete')}
-              </Button>
-            </Popconfirm>
-          </div>
-        );
-      }
-    }
-  ]
+const drawerVisible = ref(false);
+const editingData = ref<JobBatch | null>(null);
+const isEdit = ref(false);
+const loading = ref(false);
+const data = ref<JobBatch[]>([]);
+const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
+const searchForm = ref({ 
+  groupName: '', 
+  jobName: '', 
+  taskBatchStatuses: [] as string[], 
+  createdDateStart: '', 
+  createdDateEnd: '' 
 });
 
-const {
-  checkedRowKeys,
-  onDeleted,
-  onBatchDeleted
-  // closeDrawer
-} = useTableOperate(data, getData);
+const fields = [
+  { 
+    key: 'groupName', 
+    type: 'select', 
+    label: '组名称', 
+    placeholder: '请选择组名称', 
+    options: async () => await getAllGroupConfigs() 
+  },
+  { 
+    key: 'jobName', 
+    type: 'input', 
+    label: '任务名称', 
+    placeholder: '请输入任务名称' 
+  },
+  { 
+    key: 'taskBatchStatuses', 
+    type: 'select', 
+    label: '任务状态', 
+    placeholder: '请选择任务状态', 
+    options: taskBatchStatusRecordOptions,
+    mode: 'multiple'
+  },
+  { 
+    key: 'createdDateRange', 
+    type: 'date-picker', 
+    label: '创建时间', 
+    placeholder: '请选择时间范围',
+    dateConfig: {
+      showTime: true,
+      format: 'YYYY-MM-DD HH:mm:ss',
+      defaultRange: [24, 0] // 默认查询最近24小时
+    }
+  }
+];
 
-async function handleDelete(id: string) {
-  const { error } = await fetchDeleteJobBatch(id);
-  if (error) return;
-  onDeleted();
+function buildColumns(rawCols: Array<Record<string, any>>): Array<Record<string, any>> {
+  return rawCols.map((col: Record<string, any>) => ({
+    ...col,
+    key: col.key || col.dataIndex,
+    dataIndex: col.dataIndex || col.key,
+    visible: col.visible !== false // 默认 true
+  }));
 }
 
-async function handleBatchDelete() {
-  const { error } = await fetchBatchDeleteJobBatch(checkedRowKeys.value);
-  if (error) return;
-  onBatchDeleted();
-}
+const allColumns = ref<Array<Record<string, any>>>(buildColumns([
+  { title: '序号', dataIndex: 'index', width: 60, fixed: 'left' },
+  { title: '任务名称', dataIndex: 'jobName', fixed: 'left', width: 180, clickable: true },
+  { title: '组名称', dataIndex: 'groupName' },
+  { title: '执行器名称', dataIndex: 'executorInfo' },
+  { title: '任务类型', dataIndex: 'taskType', type: 'enum', enumMap: { 1: '简单任务', 2: '工作流任务' } },
+  { title: '状态', dataIndex: 'taskBatchStatus', type: 'enum', enumMap: taskBatchStatusRecordOptions },
+  { title: '操作原因', dataIndex: 'operationReason', type: 'enum', enumMap: operationReasonOptions },
+  { title: '执行器类型', dataIndex: 'executorType', type: 'enum', enumMap: { 1: 'HTTP', 2: 'GRPC', 3: 'Dubbo' } },
+  { title: '创建时间', dataIndex: 'createdDate', type: 'date' },
+  { title: '更新时间', dataIndex: 'updatedDate', type: 'date' },
+  { title: '操作', key: 'operation', width: 120, align: 'center' }
+]));
 
-function handleLog(row: Api.JobBatch.JobBatch) {
-  detailData.value = row;
-  setDetailLog(true);
-  openDetail();
-}
+const checkedKeys = ref<string[]>(allColumns.value.filter((c: Record<string, any>) => c.visible).map((c: Record<string, any>) => c.key));
 
-async function handleRetryJob(id: string) {
-  const { error } = await fetchJobBatchRetry(id);
-  if (!error) {
-    window.$message?.success($t('common.operateSuccess'));
-    getData();
+const tableColumns = computed(() =>
+  allColumns.value.filter((col: Record<string, any>) => checkedKeys.value.includes(col.key))
+);
+
+const detailDrawerVisible = ref(false);
+const detailRecord = ref<Record<string, any> | null>(null);
+
+function handleCellClick(record: Record<string, any>, column: Record<string, any>) {
+  if (column.dataIndex === 'jobName') {
+    detailRecord.value = record;
+    detailDrawerVisible.value = true;
   }
 }
 
-async function handleStopJob(id: string) {
-  const { error } = await fetchJobBatchStop(id);
-  if (!error) {
-    window.$message?.success($t('common.operateSuccess'));
-    getData();
+async function fetchData() {
+  loading.value = true;
+  try {
+    const params: JobBatchSearchParams = {
+      groupName: searchForm.value.groupName,
+      jobName: searchForm.value.jobName,
+      taskBatchStatuses: searchForm.value.taskBatchStatuses,
+      createdDateStart: searchForm.value.createdDateStart,
+      createdDateEnd: searchForm.value.createdDateEnd,
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize
+    };
+    
+    const res = await getJobBatchPage(params);
+    if (Array.isArray(res)) {
+      data.value = res;
+      pagination.total = res.length;
+    } else {
+      data.value = res.data || [];
+      pagination.total = res.total || data.value.length;
+    }
+  } catch (e) {
+    data.value = [];
+    pagination.total = 0;
+  } finally {
+    loading.value = false;
   }
 }
+
+function handleSearch() {
+  pagination.current = 1;
+  fetchData();
+}
+
+function handleReset() {
+  searchForm.value = { 
+    groupName: '', 
+    jobName: '', 
+    taskBatchStatuses: [], 
+    createdDateStart: '', 
+    createdDateEnd: '' 
+  };
+  handleSearch();
+}
+
+function handleRefresh() {
+  fetchData();
+  message.success('已刷新');
+}
+
+function handlePageChange(page: number, pageSize: number) {
+  pagination.current = page;
+  pagination.pageSize = pageSize;
+  fetchData();
+}
+
+async function handleRetry(record: JobBatch) {
+  try {
+    await retryJobBatch(String(record.id));
+    message.success('重试成功');
+    fetchData();
+  } catch (e) {
+    message.error('重试失败');
+  }
+}
+
+async function handleDelete(ids: string[]) {
+  try {
+    await batchDeleteJobBatch(ids);
+    message.success('删除成功');
+    fetchData();
+  } catch (e) {
+    message.error('删除失败');
+  }
+}
+
+function onCheckColumn(key: string, checked: boolean) {
+  if (checked) {
+    if (!checkedKeys.value.includes(key)) checkedKeys.value.push(key);
+  } else {
+    checkedKeys.value = checkedKeys.value.filter((k: string) => k !== key);
+  }
+}
+
+function getStatusColor(status: number) {
+  const colorMap: Record<number, string> = {
+    1: 'blue',    // waiting
+    2: 'processing', // running
+    3: 'success', // success
+    4: 'error',   // fail
+    5: 'default', // stop
+    6: 'default', // cancel
+    98: 'warning', // decisionFailed
+    99: 'default'  // skip
+  };
+  return colorMap[status] || 'default';
+}
+
+onMounted(() => {
+  fetchData();
+});
 </script>
 
 <template>
-  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <JobBatchSearch v-model:model="searchParams" @reset="resetSearchParams" @search="getData" />
-    <Card
-      :title="$t('page.jobBatch.title')"
-      :bordered="false"
-      size="small"
-      class="sm:flex-1-hidden card-wrapper"
-      :headStyle="{ padding: '16px' }"
-    >
-      <template #extra>
-        <TableHeaderOperation
-          v-model:columns="columnChecks"
-          :disabled-delete="checkedRowKeys.length === 0"
-          :loading="loading"
-          :show-add="false"
-          @delete="handleBatchDelete"
-          @refresh="getData"
-        >
-          <template #addAfter>
-            <Popconfirm
-              :title="$t('common.confirmRetry')"
-              @confirm="handleBatchRetry"
+  <div class="job-batch-view">
+    <div class="page-header">
+      <h2>任务批次管理</h2>
+      <div class="header-actions">
+        <a-button @click="handleRefresh" :loading="loading">
+          <template #icon><DownOutlined /></template>
+          刷新
+        </a-button>
+      </div>
+    </div>
+
+    <SearchPanel
+      :fields="fields"
+      :form="searchForm"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
+
+    <div class="table-container">
+      <div class="table-header">
+        <div class="column-selector">
+          <span>显示列：</span>
+          <a-checkbox-group v-model:value="checkedKeys">
+            <a-checkbox
+              v-for="col in allColumns"
+              :key="col.key"
+              :value="col.key"
+              @change="(e) => onCheckColumn(col.key, e.target.checked)"
             >
-              <Button
-                type="primary"
-                ghost
-                :disabled="checkedRowKeys.length === 0"
-              >
-                <template #icon>
-                  <IconTdesignRollback class="text-icon" />
-                </template>
-                {{ $t('common.retry') }}
-              </Button>
-            </Popconfirm>
-          </template>
-        </TableHeaderOperation>
-      </template>
-      <Table
-        v-model:selectedRowKeys="checkedRowKeys"
-        :columns="columns"
-        :dataSource="data"
-        :scroll="{ x: 1200 }"
+              {{ col.title }}
+            </a-checkbox>
+          </a-checkbox-group>
+        </div>
+      </div>
+
+      <a-table
+        :columns="tableColumns"
+        :data-source="data"
         :loading="loading"
-        :rowKey="row => row.id"
-        :pagination="mobilePagination"
-        class="sm:h-full"
+        :pagination="false"
+        :row-key="(record) => record.id"
+        size="middle"
+        bordered
+      >
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.dataIndex === 'index'">
+            {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'jobName'">
+            <a @click="handleCellClick(record, column)">{{ record.jobName }}</a>
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'taskBatchStatus'">
+            <a-tag :color="getStatusColor(record.taskBatchStatus)">
+              {{ taskBatchStatusRecordOptions.find(opt => opt.value === record.taskBatchStatus)?.label || record.taskBatchStatus }}
+            </a-tag>
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'createdDate'">
+            {{ record.createdDate ? new Date(record.createdDate).toLocaleString() : '-' }}
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'updatedDate'">
+            {{ record.updatedDate ? new Date(record.updatedDate).toLocaleString() : '-' }}
+          </template>
+          
+          <template v-else-if="column.key === 'operation'">
+            <a-space>
+              <a-button
+                v-if="record.taskBatchStatus === 4"
+                type="link"
+                size="small"
+                @click="handleRetry(record)"
+              >
+                重试
+              </a-button>
+              <a-button
+                type="link"
+                size="small"
+                danger
+                @click="handleDelete([String(record.id)])"
+              >
+                删除
+              </a-button>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
+
+      <CommonPagination
+        :current="pagination.current"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
+        @change="handlePageChange"
       />
-    </Card>
-    <JobBatchDetailDrawer
-      v-if="detailVisible"
-      v-model:open="detailVisible"
-      v-model:log="detailLog"
-      :row-data="detailData"
+    </div>
+
+    <DetailDrawer
+      v-model:visible="detailDrawerVisible"
+      :record="detailRecord"
+      title="任务批次详情"
     />
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.job-batch-view {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.column-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.column-selector span {
+  font-weight: 500;
+  color: #374151;
+}
+
+:deep(.ant-table-thead > tr > th) {
+  background: #fafafa;
+  font-weight: 500;
+}
+
+:deep(.ant-table-tbody > tr > td) {
+  vertical-align: middle;
+}
+
+:deep(.ant-tag) {
+  margin: 0;
+}
+</style>

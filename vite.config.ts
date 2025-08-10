@@ -15,10 +15,11 @@ export default defineConfig({
     }
   },
   server: {
+    host: '0.0.0.0',
     port: 3000,
     proxy: {
       '/api/v1': {
-        target: 'http://127.0.0.1:8098',
+        target: 'http://192.168.50.57:8098',
         changeOrigin: true,
         //rewrite: (path) => path.replace(/^\/api\/v1/, ''), // 路径重写
       }
