@@ -107,6 +107,7 @@
       :read-only="editorReadOnly"
       :env-name="environments.find(env => env.id === Number(activeTabKey))?.displayName"
       :history-list="modifyHistoryList"
+      @cancel="showEditor=false"
       @save="handleSave"
     />
 
