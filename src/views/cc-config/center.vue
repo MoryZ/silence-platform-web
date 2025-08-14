@@ -107,6 +107,7 @@
       :read-only="editorReadOnly"
       :env-name="environments.find(env => env.id === Number(activeTabKey))?.displayName"
       :history-list="modifyHistoryList"
+      @cancel="showEditor=false"
       @save="handleSave"
     />
 
@@ -1388,7 +1389,7 @@ const handleSave = async (content: string) => {
   try {
     await updateConfigContent(currentEditItem.value.id, content);
     message.success('保存成功');
-    currentEditItem.value = null;
+    showEditor.value = false;
     await fetchConfigItems();
   } catch (error) {
     message.error('保存失败');
