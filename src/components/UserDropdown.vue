@@ -1,7 +1,7 @@
 <template>
     <a-dropdown>
       <div class="user-dropdown">
-        <a-avatar :src="user.avatar" />
+        <a-avatar :src="user.avatar" size="large" />
         <span class="username">{{ user.name }}</span>
       </div>
       <template #overlay>
@@ -27,10 +27,11 @@
   <script setup lang="ts">
   import { ref } from 'vue'
   import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+  import workAvatar from '@/assets/images/work.png'
   
   const user = ref({
     name: 'Admin',
-    avatar: ''
+    avatar: workAvatar
   })
   
   function logout() {

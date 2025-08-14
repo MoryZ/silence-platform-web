@@ -504,6 +504,7 @@ onMounted(() => {
 
 .login-desc {
   margin-bottom: 48px;
+  width: 520px;
 }
 
 .login-desc h2 {
