@@ -1,22 +1,7 @@
 <script setup lang="tsx">
-import { Button, Popconfirm, Tag, Table, Tooltip, Divider } from 'ant-design-vue';
-import { ref } from 'vue';
-import { useBoolean } from '~/packages/hooks';
-import {
-  fetchBatchDeleteRetryTask,
-  fetchDeleteRetryTask,
-  fetchRetryTaskById,
-  fetchRetryTaskPageList,
-  fetchStopRetryTask
-} from '@/service/api';
-import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
+
 import { retryOperationReasonRecord, retryTaskStatusTypeRecord, retryTaskTypeRecord } from '@/constants/business';
 import { monthRangeISO8601, tagColor } from '@/utils/common';
-import SvgIcon from '@/components/custom/svg-icon.vue';
-import RetryLogSearch from './modules/retry-task-search.vue';
-import RetryLogDetailDrawer from './modules/retry-task-detail-drawer.vue';
 
 const appStore = useAppStore();
 

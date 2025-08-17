@@ -5,6 +5,7 @@ export interface ConfigItem {
   configEnvironmentId: number;
   namespaceId: string;
   namespaceStatus: number;
+  ips: string;
   formatType: number;
   type: number;
   oldContent: string;

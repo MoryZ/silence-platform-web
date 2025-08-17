@@ -11,16 +11,8 @@ import {
   fetchUpdateRetryStatus
 } from '@/service/api';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
 import { retryStatusTypeRecord, retryTaskTypeRecord } from '@/constants/business';
 import { tagColor } from '@/utils/common';
-import SvgIcon from '@/components/custom/svg-icon.vue';
-import { useRouterPush } from '@/hooks/common/router';
-import RetryTaskOperateDrawer from './modules/retry-operate-drawer.vue';
-import RetryTaskBatchAddDrawer from './modules/retr-batch-add-drawer.vue';
-import RetryTaskSearch from './modules/retry-search.vue';
-import RetryTaskDetailDrawerVue from './modules/retry-detail-drawer.vue';
 
 /** 详情页属性数据 */
 const detailData = ref<Api.Retry.Retry | null>();

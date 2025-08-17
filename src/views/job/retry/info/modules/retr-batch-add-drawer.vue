@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
-import OperateDrawer from '@/components/common/operate-drawer.vue';
 import { $t } from '@/locales';
-import { fetchBatchAddRetry } from '@/service/api';
+import { fetchBatchAddRetry } from '@/api/job/retry';
 import { translateOptions } from '@/utils/common';
 import { retryStatusTypeOptions } from '@/constants/business';
-import SelectGroup from '@/components/common/select-group.vue';
 
 defineOptions({
   name: 'RetryTaskBatchAddDrawer'

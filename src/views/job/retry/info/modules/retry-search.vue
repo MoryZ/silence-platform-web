@@ -2,8 +2,6 @@
 import { $t } from '@/locales';
 import { translateOptions } from '@/utils/common';
 import { retryStatusTypeOptions } from '@/constants/business';
-import SelectGroup from '@/components/common/select-group.vue';
-import SelectScene from '@/components/common/select-scene.vue';
 
 defineOptions({
   name: 'RetryTaskSearch'

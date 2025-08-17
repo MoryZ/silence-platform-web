@@ -2,19 +2,9 @@
 import { Button, Popconfirm, Tag, Table, Dropdown, Divider } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { useBoolean } from '@sa/hooks';
-import { fetchBatchDeleteWorkflow, fetchGetWorkflowPageList, fetchUpdateWorkflowStatus } from '@/service/api';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
 import { triggerTypeRecord } from '@/constants/business';
-import StatusSwitch from '@/components/common/status-switch.vue';
 import { tagColor } from '@/utils/common';
-import { useAuth } from '@/hooks/business/auth';
-import { downloadFetch } from '@/utils/download';
-import { useRouterPush } from '@/hooks/common/router';
-import WorkflowSearch from './modules/workflow-search.vue';
-import WorkflowTriggerModal from './modules/workflow-trigger-modal.vue';
 
 const { hasAuth } = useAuth();
 

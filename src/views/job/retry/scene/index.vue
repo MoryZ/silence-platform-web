@@ -1,7 +1,6 @@
 <script setup lang="tsx">
 import { Button, Popconfirm, Tag, Table } from 'ant-design-vue';
 import { ref } from 'vue';
-import { useBoolean } from '@sa/hooks';
 import {
   fetchBatchDeleteRetryScene,
   fetchDeleteRetryScene,
@@ -9,8 +8,6 @@ import {
   fetchUpdateSceneStatus
 } from '@/service/api';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
 import {
   DelayLevel,
   backOffRecord,
@@ -18,12 +15,6 @@ import {
   groupConfigStatusRecord,
   routeKeyRecord
 } from '@/constants/business';
-import StatusSwitch from '@/components/common/status-switch.vue';
-import { downloadFetch } from '@/utils/download';
-import { useAuth } from '@/hooks/business/auth';
-import SceneOperateDrawer from './modules/scene-operate-drawer.vue';
-import SceneSearch from './modules/scene-search.vue';
-import SceneDetailDrawer from './modules/scene-detail-drawer.vue';
 const { hasAuth } = useAuth();
 
 const appStore = useAppStore();

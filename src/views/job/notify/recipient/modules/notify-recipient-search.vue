@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { $t } from '@/locales';
-import SearchForm from '@/components/common/search-form.vue';
 import { alarmTypeRecordOptions } from '@/constants/business';
 import { translateOptions } from '@/utils/common';
 

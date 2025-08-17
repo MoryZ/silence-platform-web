@@ -1,10 +1,6 @@
 <script setup lang="tsx">
-import { computed, ref, watch, reactive } from 'vue';
-import type { TableColumnsType } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { fetchAllGroupName, fetchJobLine, fetchRetryLine } from '@/api/';
-import DatetimeRange from '@/components/common/datetime-range.vue';
+import { fetchAllGroupName, fetchJobLine, fetchRetryLine } from '@/api/job/dashboard';
 import TaskLineChart from './task-line-chart.vue';
 import TaskPieChart from './task-pie-chart.vue';
 
