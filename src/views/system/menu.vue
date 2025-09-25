@@ -111,8 +111,8 @@ import message from 'ant-design-vue/es/message'
 import type { FormInstance } from 'ant-design-vue/es/form'
 import * as Icons from '@ant-design/icons-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/menu'
-import type { Menu } from '@/api/menu'
+import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/auth/menu'
+import type { Menu } from '@/api/auth/menu'
 
 // 表格列定义
 const columns = [

@@ -1,5 +1,5 @@
 import { Message, MessageQuery, MessagePageResult, MessageTrace, MessageTraceQuery } from '@/types/mq/message';
-import request from '../../utils/request';
+import { mqRequest as request } from '@/utils/request';
 import { PaginationResult } from '@/types/mq/api';
 
 

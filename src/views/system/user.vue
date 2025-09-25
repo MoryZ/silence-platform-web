@@ -149,8 +149,8 @@ import {
   addUser,
   updateUser,
   User 
-} from '@/api/user'
-import { getRoleList, getRoles, Role, RoleResponse } from '@/api/role'
+} from '@/api/auth/user'
+import { getRoleList, getRoles, Role, RoleResponse } from '@/api/auth/role'
 
 // 表格列定义
 const columns = [

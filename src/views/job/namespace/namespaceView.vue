@@ -30,6 +30,7 @@ const allColumns = ref([
   { title: '序号', dataIndex: 'index', key: 'index', visible: true },
   { title: '名称', dataIndex: 'name', key: 'name', visible: true },
   { title: '唯一标识(默认UUID)', dataIndex: 'uniqueId', key: 'uniqueId', visible: true },
+  { title: '描述', dataIndex: 'description', key: 'description', visible: true },
   { title: '创建时间', dataIndex: 'createdDate', key: 'createdDate', visible: true, customRender: ({ text }: { text: string }) => text ? formatDate(text) : '' },
   { title: '更新时间', dataIndex: 'updatedDate', key: 'updatedDate', visible: true, customRender: ({ text }: { text: string }) => text ? formatDate(text) : '' },
   { title: '操作', key: 'operation', visible: true, width: 100, align: 'center' }

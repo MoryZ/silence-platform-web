@@ -1,35 +1,20 @@
-import request from '../../utils/request';
+import { jobRequest as request } from '@/utils/request';
 
 /** get retry dead letter list */
-export function fetchGetRetryDeadLetterPageList(params?: Api.RetryDeadLetter.RetryDeadLetterSearchParams) {
-  return request<Api.RetryDeadLetter.RetryDeadLetterList>({
-    url: '/retry-dead-letter/list',
-    method: 'get',
-    params
-  });
+export function fetchGetRetryDeadLetterPageList(params?: any) {
+  return request.get<any>('/retry-dead-letter/list', { params });
 }
 
 export function fetchGetRetryDeadLetterById(id: string, groupName: string) {
-  return request({
-    url: `/retry-dead-letter/${id}?groupName=${groupName}`,
-    method: 'get'
-  });
+  return request.get<any>(`/retry-dead-letter/${id}?groupName=${groupName}`);
 }
 
 /** add retry scene */
-export function fetchRollbackRetryDeadLetter(data: Api.RetryDeadLetter.BatchDeadLetter) {
-  return request<boolean>({
-    url: '/retry-dead-letter/batch/rollback',
-    method: 'post',
-    data
-  });
+export function fetchRollbackRetryDeadLetter(data: any) {
+  return request.post<boolean>('/retry-dead-letter/batch/rollback', data);
 }
 
 /** edit retry scene */
-export function fetchDeleteRetryDeadLetter(data: Api.RetryDeadLetter.BatchDeadLetter) {
-  return request<boolean>({
-    url: '/retry-dead-letter/batch',
-    method: 'delete',
-    data
-  });
+export function fetchDeleteRetryDeadLetter(data: any) {
+  return request.delete<boolean>('/retry-dead-letter/batch', { data });
 }

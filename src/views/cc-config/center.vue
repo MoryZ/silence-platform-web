@@ -516,7 +516,7 @@ import {
   markAllNoticeAsRead,
   clearNotice,
   type Notice
-} from '../../api/notice';
+} from '../../api/auth/notice';
 
 dayjs.extend(utc);
 

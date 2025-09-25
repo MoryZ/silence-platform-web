@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { jobRequest as request } from '@/utils/request';
 
 /** get system user list */
 export function fetchSystemUser() {

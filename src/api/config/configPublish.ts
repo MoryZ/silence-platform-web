@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { configRequest as request } from '@/utils/request';
 
 interface BatchPublishParams {
   configItemIds: number[];
@@ -8,9 +8,5 @@ interface BatchPublishParams {
 }
 
 export function batchPublishConfigs(params: BatchPublishParams) {
-  return request({
-    url: '/api/v1/configPublish/batch',
-    method: 'post',
-    data: params
-  });
+  return request.post('/api/v1/configPublish/batch', params);
 } 

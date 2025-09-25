@@ -18,8 +18,23 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-      '/api/v1': {
-        target: 'http://127.0.0.1:8098',
+      '/auth/api/v1': {
+        target: 'http://14.103.187.231:9000',
+        changeOrigin: true,
+        //rewrite: (path) => path.replace(/^\/api\/v1/, ''), // 路径重写
+      },
+      '/config/api/v1': {
+        target: 'http://14.103.187.231:9000',
+        changeOrigin: true,
+        //rewrite: (path) => path.replace(/^\/api\/v1/, ''), // 路径重写
+      },
+      '/job/api/v1': {
+        target: 'http://localhost:8098',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/job\/api\/v1/, '/api/v1'), // 路径重写
+      },
+      '/mq/api/v1': {
+        target: 'http://14.103.187.231:9000',
         changeOrigin: true,
         //rewrite: (path) => path.replace(/^\/api\/v1/, ''), // 路径重写
       }

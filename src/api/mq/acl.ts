@@ -1,5 +1,5 @@
 import { AclConfig, AclResponse, AclPermission, UpdatePermRequest, AddPermRequest, ACLAccount } from '@/types/mq/acl';
-import request from '../../utils/request';
+import { mqRequest as request } from '@/utils/request';
 
 
 

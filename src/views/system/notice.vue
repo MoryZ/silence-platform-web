@@ -81,7 +81,7 @@ import {
   clearNotice,
   type Notice,
   type NoticeParams
-} from '../../api/notice';
+} from '../../api/auth/notice';
 import dayjs from 'dayjs';
 import SearchPanel from '../../components/SearchPanel.vue';
 

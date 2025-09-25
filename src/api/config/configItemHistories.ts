@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { configRequest as request } from '@/utils/request';
 import type { AxiosResponse } from 'axios';
 
 export interface ConfigItemHistory {

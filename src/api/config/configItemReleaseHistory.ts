@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { configRequest as request } from '@/utils/request';
 
 export interface ConfigItemReleaseHistory {
   id: number;

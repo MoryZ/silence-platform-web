@@ -1,4 +1,4 @@
-import request from '../utils/request';
+import { authRequest as request } from '@/utils/request';
 
 export interface Role {
   id: number;

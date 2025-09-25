@@ -1,63 +1,36 @@
 import request from '../../utils/request';
 
 /** get retry scene list */
-export function fetchGetRetryScenePageList(params?: Api.RetryScene.SceneSearchParams) {
-  return request<Api.RetryScene.SceneList>({
-    url: '/scene-config/page/list',
-    method: 'get',
-    params
-  });
+export function fetchGetRetryScenePageList(params?: any) {
+  return request.get<any>('/scene-config/page/list', { params });
 }
 
 /** get retry scene list */
-export function fetchGetRetrySceneList(params?: Api.RetryScene.SceneSearchParams) {
-  return request<Api.RetryScene.Scene[]>({
-    url: '/scene-config/list',
-    method: 'get',
-    params
-  });
+export function fetchGetRetrySceneList(params?: any) {
+  return request.get<any>('/scene-config/list', { params });
 }
 
 /** add retry scene */
-export function fetchAddRetryScene(data: Api.RetryScene.Scene) {
-  return request<boolean>({
-    url: '/scene-config',
-    method: 'post',
-    data
-  });
+export function fetchAddRetryScene(data: any) {
+  return request.post<boolean>('/scene-config', data);
 }
 
 /** edit retry scene */
-export function fetchEditRetryScene(data: Api.RetryScene.Scene) {
-  return request<boolean>({
-    url: '/scene-config',
-    method: 'put',
-    data
-  });
+export function fetchEditRetryScene(data: any) {
+  return request.put<boolean>('/scene-config', data);
 }
 
 /** update retry scene status */
-export function fetchUpdateSceneStatus(id: string, status: Api.Common.EnableStatusNumber) {
-  return request<boolean>({
-    url: `/scene-config/${id}/status/${status}`,
-    method: 'put'
-  });
+export function fetchUpdateSceneStatus(id: string, status: number) {
+  return request.put<boolean>(`/scene-config/${id}/status/${status}`);
 }
 
 /** delete retry scene status */
 export function fetchDeleteRetryScene(id: string) {
-  return request({
-    url: '/scene-config/ids',
-    method: 'delete',
-    data: [id]
-  });
+  return request.delete<boolean>('/scene-config/ids', { data: [id] });
 }
 
 /** batch delete retry scene status */
 export function fetchBatchDeleteRetryScene(data: string[]) {
-  return request({
-    url: '/scene-config/ids',
-    method: 'delete',
-    data
-  });
+  return request.delete<boolean>('/scene-config/ids', { data });
 }

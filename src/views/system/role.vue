@@ -178,8 +178,8 @@ import {
   RoleParams,
   disableRole,
   enableRole
-} from '@/api/role';
-import { getMenuTree, MenuResponse } from '@/api/menu';
+} from '@/api/auth/role';
+import { getMenuTree, MenuResponse } from '@/api/auth/menu';
 
 // 表格列定义
 const columns = [

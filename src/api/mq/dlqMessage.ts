@@ -1,5 +1,5 @@
 import type {PaginationQuery, PaginationResult } from '@/types/mq/api'
-import request from '../../utils/request';
+import { mqRequest as request } from '@/utils/request';
 import { MessagePageResultPage } from '@/types/mq/message';
 import { MessageView } from '@/types/mq/message';
 import { ResendDLQMessageRequest } from '@/types/mq/dlqMessage';

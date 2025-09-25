@@ -1,5 +1,5 @@
 import { ConsumerConfigInfo, ConsumerConnection, ConsumerRunningInfo, DeleteSubGroupRequest, GroupConsumeInfo } from '@/types/mq/consumer';
-import request from '../../utils/request';
+import { mqRequest as request } from '@/utils/request';
 import { ResetOffsetConfig } from '@/types/mq/topic';
 import { TopicConsumerInfo } from './topic';
 

@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { mqRequest as request } from '@/utils/request';
 
 
 /**

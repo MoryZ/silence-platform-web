@@ -1,4 +1,4 @@
-import request from '../../utils/request';
+import { configRequest as request } from '@/utils/request';
 
 interface CloneNamespaceParams {
   sourceEnvironmentId: number;
@@ -7,9 +7,5 @@ interface CloneNamespaceParams {
 }
 
 export function cloneNamespace(params: CloneNamespaceParams) {
-  return request({
-    url: '/api/v1/configNamespaces/clone',
-    method: 'post',
-    data: params
-  });
+  return request.post('/api/v1/configNamespaces/clone', params);
 } 

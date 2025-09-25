@@ -21,7 +21,7 @@ const isEdit = ref(false);
 const loading = ref(false);
 const data = ref<GroupConfig[]>([]);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
-const searchForm = ref({ groupName: '', groupStatus: false });
+const searchForm = ref<{ groupName: string; groupStatus: '' | '1' | '0' }>({ groupName: '', groupStatus: '' });
 const fields = [
   { key: 'groupName', type: 'input' as const, placeholder: '请输入组名称' },
   { key: 'groupStatus', type: 'select' as const, options: [{ label: '启用', value: '1' }, { label: '禁用', value: '0' }] },
@@ -48,7 +48,7 @@ async function fetchData() {
   try {
     const params = {
       groupName: searchForm.value.groupName,
-      groupStatus: searchForm.value.groupStatus,
+      groupStatus: searchForm.value.groupStatus === '' ? undefined : searchForm.value.groupStatus === '1',
       pageNo: pagination.current,
       pageSize: pagination.pageSize
     };
@@ -73,7 +73,7 @@ function handleSearch() {
   fetchData();
 }
 function handleReset() {
-  searchForm.value = { groupName: '', groupStatus: false };
+  searchForm.value = { groupName: '', groupStatus: '' };
   handleSearch();
 }
 function handleAdd() {

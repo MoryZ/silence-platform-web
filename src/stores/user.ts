@@ -6,7 +6,7 @@ import {
   logout as apiLogout,
   type UserInfo,
   type LoginParams,
-} from "@/api/user";
+} from "@/api/auth/user";
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ls } from "@/utils/stoarge";
