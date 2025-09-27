@@ -1,127 +1,165 @@
-<script setup lang="tsx">
-import { ref, computed, onMounted } from 'vue';
-import { Select, Table, Tag, Popover, Button, Pagination, Input } from 'ant-design-vue';
+<script setup lang="ts">
+import { ref, reactive, computed } from 'vue';
+import { message, Tag } from 'ant-design-vue';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
+import { getJobPods, type JobPodParams } from '@/api/job/pods';
+import { getAllGroupConfigs } from '@/api/job/group';
+import { formatDate } from '@/utils/common';
 
-// 模拟数据和 API
-const groupOptions = ref([
-  { label: 'snail_job_demo_group', value: 'snail_job_demo_group' },
-  { label: 'DEFAULT_SERVER', value: 'DEFAULT_SERVER' }
-]);
-const searchGroup = ref();
+// 搜索与分页
 const loading = ref(false);
-const dataSource = ref([
-  {
-    hostId: '1919412684496551936',
-    nodeType: 1,
-    groupName: 'DEFAULT_SERVER',
-    hostIp: '172.18.0.3',
-    hostPort: 17888,
-    consumerBuckets: [0,1,2,3,4,5,6,7,8,9,10,11],
-    contextPath: '/',
-    updateDt: '2025-05-09 13:37:40'
-  },
-  {
-    hostId: '1910581488086872064',
-    nodeType: 2,
-    groupName: 'snail_job_demo_group',
-    hostIp: 'client9090',
-    hostPort: 17889,
-    consumerBuckets: [],
-    contextPath: '/',
-    updateDt: '2025-05-09 13:37:54'
-  }
-]);
-const pagination = ref({ current: 1, pageSize: 10, total: 2 });
+const data = ref<Record<string, any>[]>([]);
+const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 
-const columns = [
-  { title: 'Pod ID', dataIndex: 'hostId', key: 'hostId', width: 180 },
-  { title: '类型', dataIndex: 'nodeType', key: 'nodeType', width: 100, customRender: ({ record }) => {
-    const color = record.nodeType === 1 ? 'blue' : 'green';
-    const label = record.nodeType === 1 ? '服务端' : '客户端';
-    return <Tag color={color}>{label}</Tag>;
-  }},
-  { title: '组名称', dataIndex: 'groupName', key: 'groupName', width: 180 },
-  { title: 'IP', dataIndex: 'hostIp', key: 'hostIp', width: 120 },
-  { title: 'Port', dataIndex: 'hostPort', key: 'hostPort', width: 100 },
-  { title: '路径/桶', dataIndex: 'consumerBuckets', key: 'consumerBuckets', width: 350, customRender: ({ record }) => {
-    if (record.nodeType === 1) {
-      // 服务端
-      return <span>Path: <Tag color="blue">{record.contextPath || '/'}</Tag></span>;
-    } else {
-      // 客户端
-      const buckets = record.consumerBuckets || [];
-      const showBuckets = buckets.slice(0, 10);
-      return <span>Bucket: {showBuckets.map(b => <Tag color="red" key={b}>{b}</Tag>)}
-        {buckets.length > 10 && (
-          <Popover content={() => <div style="max-width:300px;display:flex;flex-wrap:wrap;">{buckets.map(b => <Tag color="red" key={b}>{b}</Tag>)}</div>}>
-            <Tag color="red">...</Tag>
-          </Popover>
-        )}
-      </span>;
-    }
-  }},
-  { title: '更新时间', dataIndex: 'updateDt', key: 'updateDt', width: 180 }
+// 搜索面板表单（组名称改为下拉框，复用 taskView 的实现）
+const searchForm = ref<{ groupName: string }>({ groupName: '' });
+const fields = [
+  { key: 'groupName', type: 'select' as const, label: '组名称', placeholder: '请选择组名称', options: async () => await getAllGroupConfigs() },
 ];
 
-function handleSearch() {
-  // 这里应调用后端API，带上 searchGroup.value 作为 groupName 参数
-  // 这里只做静态过滤演示
-  if (!searchGroup.value) {
-    pagination.value.total = dataSource.value.length;
-    return dataSource.value;
-  }
-  const filtered = dataSource.value.filter(item => item.groupName === searchGroup.value);
-  pagination.value.total = filtered.length;
-  return filtered;
+// 枚举：nodeType 1 客户端 2 服务端
+const nodeTypeEnum: Record<number, { label: string; color: string }> = {
+  1: { label: '客户端', color: 'green' },
+  2: { label: '服务端', color: 'blue' }
+};
+
+// 列
+const allColumns = ref([
+  { title: '序号', dataIndex: 'index', key: 'index', width: 70 },
+  { title: 'Pod ID', dataIndex: 'hostId', key: 'hostId', width: 220 },
+  { title: '类型', dataIndex: 'nodeType', key: 'nodeType', type: 'enum', enumMap: nodeTypeEnum, width: 100 },
+  { title: '组名称', dataIndex: 'groupName', key: 'groupName', width: 200 },
+  { title: 'IP', dataIndex: 'ip', key: 'ip', width: 160 },
+  { title: '路径/分区', dataIndex: 'consumerBuckets', key: 'consumerBuckets', width: 360 },
+  { title: '更新时间', dataIndex: 'updatedDate', key: 'updatedDate', type: 'date', width: 180 }
+]);
+
+const tableColumns = computed(() => allColumns.value);
+
+function abbreviateId(id: string | number, head = 4, tail = 4) {
+  const s = String(id || '');
+  if (s.length <= head + tail + 3) return s;
+  return `${s.slice(0, head)}...${s.slice(-tail)}`;
 }
 
-const filteredData = computed(() => handleSearch());
+// 数据加载
+async function fetchData() {
+  loading.value = true;
+  try {
+    const params: JobPodParams = {
+      groupName: searchForm.value.groupName,
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize,
+      sort: ''
+    };
+    const res = await getJobPods(params);
+    if (Array.isArray(res as any)) {
+      const list = res as any as Record<string, any>[];
+      data.value = list;
+      pagination.total = list.length;
+    } else {
+      // 接口返回 { total, data }
+      const page = (res as any) || {};
+      data.value = page.data || [];
+      pagination.total = page.total || (data.value?.length || 0);
+    }
+  } catch (e) {
+    data.value = [];
+    pagination.total = 0;
+  } finally {
+    loading.value = false;
+  }
+}
 
-function handleRefresh() {
-  // 这里应重新拉取数据
+function handleSearch() {
+  pagination.current = 1;
+  fetchData();
+}
+
+function handleReset() {
+  searchForm.value = { groupName: '' };
+  handleSearch();
 }
 
 function handlePageChange(page: number, pageSize: number) {
-  pagination.value.current = page;
-  pagination.value.pageSize = pageSize;
+  pagination.current = page;
+  pagination.pageSize = pageSize;
+  fetchData();
 }
+
+// 初始化
+fetchData();
 </script>
 
 <template>
-  <div style="padding: 24px; background: #fafbfc; min-height: 100vh;">
-    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-      <span style="font-weight: bold; margin-right: 12px;">组合名称</span>
-      <a-select
-        v-model:value="searchGroup"
-        show-search
-        allow-clear
-        placeholder="请输入组名称"
-        style="width: 300px"
-        :options="groupOptions"
-        @change="handleSearch"
+  <div class="pods-page">
+    <a-card :bordered="false">
+      <SearchPanel
+        v-model="searchForm"
+        :fields="fields"
+        @search="handleSearch"
+        @reset="handleReset"
       />
-      <Button style="margin-left: 16px;" @click="handleRefresh">刷新</Button>
-    </div>
-    <a-table
-      :columns="columns"
-      :data-source="filteredData"
-      :pagination="false"
-      :loading="loading"
-      row-key="hostId"
-      bordered
-      style="background: #fff;"
-    />
-    <div style="margin-top: 16px; text-align: right;">
-      <a-pagination
-        v-model:current="pagination.current"
-        :total="pagination.total"
+
+      <CommonPagination
+        :columns="tableColumns"
+        :data-source="data"
+        :loading="loading"
+        row-key="hostId"
+        :page-no="pagination.current"
         :page-size="pagination.pageSize"
-        show-size-changer
+        :total="pagination.total"
+        @update:pageNo="(val: number) => { pagination.current = val; fetchData(); }"
+        @update:pageSize="(val: number) => { pagination.pageSize = val; pagination.current = 1; fetchData(); }"
         @change="handlePageChange"
-      />
-    </div>
+      >
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'index'">
+            {{ index + 1 }}
+          </template>
+          <template v-else-if="column.key === 'hostId'">
+            <a-tooltip :title="record.hostId">
+              <span class="podid-ellipsis">{{ abbreviateId(record.hostId) }}</span>
+            </a-tooltip>
+          </template>
+          <template v-else-if="column.key === 'ip'">
+            {{ record.hostIp }}:{{ record.hostPort }}
+          </template>
+          <template v-else-if="column.key === 'consumerBuckets'">
+            <span v-if="Array.isArray(record.consumerBuckets) && record.consumerBuckets.length">
+              <span>Bucket: </span>
+              <template v-for="(b, i) in record.consumerBuckets.slice(0, 10)" :key="i">
+                <a-tag color="green">{{ b }}</a-tag>
+              </template>
+              <a-popover v-if="record.consumerBuckets.length > 10">
+                <template #content>
+                  <div style="max-width:300px;display:flex;flex-wrap:wrap;gap:4px;">
+                    <a-tag v-for="(b, idx) in record.consumerBuckets" :key="idx" color="green">{{ b }}</a-tag>
+                  </div>
+                </template>
+                <a-tag color="green">...</a-tag>
+              </a-popover>
+            </span>
+            <span v-else>-</span>
+          </template>
+        </template>
+      </CommonPagination>
+    </a-card>
   </div>
 </template>
 
 <style scoped>
+.pods-page {
+  padding: 24px;
+  background: #fafbfc;
+  min-height: 100vh;
+}
+.podid-ellipsis {
+  max-width: 160px;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
