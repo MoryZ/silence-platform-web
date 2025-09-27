@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
-import OperateDrawer from '@/components/common/operate-drawer.vue';
 import { $t } from '@/locales';
-import { fetchAddRetry, fetchIdempotentIdGenerate } from '@/service/api';
 import { translateOptions } from '@/utils/common';
 import { retryStatusTypeOptions } from '@/constants/business';
-import CodeMirror from '@/components/common/code-mirror.vue';
-import SelectGroup from '@/components/common/select-group.vue';
-import SelectScene from '@/components/common/select-scene.vue';
 
 defineOptions({
   name: 'RetryTaskOperateDrawer'

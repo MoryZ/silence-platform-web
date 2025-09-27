@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
-import OperateDrawer from '@/components/common/operate-drawer.vue';
 import { $t } from '@/locales';
 import {
   fetchAddNotify,
@@ -10,7 +8,7 @@ import {
   fetchGetNotifyRecipientList,
   fetchGetRetrySceneList,
   fetchGetWorkflowNameList
-} from '@/service/api';
+} from '@/api/job/notify';
 import {
   enableStatusNumberOptions,
   jobNotifySceneOptions,
@@ -19,7 +17,6 @@ import {
   workflowNotifySceneOptions
 } from '@/constants/business';
 import { translateOptions } from '@/utils/common';
-import SelectGroup from '@/components/common/select-group.vue';
 import { Form, Input, Select, Switch, InputNumber, Button } from 'ant-design-vue';
 
 defineOptions({

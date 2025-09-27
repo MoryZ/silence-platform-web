@@ -1,18 +1,10 @@
 <script setup lang="tsx">
 import { Button, Popconfirm, Tag, Table, Typography, Divider } from 'ant-design-vue';
 import { ref } from 'vue';
-import { useBoolean } from '@sa/hooks';
-import { fetchBatchDeleteNotify, fetchGetNotifyConfigList, fetchUpdateNotifyStatus } from '@/service/api';
+import { fetchBatchDeleteNotify, fetchGetNotifyConfigList, fetchUpdateNotifyStatus } from '@/api/job/notify';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useTable, useTableOperate } from '@/hooks/common/table';
-import NotifyConfigOperateDrawer from '@/views/notify/config/modules/notify-config-operate-drawer.vue';
-import NotifyConfigSearch from '@/views/notify/config/modules/notify-config-search.vue';
-import NotifyConfigDetailDrawer from '@/views/notify/config/modules/notify-config-detail-drawer.vue';
-import StatusSwitch from '@/components/common/status-switch.vue';
 import { jobNotifyScene, retryNotifyScene, systemTaskType, workflowNotifyScene } from '@/constants/business';
 import { tagColor } from '@/utils/common';
-import { useAuth } from '@/hooks/business/auth';
 const { hasAuth } = useAuth();
 
 const appStore = useAppStore();

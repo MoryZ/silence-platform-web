@@ -2,7 +2,6 @@
 import { $t } from '@/locales';
 import { translateOptions } from '@/utils/common';
 import { enableStatusNumberOptions } from '@/constants/business';
-import SelectGroup from '@/components/common/select-group.vue';
 
 defineOptions({
   name: 'WorkflowSearch'
