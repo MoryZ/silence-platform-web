@@ -4,9 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "SASS_SILENCE_DEPRECATIONS=legacy-js-api vite",
-    "build": "SASS_SILENCE_DEPRECATIONS=legacy-js-api vue-tsc && SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
-    "preview": "SASS_SILENCE_DEPRECATIONS=legacy-js-api vite preview",
+    "dev": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite",
+    "build": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vue-tsc && cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
+    "preview": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "@vitejs/plugin-vue": "^4.3.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
     "@vue/eslint-config-typescript": "^14.5.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.25.1",
     "eslint-plugin-vue": "^10.0.0",
     "less": "^4.2.2",
