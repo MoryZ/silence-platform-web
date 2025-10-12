@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import Workflow from '@/components/workflow';
-import { fetchWorkflowInfo } from '@/service/api';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { fetchWorkflowInfo } from '@/api/job/workflow';
+import Workflow from '@/components/workflow/workflow.vue';
 
-const store = useWorkflowStore();
 const route = useRoute();
 
 const spinning = ref(false);
 
 const id: string = String(route.query.id);
 
-const node = ref<Workflow.NodeDataType>({});
+const node = ref<any>({});
 
 const getDetail = async () => {
   spinning.value = true;
@@ -24,15 +22,27 @@ const getDetail = async () => {
 };
 
 onMounted(() => {
-  store.clear();
-  store.setType(1);
-  store.setId(id);
   getDetail();
 });
+
+function getBlockStrategyText(strategy: number): string {
+  const strategyMap: Record<number, string> = {
+    1: '单机串行',
+    2: '丢弃后续调度',
+    3: '覆盖之前调度'
+  };
+  return strategyMap[strategy] || '未知';
+}
 </script>
 
 <template>
-  <Workflow v-model="node" :spinning="spinning" disabled />
+  <Workflow 
+    v-model="node" 
+    :spinning="spinning"
+    :disabled="true"
+  />
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 使用 Workflow 组件的默认样式 */
+</style>

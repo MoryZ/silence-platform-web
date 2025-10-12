@@ -34,10 +34,11 @@
           <a-form-item v-else-if="field.type === 'select'" :label="field.label">
             <a-select
               v-model:value="localForm[field.key]"
-              :options="field._options"
+              :options="fieldOptions[field.key] || field._options"
               :allow-clear="true"
               :style="field.style || 'width: 160px'"
               :placeholder="field.placeholder"
+              @change="handleFieldChange"
             />
           </a-form-item>
           <a-form-item v-else-if="field.type === 'tree'" :label="field.label">
@@ -102,19 +103,26 @@
   
   const collapsed = ref(false);
   const localForm = ref({ ...props.modelValue });
+  const fieldOptions = ref<Record<string, Array<{ label: string; value: string }>>>({});
   
   // 处理异步 options/treeData
   async function initFieldData() {
     for (const field of props.fields) {
       if (field.type === 'select') {
         if (typeof field.options === 'function') {
-          field._options = await field.options();
+          const options = await field.options();
+          // 使用响应式数据来存储选项
+          fieldOptions.value[field.key] = options;
+          field._options = options;
+          console.log('SearchPanel设置选项:', field.key, options);
         } else {
+          fieldOptions.value[field.key] = field.options || [];
           field._options = field.options || [];
         }
       } else if (field.type === 'tree') {
         if (typeof field.treeData === 'function') {
-          field._treeData = await field.treeData();
+          const treeData = await field.treeData();
+          field._treeData = treeData;
         } else {
           field._treeData = field.treeData || [];
         }
@@ -150,6 +158,7 @@
   watch(() => props.modelValue, (val) => {
     localForm.value = { ...val };
   });
+
   
   function emitSearch() {
     emit('update:modelValue', { ...localForm.value });
@@ -162,6 +171,10 @@
   }
   function toggle() {
     collapsed.value = !collapsed.value;
+  }
+  
+  function handleFieldChange() {
+    emit('update:modelValue', { ...localForm.value });
   }
   </script>
   

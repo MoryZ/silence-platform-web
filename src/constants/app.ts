@@ -4,7 +4,7 @@ export const GLOBAL_HEADER_MENU_ID = '__GLOBAL_HEADER_MENU__';
 
 export const GLOBAL_SIDER_MENU_ID = '__GLOBAL_SIDER_MENU__';
 
-export const themeSchemaRecord: Record<UnionKey.ThemeScheme, App.I18n.I18nKey> = {
+export const themeSchemaRecord: Record<string, string> = {
   light: 'theme.themeSchema.light',
   dark: 'theme.themeSchema.dark',
   auto: 'theme.themeSchema.auto'
@@ -12,11 +12,11 @@ export const themeSchemaRecord: Record<UnionKey.ThemeScheme, App.I18n.I18nKey> =
 
 export const themeSchemaOptions = transformRecordToOption(themeSchemaRecord);
 
-export const loginModuleRecord: Record<UnionKey.LoginModule, App.I18n.I18nKey> = {
+export const loginModuleRecord: Record<string, string> = {
   'pwd-login': 'page.login.pwdLogin.title'
 };
 
-export const themeLayoutModeRecord: Record<UnionKey.ThemeLayoutMode, App.I18n.I18nKey> = {
+export const themeLayoutModeRecord: Record<string, string> = {
   vertical: 'theme.layoutMode.vertical',
   'vertical-mix': 'theme.layoutMode.vertical-mix',
   horizontal: 'theme.layoutMode.horizontal',
@@ -25,21 +25,21 @@ export const themeLayoutModeRecord: Record<UnionKey.ThemeLayoutMode, App.I18n.I1
 
 export const themeLayoutModeOptions = transformRecordToOption(themeLayoutModeRecord);
 
-export const themeScrollModeRecord: Record<UnionKey.ThemeScrollMode, App.I18n.I18nKey> = {
+export const themeScrollModeRecord: Record<string, string> = {
   wrapper: 'theme.scrollMode.wrapper',
   content: 'theme.scrollMode.content'
 };
 
 export const themeScrollModeOptions = transformRecordToOption(themeScrollModeRecord);
 
-export const themeTabModeRecord: Record<UnionKey.ThemeTabMode, App.I18n.I18nKey> = {
+export const themeTabModeRecord: Record<string, string> = {
   chrome: 'theme.tab.mode.chrome',
   button: 'theme.tab.mode.button'
 };
 
 export const themeTabModeOptions = transformRecordToOption(themeTabModeRecord);
 
-export const themePageAnimationModeRecord: Record<UnionKey.ThemePageAnimateMode, App.I18n.I18nKey> = {
+export const themePageAnimationModeRecord: Record<string, string> = {
   'fade-slide': 'theme.page.mode.fade-slide',
   fade: 'theme.page.mode.fade',
   'fade-bottom': 'theme.page.mode.fade-bottom',
@@ -51,7 +51,7 @@ export const themePageAnimationModeRecord: Record<UnionKey.ThemePageAnimateMode,
 
 export const themePageAnimationModeOptions = transformRecordToOption(themePageAnimationModeRecord);
 
-export const resetCacheStrategyRecord: Record<UnionKey.ResetCacheStrategy, App.I18n.I18nKey> = {
+export const resetCacheStrategyRecord: Record<string, string> = {
   close: 'theme.resetCacheStrategy.close',
   refresh: 'theme.resetCacheStrategy.refresh'
 };

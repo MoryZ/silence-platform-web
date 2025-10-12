@@ -10,7 +10,7 @@
       :row-key="rowKey"
       v-bind="tableProps"
       :pagination="false"
-      :scroll="{ x: 1500 }"
+      :scroll="tableProps?.scroll ?? { x: 'max-content' }"
     >
       <template v-for="(_, name) in $slots" #[name]="slotProps">
         <slot :name="name" v-bind="slotProps" />
@@ -36,6 +36,7 @@
 <script lang="ts" setup>
 import { computed, h, ref } from 'vue';
 import { Tag, Switch } from 'ant-design-vue';
+import { $t } from '@/locales';
 
 interface Props {
   columns: any[];
@@ -119,7 +120,7 @@ const computedColumns = computed(() => {
       return {
         ...col,
         customRender: ({ text, record }: { text: any; record: any }) =>
-          h(Switch, {
+          h(Switch as any, {
             checked: text === 1 || text === '1' || text === true,
             loading: switchLoadingMap.value[record[props.rowKey] || ''],
             onChange: async (checked: boolean) => {
@@ -139,7 +140,18 @@ const computedColumns = computed(() => {
         customRender: ({ text }: { text: any }) => {
           const item = col.enumMap[text];
           if (!item) return text;
-          return h(Tag, { color: item.color }, () => item.label);
+          // Support both object { label, color } and string
+          if (typeof item === 'string') {
+            // Only translate when it looks like an i18n key (contains dot)
+            if (typeof item === 'string' && item.includes('.')) {
+              return $t ? $t(item as any) : item;
+            }
+            return item;
+          }
+          const label = (item as any).label;
+          // 如果label看起来像国际化键（包含点号），则使用$t函数翻译
+          const translatedLabel = typeof label === 'string' && label.includes('.') ? $t(label) : label;
+          return h(Tag, { color: (item as any).color }, () => translatedLabel);
         }
       };
     }

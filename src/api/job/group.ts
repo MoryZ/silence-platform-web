@@ -8,6 +8,7 @@ export interface GroupConfigSearchParams {
 }
 
 export interface GroupConfigRequestVO {
+  id?: number;
   groupName: string; // 组名称, 长度为1~64字符且类型为数字、字母、下划线和短横线
   groupStatus: boolean; // 组状态不能为空
   token: string; // 令牌不能为空
@@ -45,6 +46,11 @@ export interface GroupConfigUpdateVO {
   groupStatus: boolean; // 组状态不能为空
 }
 
+export interface CommonSelectedVO {
+  label: string;
+  value: string;
+}
+
 /** get groupConfig list */
 export function getGroupPage(params:GroupConfigSearchParams) {
   return request.get<GroupConfigResponseVO>('/api/v1/groupConfigs', { params });
@@ -58,7 +64,7 @@ export function getAllGroupConfigs() {
 
 
 export function getAllGroupNameList(params?:GroupConfigSearchParams) {
-  return request.get('/api/v1/groupConfigs');
+  return request.get<CommonSelectedVO[]>('/api/v1/groupConfigs');
 }
 
 /** add groupConfig */
@@ -67,8 +73,8 @@ export function createGroup(data:GroupConfigRequestVO) {
 }
 
 /** edit groupConfig */
-export function updateGroup(id:string, data:GroupConfigRequestVO) {
-  return request.post(`/api/v1/groupConfigs/${id}`, data);
+export function updateGroup(id:number, data:GroupConfigRequestVO) {
+  return request.put(`/api/v1/groupConfigs/${id}`, data);
 }
 
 export function enableGroup(data:GroupConfigUpdateVO) {

@@ -46,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import { getConfigEnvironments, createConfigEnvironment, deleteConfigEnvironment } from '../../../api/config/configEnvironment';
@@ -98,6 +98,17 @@ const currentEnvTypeLabel = computed(() => {
   };
   return envTypeMap[props.currentEnv] || '未知环境';
 });
+
+// 监听 props 变化
+watch(
+  () => [props.selectedComponents, props.currentEnv],
+  () => {
+    if (props.selectedComponents.length && props.currentEnv) {
+      fetchEnvironments();
+    }
+  },
+  { immediate: true }
+);
 
 // 获取环境列表
 const fetchEnvironments = async () => {

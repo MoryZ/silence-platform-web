@@ -1,96 +1,57 @@
 <template>
   <div class="cc-config-center">
-
-    <!-- 环境管理 -->
-    <environment-management
-      v-if="selectedComponents.length && currentEnv"
-      :selected-components="selectedComponents"
-      :current-env="currentEnv"
-      v-model:environments="environments"
-      v-model:active-tab-key="activeTabKey"
-      @refresh-data="fetchData"
-    >
-      <template #tab-content="{ environment }">
-        <!-- 配置管理 -->
-        <config-management
-          :data-source="dataSource"
-          :pagination="pagination"
-          :loading="loading"
-          :environments="environments"
-          :active-tab-key="activeTabKey"
-          :target-environments="targetEnvironments"
-          @update:data-source="handleDataSourceUpdate"
-          @update:pagination="handlePaginationUpdate"
-          @view-release-history="handleViewReleaseHistory"
-          @publish="handlePublish"
-          @refresh-data="fetchData"
+    <!-- 环境选择器 -->
+    <div v-if="environments.length > 0" class="environment-selector">
+      <a-tabs
+        v-model:activeKey="activeTabKey"
+        type="card"
+        @change="handleEnvironmentChange"
+      >
+        <a-tab-pane
+          v-for="env in environments"
+          :key="env.id"
+          :tab="env.displayName || env.name"
         />
-      </template>
-    </environment-management>
-
-    <!-- 发布管理 -->
-    <publish-management
-      ref="publishManagementRef"
-      :target-environments="targetEnvironments"
-      :active-tab-key="activeTabKey"
-      :selected-items="selectedItems"
-      @refresh-data="fetchData"
-      @clear-selection="clearSelection"
-    />
-
-    <!-- 发布历史 -->
-    <release-history
-      ref="releaseHistoryRef"
-      :data-source="dataSource"
-      @refresh-data="fetchData"
-    />
-
-    <!-- 通知区域 -->
-    <div class="notification-container">
-      <div class="button-container">
-        <a-button @click="handleMarkAllAsRead">全部标记为已读</a-button>
-        <a-button @click="handleClearAll">清空所有</a-button>
-      </div>
+      </a-tabs>
     </div>
+
+    <!-- 配置管理 -->
+    <config-management
+      v-if="selectedComponents.length && currentEnv && activeTabKey"
+      :data-source="dataSource"
+      :pagination="pagination"
+      :loading="loading"
+      :environments="environments"
+      :active-tab-key="activeTabKey"
+      :target-environments="targetEnvironments"
+      @update:data-source="handleDataSourceUpdate"
+      @update:pagination="handlePaginationUpdate"
+      @view-release-history="handleViewReleaseHistory"
+      @publish="handlePublish"
+      @refresh-data="fetchData"
+    />
+
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import SystemComponentSelector from '../../components/SystemComponentSelector.vue';
-import EnvSelector from '../../components/EnvSelector.vue';
-import EnvironmentManagement from './components/EnvironmentManagement.vue';
 import ConfigManagement from './components/ConfigManagement.vue';
-import PublishManagement from './components/PublishManagement.vue';
-import ReleaseHistory from './components/ReleaseHistory.vue';
 import { getConfigItems } from '../../api/config/configItem';
 import { getConfigEnvironments } from '../../api/config/configEnvironment';
 import type { ConfigItem } from '../../api/config/configItem';
 import type { ConfigEnvironment } from '../../api/config/configEnvironment';
 
-import { getConfigItemReleaseHistories, type ConfigItemReleaseHistory } from '../../api/config/configItemReleaseHistory';
-import CodeEditor from '../../components/CodeEditor.vue';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import { ClockCircleOutlined } from '@ant-design/icons-vue';
-import * as monaco from 'monaco-editor';
 import { useConfigStore } from '../../stores/config';
 import { useEnvStore } from '../../stores/env';
-import { cloneNamespace } from '../../api/config/configNamespace';
-import { batchPublishConfigs } from '../../api/config/configPublish';
-import { ConfigItemHistory, getConfigItemHistories } from '../../api/config/configItemHistories';
-import {
-  getNotices,
-  getNoticeByStatus,
-  markNoticeAsRead,
-  markAllNoticeAsRead,
-  clearNotice,
-  type Notice
-} from '../../api/auth/notice';
-// 组件选择相关
-const selectedComponents = ref<number[]>([]);
-const currentEnv = ref<string>('1'); // 默认选择开发环境
+// 获取 store 实例
+const configStore = useConfigStore();
+const envStore = useEnvStore();
+
+// 组件选择相关 - 从 store 获取
+const selectedComponents = computed(() => configStore.selectedComponentIds);
+const currentEnv = computed(() => envStore.currentEnv);
 
 // 环境相关
 const environments = ref<ConfigEnvironment[]>([]);
@@ -110,13 +71,6 @@ const pagination = ref({
 
 // 选择相关
 const selectedItems = ref<ConfigItem[]>([]);
-
-// 子组件引用
-const publishManagementRef = ref();
-const releaseHistoryRef = ref();
-
-// 计算属性
-const selectedRowKeys = computed(() => selectedItems.value.map(item => item.id));
 
 // 监听器
 watch([selectedComponents, currentEnv], () => {
@@ -141,6 +95,12 @@ const handleEnvChange = () => {
   activeTabKey.value = '';
   dataSource.value = [];
   selectedItems.value = [];
+};
+
+// 处理环境标签页变化
+const handleEnvironmentChange = (key: string | number) => {
+  activeTabKey.value = key;
+  fetchData();
 };
 
 // 获取环境列表
@@ -168,6 +128,9 @@ const fetchEnvironments = async () => {
     
     const newEnvironments = Array.isArray(envData) ? envData : [];
     environments.value = newEnvironments;
+    
+    // 设置目标环境（除了当前环境外的其他环境）
+    targetEnvironments.value = newEnvironments.filter(env => env.id !== newEnvironments[0]?.id);
     
     if (newEnvironments.length > 0) {
       activeTabKey.value = newEnvironments[0].id;
@@ -214,29 +177,14 @@ const handlePaginationUpdate = (pag: any) => {
 
 // 处理查看发布历史
 const handleViewReleaseHistory = (record: ConfigItem) => {
-  releaseHistoryRef.value?.openReleaseHistoryModal(record);
+  // TODO: 实现查看发布历史功能
+  message.info('查看发布历史功能待实现');
 };
 
 // 处理发布
 const handlePublish = (record: ConfigItem) => {
-  publishManagementRef.value?.openPublishModal(record);
-};
-
-// 清空选择
-const clearSelection = () => {
-  selectedItems.value = [];
-};
-
-// 处理全部标记为已读
-const handleMarkAllAsRead = async () => {
-  // TODO: 实现全部标记为已读逻辑
-  message.info('全部标记为已读功能待实现');
-};
-
-// 处理清空所有
-const handleClearAll = async () => {
-  // TODO: 实现清空所有逻辑
-  message.info('清空所有功能待实现');
+  // TODO: 实现发布功能
+  message.info('发布功能待实现');
 };
 
 // 组件挂载时获取数据
@@ -249,28 +197,29 @@ onMounted(() => {
 .cc-config-center {
   padding: 24px;
   
-  .component-selector,
-  .env-selector {
+  .environment-selector {
     margin-bottom: 24px;
     
-    h3 {
-      margin: 0 0 16px 0;
-      color: var(--text-color);
-      font-size: 16px;
-      font-weight: 500;
+    :deep(.ant-tabs-card) {
+      .ant-tabs-nav {
+        margin-bottom: 16px;
+        
+        .ant-tabs-tab {
+          border-radius: 6px 6px 0 0;
+          
+          &.ant-tabs-tab-active {
+            background: var(--primary-1);
+            border-color: var(--primary-color);
+            
+            .ant-tabs-tab-btn {
+              color: var(--primary-color);
+              font-weight: 500;
+            }
+          }
+        }
+      }
     }
   }
   
-  .notification-container {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    
-    .button-container {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-  }
 }
 </style> 

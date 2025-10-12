@@ -1,12 +1,39 @@
 <template>
   <a-drawer
     :open="visible"
-    :title="title || '详情'"
-    width="700"
+    :width="drawerWidth"
     :footer="null"
+    :closable="false"
     @close="$emit('update:visible', false)"
     class="detail-drawer"
   >
+    <!-- 自定义头部 -->
+    <template #title>
+      <div class="drawer-header">
+        <span class="drawer-title">{{ title || '详情' }}</span>
+        <div class="drawer-actions">
+          <a-button 
+            type="text" 
+            @click="toggleDrawerSize"
+            :title="isDrawerMaximized ? '还原' : '最大化'"
+          >
+            <template #icon>
+              <FullscreenOutlined v-if="!isDrawerMaximized" />
+              <FullscreenExitOutlined v-else />
+            </template>
+          </a-button>
+          <a-button 
+            type="text" 
+            @click="$emit('update:visible', false)"
+            title="关闭"
+          >
+            <template #icon>
+              <CloseOutlined />
+            </template>
+          </a-button>
+        </div>
+      </div>
+    </template>
     <div class="detail-table">
       <div v-for="(row, idx) in rows" :key="idx" class="detail-row">
         <div v-if="row[0]" class="detail-col">
@@ -28,7 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, PropType } from 'vue';
+import { computed, PropType, ref } from 'vue';
+import { FullscreenOutlined, FullscreenExitOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import DetailCell from './DetailCell.vue';
 
 interface ColumnType {
@@ -54,6 +82,21 @@ const props = defineProps({
   },
   title: String
 });
+
+// 抽屉大小控制
+const drawerWidth = ref<number | string>(700);
+const isDrawerMaximized = ref(false);
+
+// 切换抽屉大小
+function toggleDrawerSize() {
+  if (isDrawerMaximized.value) {
+    drawerWidth.value = 700;
+    isDrawerMaximized.value = false;
+  } else {
+    drawerWidth.value = '100vw';
+    isDrawerMaximized.value = true;
+  }
+}
 
 const showColumns = computed(() => (props.columns || []).filter(col => col.dataIndex && col.dataIndex !== 'operation'));
 const rows = computed(() => {
@@ -85,6 +128,37 @@ const rows = computed(() => {
 <style scoped>
 .detail-drawer >>> .ant-drawer-body {
   padding: 24px 32px 24px 32px;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.drawer-actions .ant-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawer-actions .ant-btn:hover {
+  background-color: #f5f5f5;
 }
 .detail-table {
   width: 100%;

@@ -7,6 +7,12 @@ defineOptions({
   name: 'NotifyRecipientSearch'
 });
 
+// 定义类型接口
+interface NotifyRecipientParams {
+  recipientName?: string;
+  notifyType?: number;
+}
+
 interface Emits {
   (e: 'reset'): void;
   (e: 'search'): void;
@@ -14,7 +20,7 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const model = defineModel<Api.NotifyRecipient.NotifyRecipientParams>('model', { required: true });
+const model = defineModel<NotifyRecipientParams>('model', { required: true });
 
 function reset() {
   emit('reset');
@@ -26,29 +32,27 @@ function search() {
 </script>
 
 <template>
-  <SearchForm :model="model" @search="search" @reset="reset">
-    <NFormItemGi
-      span="24 s:12 m:6"
-      :label-width="100"
+  <SearchPanel :model="model" @search="search" @reset="reset">
+    <a-form-item
       :label="$t('page.notifyRecipient.recipientName')"
-      path="recipientName"
+      name="recipientName"
       class="pr-24px"
     >
-      <NInput
+      <a-input
         v-model:value="model.recipientName"
         :placeholder="$t('page.notifyRecipient.form.recipientName')"
-        clearable
+        allow-clear
       />
-    </NFormItemGi>
-    <NFormItemGi span="24 s:12 m:6" :label="$t('page.notifyRecipient.notifyType')" path="notifyType" class="pr-24px">
-      <NSelect
+    </a-form-item>
+    <a-form-item :label="$t('page.notifyRecipient.notifyType')" name="notifyType" class="pr-24px">
+      <a-select
         v-model:value="model.notifyType"
         :options="translateOptions(alarmTypeRecordOptions)"
         :placeholder="$t('page.notifyRecipient.notifyType')"
-        clearable
+        allow-clear
       />
-    </NFormItemGi>
-  </SearchForm>
+    </a-form-item>
+  </SearchPanel>
 </template>
 
 <style scoped></style>

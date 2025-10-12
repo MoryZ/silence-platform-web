@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import Workflow from '@/components/workflow';
+import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { useWorkflowStore } from '@/store/modules/workflow';
-import { fetchUpdateWorkflow, fetchWorkflowInfo } from '@/service/api';
+import { fetchUpdateWorkflow, fetchWorkflowInfo } from '@/api/job/workflow';
+import Workflow from '@/components/workflow/workflow.vue';
 
-const store = useWorkflowStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -14,7 +13,7 @@ const spinning = ref(false);
 
 const id: string = String(route.query.id);
 
-const node = ref<Workflow.NodeDataType>({});
+const node = ref<any>({});
 
 const getDetail = async () => {
   spinning.value = true;
@@ -26,16 +25,13 @@ const getDetail = async () => {
 };
 
 onMounted(() => {
-  store.clear();
-  store.setType(0);
-  store.setId(id);
   getDetail();
 });
 
 const update = async () => {
   const { error } = await fetchUpdateWorkflow(node.value);
   if (!error) {
-    window.$message?.info($t('common.updateSuccess'));
+    message.success($t('common.updateSuccess'));
     router.push({ path: '/workflow/task' });
   }
 };
@@ -46,7 +42,15 @@ const cancel = () => {
 </script>
 
 <template>
-  <Workflow v-model="node" :spinning="spinning" @save="update" @cancel="cancel" />
+  <Workflow 
+    v-model="node" 
+    :spinning="spinning"
+    :disabled="false"
+    @save="update" 
+    @cancel="cancel" 
+  />
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 使用 Workflow 组件的默认样式 */
+</style>

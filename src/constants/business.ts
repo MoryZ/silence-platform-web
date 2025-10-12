@@ -1,12 +1,12 @@
 import { $t } from '@/locales';
 import { transformRecordToNumberOption } from '@/utils/common';
 
-export const yesOrNoRecord: Record<Api.Common.YesOrNo, App.I18n.I18nKey> = {
+export const yesOrNoRecord: Record<string, string> = {
   '0': 'common.yesOrNo.no',
   '1': 'common.yesOrNo.yes'
 };
 
-export const enableStatusNumberRecord: Record<Api.Common.EnableStatusNumber, App.I18n.I18nKey> = {
+export const enableStatusNumberRecord: Record<number, string> = {
   0: 'common.status.disable',
   1: 'common.status.enable'
 };
@@ -18,12 +18,12 @@ export const roleTypeRecord: Record<number, string> = {
   2: 'R_ADMIN'
 };
 
-export const podsType: Record<Api.Dashboard.DashboardPodsType, App.I18n.I18nKey> = {
+export const podsType: Record<number, string> = {
   1: 'page.pods.type.client',
   2: 'page.pods.type.server'
 };
 
-export const alarmTypeRecord: Record<Api.NotifyRecipient.AlarmType, App.I18n.I18nKey> = {
+export const alarmTypeRecord: Record<number, string> = {
   1: 'page.notifyRecipient.dingDing',
   2: 'page.notifyRecipient.email',
   3: 'page.notifyRecipient.weCom',
@@ -32,13 +32,13 @@ export const alarmTypeRecord: Record<Api.NotifyRecipient.AlarmType, App.I18n.I18
 };
 export const alarmTypeRecordOptions = transformRecordToNumberOption(alarmTypeRecord);
 
-export const alarmWebhookTypeRecord: Record<Api.NotifyRecipient.AlarmTypeWebhook, App.I18n.I18nKey> = {
+export const alarmWebhookTypeRecord: Record<number, string> = {
   1: 'page.notifyRecipient.form.applicationJson',
   2: 'page.notifyRecipient.form.applicationXWwwFormUrlencoded'
 };
 export const alarmWebhookTypeRecordOptions = transformRecordToNumberOption(alarmWebhookTypeRecord);
 
-export const systemTaskType: Record<Api.NotifyConfig.SystemTaskType, App.I18n.I18nKey> = {
+export const systemTaskType: Record<number, string> = {
   1: 'common.systemTaskType.retry',
   // 2: 'common.systemTaskType.callback',
   3: 'common.systemTaskType.job',
@@ -46,7 +46,7 @@ export const systemTaskType: Record<Api.NotifyConfig.SystemTaskType, App.I18n.I1
 };
 export const systemTaskTypeOptions = transformRecordToNumberOption(systemTaskType);
 
-export const retryNotifyScene: Record<Api.NotifyConfig.RetryNotifyScene, App.I18n.I18nKey> = {
+export const retryNotifyScene: Record<number, string> = {
   1: 'page.notifyConfig.retryNotifyScene.maxRetry',
   2: 'page.notifyConfig.retryNotifyScene.maxRetryError',
   3: 'page.notifyConfig.retryNotifyScene.clientReportError',
@@ -57,39 +57,39 @@ export const retryNotifyScene: Record<Api.NotifyConfig.RetryNotifyScene, App.I18
 };
 export const retryNotifySceneOptions = transformRecordToNumberOption(retryNotifyScene);
 
-export const jobNotifyScene: Record<Api.NotifyConfig.JobNotifyScene, App.I18n.I18nKey> = {
+export const jobNotifyScene: Record<number, string> = {
   1: 'page.notifyConfig.jobNotifyScene.jobTaskError',
   2: 'page.notifyConfig.jobNotifyScene.jobClientError',
   3: 'page.notifyConfig.jobNotifyScene.jobNoClientNodesError'
 };
 export const jobNotifySceneOptions = transformRecordToNumberOption(jobNotifyScene);
 
-export const workflowNotifyScene: Record<Api.NotifyConfig.WorkflowNotifyScene, App.I18n.I18nKey> = {
+export const workflowNotifyScene: Record<number, string> = {
   2: 'page.notifyConfig.workflowNotifyScene.workflowClientError',
   3: 'page.notifyConfig.workflowNotifyScene.workNoClientNodesError',
   100: 'page.notifyConfig.workflowNotifyScene.workTaskError'
 };
 export const workflowNotifySceneOptions = transformRecordToNumberOption(workflowNotifyScene);
 
-export const groupConfigStatusRecord: Record<Api.GroupConfig.GroupStatusType, App.I18n.I18nKey> = {
+export const groupConfigStatusRecord: Record<number, string> = {
   0: 'common.status.disable',
   1: 'common.status.enable'
 };
 export const groupConfigStatusOptions = transformRecordToNumberOption(groupConfigStatusRecord, true);
 
-export const groupConfigIdModeRecord: Record<Api.GroupConfig.IdGeneratorModeType, App.I18n.I18nKey> = {
+export const groupConfigIdModeRecord: Record<number, string> = {
   1: 'page.groupConfig.idMode.segment',
   2: 'page.groupConfig.idMode.idWorker'
 };
 export const groupConfigIdModeOptions = transformRecordToNumberOption(groupConfigIdModeRecord);
 
-export const groupConfigYesOrNoRecord: Record<Api.GroupConfig.YesOrNoType, App.I18n.I18nKey> = {
+export const groupConfigYesOrNoRecord: Record<number, string> = {
   0: 'common.yesOrNo.no',
   1: 'common.yesOrNo.yes'
 };
 export const groupConfigYesOrNoOptions = transformRecordToNumberOption(groupConfigYesOrNoRecord, true);
 
-export const retryStatusTypeRecord: Record<Api.Retry.RetryStatusType, App.I18n.I18nKey> = {
+export const retryStatusTypeRecord: Record<number, string> = {
   0: 'page.retry.retryStatusType.retrying',
   1: 'page.retry.retryStatusType.finished',
   2: 'page.retry.retryStatusType.maxRetry',
@@ -97,7 +97,7 @@ export const retryStatusTypeRecord: Record<Api.Retry.RetryStatusType, App.I18n.I
 };
 export const retryStatusTypeOptions = transformRecordToNumberOption(retryStatusTypeRecord);
 
-export const retryTaskStatusTypeRecord: Record<Api.Retry.RetryTaskStatusType, App.I18n.I18nKey> = {
+export const retryTaskStatusTypeRecord: Record<number, string> = {
   1: 'common.retryTaskStatus.items.waiting',
   2: 'common.retryTaskStatus.items.running',
   3: 'common.retryTaskStatus.items.success',
@@ -107,32 +107,41 @@ export const retryTaskStatusTypeRecord: Record<Api.Retry.RetryTaskStatusType, Ap
 };
 export const retryTaskStatusTypeOptions = transformRecordToNumberOption(retryTaskStatusTypeRecord);
 
-export const retryTaskTypeRecord: Record<Api.Retry.TaskType, App.I18n.I18nKey> = {
+export const retryTaskTypeRecord: Record<number, string> = {
   1: 'page.retry.taskTypeDict.retry',
   2: 'page.retry.taskTypeDict.callback'
 };
 export const retryTaskTypeOptions = transformRecordToNumberOption(retryTaskTypeRecord);
 
-export const backOffRecord: Record<Api.RetryScene.BackOff, App.I18n.I18nKey> = {
-  1: 'page.retryScene.backOffItem.delayLevel',
-  2: 'page.retryScene.backOffItem.fixed',
+export const backOffRecord: Record<number, string> = {
+  4: 'page.retryScene.backOffItem.random',
   3: 'page.retryScene.backOffItem.cron',
-  4: 'page.retryScene.backOffItem.random'
+  2: 'page.retryScene.backOffItem.fixed',
+  1: 'page.retryScene.backOffItem.delayLevel'
 };
 export const backOffRecordOptions = transformRecordToNumberOption(backOffRecord, true);
 
-export const routeKeyRecord: Record<Api.Common.RouteKey, App.I18n.I18nKey> = {
-  1: 'common.routeKey.items.consistentHash',
-  2: 'common.routeKey.items.random',
-  3: 'common.routeKey.items.lru',
-  4: 'common.routeKey.items.round',
-  5: 'common.routeKey.items.first',
-  6: 'common.routeKey.items.last'
+/** 回调触发类型 */
+export const cbTriggerTypeRecord: Record<number, string> = {
+  4: 'page.retryScene.cbTriggerTypeItem.random',
+  3: 'page.retryScene.cbTriggerTypeItem.cron',
+  2: 'page.retryScene.cbTriggerTypeItem.fixed',
+  1: 'page.retryScene.cbTriggerTypeItem.delayLevel'
+};
+export const cbTriggerTypeRecordOptions = transformRecordToNumberOption(cbTriggerTypeRecord, true);
+
+export const routeKeyRecord: Record<number, string> = {
+  1: 'common.routeKey.items.last',
+  2: 'common.routeKey.items.first',
+  3: 'common.routeKey.items.round',
+  4: 'common.routeKey.items.lru',
+  5: 'common.routeKey.items.random',
+  6: 'common.routeKey.items.consistentHash'
 };
 export const routeKeyRecordOptions = transformRecordToNumberOption(routeKeyRecord, true);
 
 /** 阻塞策略 */
-export const blockStrategyRecord: Record<Api.Common.BlockStrategy, App.I18n.I18nKey> = {
+export const blockStrategyRecord: Record<number, string> = {
   1: 'common.blockStrategy.items.discard',
   2: 'common.blockStrategy.items.overwrite',
   3: 'common.blockStrategy.items.parallel',
@@ -141,7 +150,7 @@ export const blockStrategyRecord: Record<Api.Common.BlockStrategy, App.I18n.I18n
 export const blockStrategyRecordOptions = transformRecordToNumberOption(blockStrategyRecord);
 
 /** 失败策略 */
-export const failStrategyRecord: Record<Api.Common.FailStrategy, App.I18n.I18nKey> = {
+export const failStrategyRecord: Record<number, string> = {
   1: 'common.failStrategy.items.skip',
   2: 'common.failStrategy.items.blockage'
 };
@@ -149,7 +158,7 @@ export const failStrategyRecord: Record<Api.Common.FailStrategy, App.I18n.I18nKe
 export const failStrategyOptions = transformRecordToNumberOption(failStrategyRecord);
 
 /** 判定逻辑 */
-export const logicalConditionRecord: Record<Api.Common.LogicalCondition, string> = {
+export const logicalConditionRecord: Record<number, string> = {
   1: 'and',
   2: 'or'
 };
@@ -157,7 +166,7 @@ export const logicalConditionRecord: Record<Api.Common.LogicalCondition, string>
 export const logicalConditionOptions = transformRecordToNumberOption(logicalConditionRecord);
 
 /** 表达式类型 */
-export const expressionRecord: Record<Api.Common.Expression, string> = {
+export const expressionRecord: Record<number, string> = {
   1: 'SpEl',
   2: 'Aviator',
   3: 'QL'
@@ -166,7 +175,7 @@ export const expressionRecord: Record<Api.Common.Expression, string> = {
 export const expressionOptions = transformRecordToNumberOption(expressionRecord);
 
 /** 请求类型 */
-export const contentTypeRecord: Record<Api.Common.ContentType, string> = {
+export const contentTypeRecord: Record<number, string> = {
   1: 'application/json',
   2: 'application/x-www-form-urlencoded'
 };
@@ -174,14 +183,14 @@ export const contentTypeRecord: Record<Api.Common.ContentType, string> = {
 export const contentTypeOptions = transformRecordToNumberOption(contentTypeRecord);
 
 /** 执行器类型 */
-export const executorTypeRecord: Record<Api.Common.ExecutorType, App.I18n.I18nKey> = {
+export const executorTypeRecord: Record<number, string> = {
   1: 'common.executorType.items.java',
   2: 'common.executorType.items.python'
 };
 export const executorTypeRecordOptions = transformRecordToNumberOption(executorTypeRecord);
 
 /** 任务类型 */
-export const taskTypeRecord: Record<Api.Common.TaskType, App.I18n.I18nKey> = {
+export const taskTypeRecord: Record<number, string> = {
   1: 'common.taskType.items.cluster',
   2: 'common.taskType.items.broadcast',
   3: 'common.taskType.items.slice',
@@ -220,7 +229,7 @@ export const DelayLevel: Record<number, string> = {
   26: '12h'
 };
 
-export const triggerTypeRecord: Record<Api.Job.TriggerType, App.I18n.I18nKey> = {
+export const triggerTypeRecord: Record<number, string> = {
   2: 'page.jobTask.triggerTypeItem.fixed',
   3: 'page.jobTask.triggerTypeItem.cron',
   // 只会在定时任务中使用
@@ -233,7 +242,7 @@ export const workflowTriggerTypeOptions = transformRecordToNumberOption(triggerT
   item => item.value !== 99
 );
 
-export const taskBatchStatusRecord: Record<Api.Common.TaskBatchStatus, App.I18n.I18nKey> = {
+export const taskBatchStatusRecord: Record<number, string> = {
   1: 'common.taskBatchStatus.items.waiting',
   2: 'common.taskBatchStatus.items.running',
   3: 'common.taskBatchStatus.items.success',
@@ -245,7 +254,7 @@ export const taskBatchStatusRecord: Record<Api.Common.TaskBatchStatus, App.I18n.
 };
 export const taskBatchStatusRecordOptions = transformRecordToNumberOption(taskBatchStatusRecord);
 
-export const taskStatusRecord: Record<Api.Common.TaskStatus, App.I18n.I18nKey> = {
+export const taskStatusRecord: Record<number, string> = {
   2: 'common.taskStatus.items.running',
   3: 'common.taskStatus.items.success',
   4: 'common.taskStatus.items.fail',
@@ -254,7 +263,7 @@ export const taskStatusRecord: Record<Api.Common.TaskStatus, App.I18n.I18nKey> =
 };
 export const taskStatusRecordOptions = transformRecordToNumberOption(taskStatusRecord);
 
-export const operationReasonRecord: Record<Api.Common.OperationReason, App.I18n.I18nKey> = {
+export const operationReasonRecord: Record<number, string> = {
   0: 'common.jobOperationReason.items.none',
   1: 'common.jobOperationReason.items.taskExecutionTimeout',
   2: 'common.jobOperationReason.items.notClient',
@@ -273,7 +282,7 @@ export const operationReasonRecord: Record<Api.Common.OperationReason, App.I18n.
 };
 export const operationReasonOptions = transformRecordToNumberOption(operationReasonRecord);
 
-export const retryOperationReasonRecord: Record<Api.Common.RetryOperationReason, App.I18n.I18nKey> = {
+export const retryOperationReasonRecord: Record<number, string> = {
   0: 'common.retryOperationReason.items.none',
   1: 'common.retryOperationReason.items.taskExecutionTimeout',
   2: 'common.retryOperationReason.items.notClient',
@@ -289,7 +298,7 @@ export const retryOperationReasonRecord: Record<Api.Common.RetryOperationReason,
 };
 export const retryOperationReasonOptions = transformRecordToNumberOption(retryOperationReasonRecord);
 
-export const jobOperationReasonEnum: Workflow.JobTagType = {
+export const jobOperationReasonEnum: Record<number, { name: string; color: string }> = {
   0: {
     name: operationReasonRecord[0],
     color: '#f5f5f5'
@@ -352,20 +361,20 @@ export const jobOperationReasonEnum: Workflow.JobTagType = {
   }
 };
 
-export const roleRecord: Record<Api.UserManager.Role, App.I18n.I18nKey> = {
+export const roleRecord: Record<number, string> = {
   1: 'page.userManager.roleItem.user',
   2: 'page.userManager.roleItem.admin'
 };
 export const roleRecordOptions = transformRecordToNumberOption(roleRecord);
 
-export const workFlowNodeStatusRecord: Record<Api.Common.WorkFlowNodeStatus, App.I18n.I18nKey> = {
+export const workFlowNodeStatusRecord: Record<number, string> = {
   0: 'common.workFlowNodeStatus.items.close',
   1: 'common.workFlowNodeStatus.items.open'
 };
 
 export const workFlowNodeStatusOptions = transformRecordToNumberOption(workFlowNodeStatusRecord);
 
-export const jobStatusEnum: Workflow.JobTagType = {
+export const jobStatusEnum: Record<number, { name: string; color: string }> = {
   0: {
     name: 'common.workFlowNodeStatus.items.close',
     color: '#dc3f41'
@@ -376,7 +385,7 @@ export const jobStatusEnum: Workflow.JobTagType = {
   }
 };
 
-export const taskBatchStatusEnum: Record<Api.Common.TaskBatchStatus, Workflow.TaskBatchStatusType> = {
+export const taskBatchStatusEnum: Record<number, { title: string; name: string; color: string; icon: string }> = {
   1: {
     title: $t('common.taskBatchStatus.items.waiting'),
     name: 'waiting',
@@ -427,7 +436,7 @@ export const taskBatchStatusEnum: Record<Api.Common.TaskBatchStatus, Workflow.Ta
   }
 };
 
-export const jobExecutorEnum: Workflow.JobTagType = {
+export const jobExecutorEnum: Record<number, { name: string; color: string }> = {
   1: {
     name: 'common.executorType.items.java',
     color: '#d06892'

@@ -17,9 +17,9 @@ const noSearchFlag = ref(false);
 
 const emit = defineEmits<Emits>();
 /** 工作流列表 */
-const workflowList = ref<Api.Workflow.Workflow[]>([]);
+const workflowList = ref<any[]>([]);
 
-const model = defineModel<Api.WorkflowBatch.WorkflowBatchSearchParams>('model', { required: true });
+const model = defineModel<any>('model', { required: true });
 const keywords = ref<string>(model.value.workflowName as any);
 
 function reset() {
@@ -33,7 +33,7 @@ function search() {
 
 async function keywordsUpdate() {
   const res = await fetchGetWorkflowNameList({ keywords: keywords.value, groupName: model.value.groupName });
-  workflowList.value = res.data as Api.Workflow.Workflow[];
+  workflowList.value = res.data as any[];
 }
 
 function handleSelect(value: number) {
@@ -51,55 +51,76 @@ watch(
   }
 );
 
-function translateOptions(options: Api.Workflow.Workflow[]) {
+function translateOptions(options: any[]) {
   return options.map(option => ({
     value: option.id,
     label: option.workflowName
   }));
 }
 
-function renderLabel(option: SelectProps['options'][number]) {
+function renderLabel(option: any) {
   return [option.label as string, `(${option.value})`];
 }
 </script>
 
 <template>
-  <SearchForm btn-span="12 s:24 m:10 l:12 xl:16" :model="model" @search="search" @reset="reset">
-    <a-form-item :label="$t('page.workflowBatch.groupName')" name="groupName" class="pr-24px">
-      <SelectGroup v-model:value="model.groupName" allowClear />
-    </a-form-item>
-    <a-form-item
-      :label="$t('page.workflowBatch.workflowName')"
-      :label-width="100"
-      name="workflowName"
-      class="pr-24px"
-    >
-      <a-auto-complete
-        v-model:value="keywords"
-        :placeholder="$t('page.workflowBatch.form.workflowName')"
-        :options="translateOptions(workflowList)"
-        :empty-visible="noSearchFlag"
-        allowClear
-        :filter-option="true"
-        :render-label="renderLabel"
-        @select="handleSelect"
-      />
-    </a-form-item>
-    <a-form-item
-      :label="$t('page.workflowBatch.taskBatchStatus')"
-      name="taskBatchStatus"
-      class="pr-24px"
-    >
-      <TaskBatchStatus v-model:value="model.taskBatchStatus" allowClear />
-    </a-form-item>
-    <a-form-item
-      :label="$t('page.common.createTime')"
-      name="datetimeRange"
-      class="pr-24px"
-    >
-      <DatetimeRange v-model:value="model.datetimeRange!" />
-    </a-form-item>
-  </SearchForm>
+  <div class="search-panel">
+    <a-form layout="inline" @submit.prevent="search">
+      <a-form-item :label="$t('page.workflowBatch.groupName')" name="groupName">
+        <a-input v-model:value="model.groupName" :placeholder="$t('page.workflowBatch.form.groupName')" allow-clear />
+      </a-form-item>
+      <a-form-item
+        :label="$t('page.workflowBatch.workflowName')"
+        name="workflowName"
+      >
+        <a-auto-complete
+          v-model:value="keywords"
+          :placeholder="$t('page.workflowBatch.form.workflowName')"
+          :options="translateOptions(workflowList)"
+          :empty-visible="noSearchFlag"
+          allow-clear
+          :filter-option="true"
+          :render-label="renderLabel"
+          @select="handleSelect"
+        />
+      </a-form-item>
+      <a-form-item
+        :label="$t('page.workflowBatch.taskBatchStatus')"
+        name="taskBatchStatus"
+      >
+        <a-select v-model:value="model.taskBatchStatus" :placeholder="$t('page.workflowBatch.form.taskBatchStatus')" allow-clear>
+          <a-select-option :value="1">运行中</a-select-option>
+          <a-select-option :value="2">已完成</a-select-option>
+          <a-select-option :value="3">已失败</a-select-option>
+          <a-select-option :value="4">已停止</a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item
+        :label="$t('page.common.createTime')"
+        name="datetimeRange"
+      >
+        <a-range-picker
+          v-model:value="model.datetimeRange"
+          show-time
+          format="YYYY-MM-DD HH:mm:ss"
+          :placeholder="[$t('common.startTime'), $t('common.endTime')]"
+          style="width: 240px"
+        />
+      </a-form-item>
+      <a-form-item>
+        <a-button type="primary" @click="search">{{ $t('common.search') }}</a-button>
+        <a-button @click="reset">{{ $t('common.reset') }}</a-button>
+      </a-form-item>
+    </a-form>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.search-panel {
+  background: #fff;
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+</style>

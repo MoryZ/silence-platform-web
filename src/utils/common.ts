@@ -2,6 +2,9 @@ import { Md5 } from 'ts-md5';
 import dayjs from 'dayjs';
 import { $t } from '@/locales';
 
+// Local fallback types to avoid coupling with global ambient types
+export type Option<V = string | number> = { value: V; label: string };
+
 /**
  * Transform record to option
  *
@@ -24,7 +27,7 @@ export function transformRecordToOption<T extends Record<string, string>>(record
   return Object.entries(record).map(([value, label]) => ({
     value,
     label
-  })) as CommonType.Option<keyof T>[];
+  })) as Option<keyof T>[];
 }
 
 /**
@@ -37,7 +40,7 @@ export function transformRecordToNumberOption<T extends Record<number, string>>(
   const options = Object.entries(record).map(([value, label]) => ({
     value: Number(value),
     label
-  })) as CommonType.Option<keyof T>[];
+  })) as Option<keyof T>[];
 
   return reverse ? options.sort((a: any, b: any) => b.value - a.value) : options;
 }
@@ -47,11 +50,17 @@ export function transformRecordToNumberOption<T extends Record<number, string>>(
  *
  * @param options
  */
-export function translateOptions(options: CommonType.Option<string | number>[]) {
-  return options.map(option => ({
-    ...option,
-    label: $t(option.label as App.I18n.I18nKey)
-  }));
+export function translateOptions(options: Option<string | number>[]) {
+  console.log('translateOptions input:', options);
+  const result = options.map(option => {
+    const translatedLabel = $t(option.label as any);
+    return {
+      ...option,
+      label: translatedLabel
+    };
+  });
+  console.log('translateOptions output:', result);
+  return result;
 }
 
 /**
@@ -72,12 +81,13 @@ export function translateOptions2(options: string[]) {
  * @param index
  */
 export function tagColor(index: number) {
-  const tagMap: Record<number, NaiveUI.ThemeColor> = {
+  // Use Ant Design color tokens
+  const tagMap: Record<number, string> = {
     0: 'error',
-    1: 'info',
-    2: 'success',
-    3: 'warning',
-    4: 'primary'
+    1: 'blue',
+    2: 'green',
+    3: 'orange',
+    4: 'default'
   };
 
   if (index === null || index < 0) {

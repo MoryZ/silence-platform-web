@@ -1,36 +1,38 @@
 <template>
   <div class="side-menu-container">
     <a-menu
+      v-if="!menuError"
       mode="inline"
       theme="dark"
       :inline-collapsed="collapsed"
       :selectedKeys="[activeKey]"
       :openKeys="openKeys"
+      :openAnimation="{ appear: true }"
       @openChange="onOpenChange"
       class="custom-menu"
+      :forceSubMenuRender="true"
+      :key="menuKey"
     >
-      <!-- 仪表盘菜单项始终显示 -->
-      <a-menu-item key="/dashboard" @click="navigateTo('/dashboard')">
-        <template #icon><dashboard-outlined /></template>
-        <span>仪表盘</span>
-      </a-menu-item>
-      
-      <!-- 动态生成菜单 -->
-      <template v-for="(menu, index) in menuList" :key="menu.path || menu.key || index">
+      <!-- 动态生成菜单（包含首页等在 MENUS 中的项） -->
+      <template v-for="(menu, index) in filteredMenuList" :key="menu.path || menu.key || index">
         <a-sub-menu 
           v-if="menu.children && menu.children.length" 
-          :key="`submenu-${menu.path || menu.key || index}`"
+          :key="menu.path || menu.key || `submenu-${index}`"
         >
           <template #icon>
             <component :is="getIcon(menu.meta?.icon)" />
           </template>
-          <template #title>{{ menu.meta?.title || menu.title }}</template>
+          <template #title>
+            <span @click.stop="toggleOpen(menu.path || menu.key || `submenu-${index}`)">
+              {{ menu.meta?.title || menu.title }}
+            </span>
+          </template>
           
           <a-menu-item 
             v-for="(subMenu, subIndex) in menu.children" 
-            :key="`submenu-item-${subMenu.path || subMenu.key || subIndex}`" 
-            @click="navigateTo(subMenu.path || '', menu.path)"
-            :class="isActive(subMenu.path, menu.path) ? 'active-menu-item' : ''"
+            :key="subMenu.path || subMenu.key || `submenu-item-${subIndex}`" 
+            @click="navigateTo(subMenu.path || subMenu.key || '', menu.path || menu.key)"
+            :class="isActive(subMenu.path || subMenu.key, menu.path || menu.key) ? 'active-menu-item' : ''"
           >
             <template #icon>
               <component :is="getIcon(subMenu.meta?.icon)" />
@@ -42,8 +44,8 @@
         <a-menu-item 
           v-else 
           :key="`menu-item-${menu.path || menu.key || index}`" 
-          @click="navigateTo(menu.path || '')"
-          :class="isActive(menu.path) ? 'active-menu-item' : ''"
+          @click="navigateTo(menu.path || menu.key || '')"
+          :class="isActive(menu.path || menu.key) ? 'active-menu-item' : ''"
         >
           <template #icon>
             <component :is="getIcon(menu.meta?.icon)" />
@@ -52,6 +54,9 @@
         </a-menu-item>
       </template>
     </a-menu>
+    <div v-else class="menu-error">
+      <p>菜单加载失败，请刷新页面重试</p>
+    </div>
   </div>
 </template>
 
@@ -90,74 +95,193 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 
+// 错误状态
+const menuError = ref(false);
+
 // 计算当前激活的菜单项
 const activeKey = computed(() => route.path);
+
+// 过滤重复的菜单项，确保每个菜单只显示一次
+const filteredMenuList = computed(() => {
+  try {
+    if (!props.menuList || props.menuList.length === 0) return [];
+    
+    // 递归去重函数，处理嵌套菜单
+    const deduplicateMenus = (menus: any[]): any[] => {
+      const seen = new Set();
+      const result: any[] = [];
+      
+      menus.forEach(menu => {
+        // 创建唯一标识符，包含路径和标题
+        const uniqueKey = `${menu.path || ''}-${menu.title || menu.meta?.title || ''}`;
+        
+        if (!seen.has(uniqueKey)) {
+          seen.add(uniqueKey);
+          
+          // 如果有子菜单，递归处理
+          if (menu.children && menu.children.length > 0) {
+            const deduplicatedChildren = deduplicateMenus(menu.children);
+            result.push({
+              ...menu,
+              children: deduplicatedChildren
+            });
+          } else {
+            result.push(menu);
+          }
+        }
+      });
+      
+      return result;
+    };
+    
+    return deduplicateMenus(props.menuList);
+  } catch (error) {
+    console.error('菜单过滤出错:', error);
+    menuError.value = true;
+    return [];
+  }
+});
 
 // 检查菜单项是否为当前激活的路径
 const isActive = (path?: string, parentPath?: string): boolean => {
   if (!path) return false;
   
-  // 处理路径拼接逻辑，与navigateTo函数保持一致
+  // 简化路径处理逻辑，与navigateTo函数保持一致
   let targetPath = path;
   
-  if (parentPath) {
-    if (!path.startsWith('/')) {
-      targetPath = `${parentPath}/${path}`;
-    } else if (!path.startsWith(parentPath)) {
-      // 处理特殊情况，如子路由以/开头但需要拼接父路径
-      const storedMenus = ls.get<MenuItem[]>(MENUS);
-      if (storedMenus && Array.isArray(storedMenus)) {
-        const findParentMenu = (menus: MenuItem[], targetParentPath: string): MenuItem | null => {
-          for (const menu of menus) {
-            if (menu.path === targetParentPath) {
-              return menu;
-            }
-            if (menu.children && menu.children.length > 0) {
-              const found = findParentMenu(menu.children, targetParentPath);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        
-        const parentMenu = findParentMenu(storedMenus, parentPath);
-        
-        if (parentMenu && parentMenu.children) {
-          const childPathsWithoutSlash = parentMenu.children
-            .filter(child => child.path && child.path.startsWith('/'))
-            .map(child => child.path);
-            
-          if (childPathsWithoutSlash.includes(path)) {
-            targetPath = `${parentPath}${path}`;
+  if (parentPath && !path.startsWith('/')) {
+    targetPath = `${parentPath}/${path}`;
+  } else if (parentPath && path.startsWith('/') && !path.startsWith(parentPath)) {
+    targetPath = `${parentPath}${path}`;
+  }
+  
+  // 检查当前路径是否与目标路径匹配
+  const isMatch = route.path === targetPath;
+  return isMatch;
+};
+
+// 根据 MENUS 计算应展开的所有父级 key，按路径链路展开
+function getOpenKeysByPath(path: string) {
+  const storedMenus = ls.get<MenuItem[]>(MENUS);
+  if (!storedMenus || !Array.isArray(storedMenus)) return [];
+
+  const keys: string[] = [];
+
+  const pathMatches = (base: string | undefined, target: string) => {
+    if (!base) return false;
+    if (target === base) return true;
+    if (target.startsWith(base)) {
+      const rest = target.substring(base.length);
+      const result = rest === '' || rest.startsWith('/');
+      return result;
+    }
+    return false;
+  };
+
+  const dfs = (menus: any[], ancestors: string[]) => {
+    for (const menu of menus) {
+      if (!menu || !menu.path) continue;
+      const newAncestors = [...ancestors, menu.path];
+      if (pathMatches(menu.path, path)) {
+        // 命中后，将所有祖先路径作为 openKeys（使用路径作为 key）
+        keys.splice(0, keys.length, ...newAncestors);
+        // 继续向下以便展开更深层父级
+        if (menu.children && menu.children.length > 0) {
+          dfs(menu.children, newAncestors);
+        }
+        return; // 命中一条链即可
+      }
+      if (menu.children && menu.children.length > 0) {
+        dfs(menu.children, newAncestors);
+      }
+    }
+  };
+
+  dfs(storedMenus, []);
+  return keys;
+}
+
+// 判断两个路径是否属于同一个顶级菜单
+function isSameTopLevelMenu(path1: string, path2: string): boolean {
+  const storedMenus = ls.get<MenuItem[]>(MENUS);
+  if (!storedMenus || !Array.isArray(storedMenus)) return false;
+  
+  const getTopLevelMenu = (path: string): string | null => {
+    // 首先检查是否是顶级菜单本身
+    for (const menu of storedMenus) {
+      if (menu.path && path === menu.path) {
+        return menu.path;
+      }
+    }
+    
+    // 然后检查是否是顶级菜单的子项
+    for (const menu of storedMenus) {
+      if (menu.children) {
+        for (const child of menu.children) {
+          if (child.path && path.startsWith(child.path)) {
+            return menu.path || null;
           }
         }
       }
     }
-  }
+    
+    // 最后检查是否是嵌套路径（但只匹配有子菜单的顶级菜单）
+    for (const menu of storedMenus) {
+      if (menu.path && menu.children && path.startsWith(menu.path + '/')) {
+        // 确保这个路径不是其他顶级菜单的直接子项
+        let isDirectChild = false;
+        for (const otherMenu of storedMenus) {
+          if (otherMenu.children) {
+            for (const child of otherMenu.children) {
+              if (child.path && path.startsWith(child.path)) {
+                isDirectChild = true;
+                break;
+              }
+            }
+          }
+          if (isDirectChild) break;
+        }
+        if (!isDirectChild) {
+          return menu.path;
+        }
+      }
+    }
+    
+    return null;
+  };
   
-  // 检查当前路径是否与目标路径匹配
-  return route.path === targetPath;
-};
-
-// 获取当前激活菜单的父级 openKey
-function getOpenKeysByPath(path: string) {
-  // 只展开一级父菜单
-  const segments = path.split('/').filter(Boolean);
-  if (segments.length > 1) {
-    return [`submenu-/${segments[0]}`];
-  }
-  // 如果是一级菜单（如 /dashboard），不展开任何子菜单
-  return [];
+  const topLevel1 = getTopLevelMenu(path1);
+  const topLevel2 = getTopLevelMenu(path2);
+  
+  return topLevel1 === topLevel2 && topLevel1 !== null;
 }
 
 const openKeys = ref<string[]>([]);
+const isUserManuallyOperating = ref(false);
 
-// 路由变化时只展开当前父菜单
+// 路由变化时的处理逻辑
 watch(
   () => route.path,
-  (newPath) => {
+  (newPath, oldPath) => {
     if (!props.collapsed) {
-      openKeys.value = getOpenKeysByPath(newPath);
+      const requiredOpenKeys = getOpenKeysByPath(newPath);
+      
+      // 判断是否是切换到不同的顶级菜单
+      const isSwitchingTopLevelMenu = oldPath && !isSameTopLevelMenu(oldPath, newPath);
+      
+      if (isSwitchingTopLevelMenu) {
+        // 切换到不同顶级菜单时，只展开当前路由需要的父级菜单
+        openKeys.value = requiredOpenKeys;
+        // 重置手动操作标志
+        isUserManuallyOperating.value = false;
+      } else {
+        // 同一顶级菜单内的子菜单切换时，保持父菜单展开状态
+        const currentOpenKeys = new Set(openKeys.value);
+        requiredOpenKeys.forEach(key => currentOpenKeys.add(key));
+        openKeys.value = Array.from(currentOpenKeys);
+        // 重置手动操作标志
+        isUserManuallyOperating.value = false;
+      }
     }
   },
   { immediate: true }
@@ -177,7 +301,35 @@ watch(
 );
 
 const onOpenChange = (keys: string[]) => {
-  openKeys.value = keys;
+  try {
+    // 当用户手动操作菜单时，设置标志并更新展开状态
+    // 检查是否是程序自动触发的（通过比较 keys 和当前 openKeys）
+    const isProgrammaticChange = JSON.stringify(keys.sort()) === JSON.stringify(openKeys.value.sort());
+    
+    if (!isProgrammaticChange) {
+      // 只有真正的用户手动操作才设置标志
+      isUserManuallyOperating.value = true;
+    }
+    
+    openKeys.value = keys;
+  } catch (error) {
+    console.error('菜单展开状态更新出错:', error);
+  }
+};
+
+// 点击父级标题时仅展开/收起，不导航
+const toggleOpen = (key: string) => {
+  try {
+    isUserManuallyOperating.value = true;
+    const idx = openKeys.value.indexOf(key);
+    if (idx > -1) {
+      openKeys.value.splice(idx, 1);
+    } else {
+      openKeys.value.push(key);
+    }
+  } catch (error) {
+    console.error('菜单切换出错:', error);
+  }
 };
 
 // 根据菜单图标字符串获取对应的图标组件
@@ -216,56 +368,29 @@ onMounted(() => {
   if (!props.collapsed) {
     openKeys.value = getOpenKeysByPath(route.path);
   }
+  
 });
 
 // 导航函数
 const navigateTo = (path: string, parentPath?: string) => {
-  if (!path) return;
-  
-  let targetPath = path;
-  
-  // 处理路径拼接逻辑 - 避免硬编码特定路径
-  if (parentPath) {
-    // 处理相对路径 - 如果子路径不是以/开头，将其拼接到父路径
-    if (!path.startsWith('/')) {
+  try {
+    if (!path) return;
+    
+    let targetPath = path;
+    
+    // 简化路径处理逻辑
+    if (parentPath && !path.startsWith('/')) {
+      // 如果子路径不是以/开头，拼接到父路径
       targetPath = `${parentPath}/${path}`;
-    } 
-    // 处理绝对路径 - 如果子路径以/开头，但应该是父路径的子路由
-    else if (!path.startsWith(parentPath)) {
-      // 检查当前path是否应该是parentPath的子路由
-      const storedMenus = ls.get<MenuItem[]>(MENUS);
-      if (storedMenus && Array.isArray(storedMenus)) {
-        // 查找父菜单及其子菜单配置
-        const findParentMenu = (menus: MenuItem[], targetParentPath: string): MenuItem | null => {
-          for (const menu of menus) {
-            if (menu.path === targetParentPath) {
-              return menu;
-            }
-            if (menu.children && menu.children.length > 0) {
-              const found = findParentMenu(menu.children, targetParentPath);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        
-        const parentMenu = findParentMenu(storedMenus, parentPath);
-        
-        // 如果在父菜单的子项中找到了与当前路径匹配的项，说明它应该被拼接
-        if (parentMenu && parentMenu.children) {
-          const childPathsWithoutSlash = parentMenu.children
-            .filter(child => child.path && child.path.startsWith('/'))
-            .map(child => child.path);
-            
-          if (childPathsWithoutSlash.includes(path)) {
-            targetPath = `${parentPath}${path}`;
-          }
-        }
-      }
+    } else if (parentPath && path.startsWith('/') && !path.startsWith(parentPath)) {
+      // 如果子路径是绝对路径但不包含父路径，直接拼接
+      targetPath = `${parentPath}${path}`;
     }
+    
+    router.push(targetPath);
+  } catch (error) {
+    console.error('导航出错:', error);
   }
-  
-  router.push(targetPath);
 };
 
 </script>
@@ -442,5 +567,14 @@ const navigateTo = (path: string, parentPath?: string) => {
 }
 .layout-sider {
   background: #001529;
+}
+
+.menu-error {
+  padding: 20px;
+  text-align: center;
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+  border-radius: 4px;
+  margin: 20px;
 }
 </style>

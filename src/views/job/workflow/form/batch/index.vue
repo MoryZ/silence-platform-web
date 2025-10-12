@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import Workflow from '@/components/workflow';
-import { useWorkflowStore } from '@/store/modules/workflow';
-import { fetchWorkflowBatchInfo } from '@/service/api';
+import { ReloadOutlined, DownOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
+import { fetchWorkflowBatchInfo } from '@/api/job/workflow';
+import Workflow from '@/components/workflow/workflow.vue';
 
-const store = useWorkflowStore();
 const route = useRoute();
 
 const spinning = ref(false);
 const id: string = String(route.query.id);
-const node = ref<Workflow.NodeDataType>({});
+const node = ref<any>({});
 const syncTime = ref(0);
 const interval = ref<NodeJS.Timeout>();
 const controller = new AbortController();
@@ -27,7 +26,6 @@ const stopBatch = () => {
   if (!finished.value) controller.abort();
   pauseBatch();
   node.value = {};
-  store.clear();
 };
 
 const getBatchDetail = async () => {
@@ -67,9 +65,6 @@ const handleSyncSelect = async (time: number) => {
 };
 
 onMounted(() => {
-  store.clear();
-  store.setType(2);
-  store.setId(id);
   getBatchDetail();
 });
 
@@ -107,52 +102,73 @@ const syncOptions = ref([
     key: 300
   }
 ]);
+
+function getBatchStatusColor(status: number): string {
+  const colorMap: Record<number, string> = {
+    1: 'blue',
+    2: 'green',
+    3: 'green',
+    4: 'red',
+    5: 'orange',
+    6: 'orange'
+  };
+  return colorMap[status] || 'default';
+}
+
+function getBatchStatusText(status: number): string {
+  const statusMap: Record<number, string> = {
+    1: '运行中',
+    2: '已完成',
+    3: '已完成',
+    4: '已失败',
+    5: '已停止',
+    6: '已停止'
+  };
+  return statusMap[status] || '未知';
+}
 </script>
 
 <template>
-  <Workflow v-model="node" :spinning="false" disabled @refresh="getBatchDetail()">
+  <Workflow 
+    v-model="node" 
+    :spinning="spinning"
+    :disabled="true"
+  >
     <template #buttons>
-      <div class="flex-center">
-        <NDropdown trigger="hover" width="trigger" :options="syncOptions" @select="handleSyncSelect">
-          <NTooltip placement="left">
-            <template #trigger>
-              <NButton dashed class="w-136px" :class="finished ? 'mr-16px' : 'mr-42px'" @click="handleSyncSelect(-1)">
-                <template #icon>
-                  <div class="flex-center gap-8px">
-                    <icon-solar:refresh-outline class="text-18px" />
-                    {{ syncOptions.filter(item => item.key === syncTime)[0].label }}
-                    <SvgIcon icon="material-symbols:expand-more-rounded" />
-                  </div>
-                </template>
-              </NButton>
+      <!-- 控制栏 -->
+      <div class="control-bar">
+        <a-dropdown :trigger="['hover']" @select="handleSyncSelect">
+          <a-button dashed @click="handleSyncSelect(-1)">
+            <template #icon>
+              <ReloadOutlined />
             </template>
-            自动刷新频率
-          </NTooltip>
-        </NDropdown>
-        <NTooltip v-if="finished" placement="top">
-          <template #trigger>
-            <icon-material-symbols:check-circle class="text-26px color-success" />
+            {{ syncOptions.find(item => item.key === syncTime)?.label }}
+            <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="({ key }: { key: string }) => handleSyncSelect(Number(key))">
+              <a-menu-item v-for="option in syncOptions" :key="option.key">
+                {{ option.label }}
+              </a-menu-item>
+            </a-menu>
           </template>
-          流程批次加载完成
-        </NTooltip>
-        <NTooltip v-else>
-          <template #trigger>
-            <NSpin size="small">
-              <template #icon>
-                <icon-nonicons:loading-16 />
-              </template>
-            </NSpin>
-          </template>
-          流程批次正在加载
-        </NTooltip>
+        </a-dropdown>
+        
+        <a-tooltip v-if="finished" title="流程批次加载完成">
+          <CheckCircleOutlined style="color: #52c41a; font-size: 24px; margin-left: 16px;" />
+        </a-tooltip>
+        <a-tooltip v-else title="流程批次正在加载">
+          <a-spin size="small" style="margin-left: 16px;" />
+        </a-tooltip>
       </div>
     </template>
   </Workflow>
 </template>
 
 <style scoped>
-:deep(.n-spin-body) {
-  right: 0 !important;
-  left: unset !important;
+.control-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
 }
 </style>

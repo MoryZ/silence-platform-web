@@ -1,36 +1,61 @@
-import request from '../../utils/request';
+import { jobRequest as request } from '@/utils/request';
 
-/** get retry scene list */
-export function fetchGetRetryScenePageList(params?: any) {
-  return request.get<any>('/scene-config/page/list', { params });
+export interface RetrySceneParams {
+  pageNo?: number;
+  pageSize?: number;
+  sort?: string;
+  groupName?: string | null;
+  sceneName?: string | null;
+  sceneStatus?: boolean | null;
+}
+
+export interface RetryScene {
+  id: string;
+  groupName: string;
+  sceneName: string;
+  sceneStatus: boolean;
+}
+
+export interface RetryScenePage {
+  data: RetryScene[];
+  total: number;
 }
 
 /** get retry scene list */
-export function fetchGetRetrySceneList(params?: any) {
-  return request.get<any>('/scene-config/list', { params });
+export function fetchGetRetryScenePageList(params?: RetrySceneParams) {
+  return request.get<RetryScenePage>('/api/v1/sceneConfig', { params });
+}
+
+/** get retry scene list */
+export function fetchGetRetrySceneList(params?: RetrySceneParams) {
+  return request.get<RetryScene[]>('/api/v1/sceneConfig', { params });
 }
 
 /** add retry scene */
 export function fetchAddRetryScene(data: any) {
-  return request.post<boolean>('/scene-config', data);
+  return request.post<boolean>('/api/v1/sceneConfig', data);
 }
 
 /** edit retry scene */
-export function fetchEditRetryScene(data: any) {
-  return request.put<boolean>('/scene-config', data);
+export function fetchEditRetryScene(id: string, data: any) {
+  return request.put<boolean>(`/api/v1/sceneConfig/${id}`, data);
 }
 
 /** update retry scene status */
-export function fetchUpdateSceneStatus(id: string, status: number) {
-  return request.put<boolean>(`/scene-config/${id}/status/${status}`);
+export function fetchUpdateSceneStatus(id: string, status: boolean) {
+  if (status) {
+    return request.put<boolean>(`/api/v1/sceneConfig/${id}/enable`);
+  } else {
+    return request.put<boolean>(`/api/v1/sceneConfig/${id}/disable`);
+  }
 }
 
 /** delete retry scene status */
 export function fetchDeleteRetryScene(id: string) {
-  return request.delete<boolean>('/scene-config/ids', { data: [id] });
+  return request.delete<boolean>('/api/v1/sceneConfig/ids', { data: [id] });
 }
 
 /** batch delete retry scene status */
 export function fetchBatchDeleteRetryScene(data: string[]) {
-  return request.delete<boolean>('/scene-config/ids', { data });
+  return request.delete<boolean>('/api/v1/sceneConfig/ids', { data });
 }

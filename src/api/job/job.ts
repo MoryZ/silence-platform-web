@@ -13,6 +13,7 @@ export interface JobTaskSearchParams {
 export interface JobSearchParams {
   pageNo: number;
   pageSize: number;
+  sort: string;
   groupName: string;
   jobName: string;
   jobStatus: string;
@@ -20,6 +21,14 @@ export interface JobSearchParams {
   executorInfo: string;
 }
 
+
+export interface JobSearchListParams {
+  groupName: string;
+  jobName: string;
+  jobStatus: string;
+  ownerId: string;
+  executorInfo: string;
+}
 export interface Job {
   id: string;
   groupName: string;
@@ -62,12 +71,12 @@ export interface ExportJobParams {
 
 /** get Job page */
 export function getJobPage(params?: JobSearchParams) {
-  return request.get('/api/v1/jobs/', { params });
+  return request.get('/api/v1/jobs', { params });
 }
 
 /** get Job list */
 export function getJobList(params?: JobSearchParams) {
-  return request.get('/api/v1/jobs/list', { params });
+  return request.get('/api/v1/jobs', { params });
 }
 
 /** get Job list */

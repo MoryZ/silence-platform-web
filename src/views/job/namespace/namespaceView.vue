@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
+import { ReloadOutlined } from '@ant-design/icons-vue';
 import {
   getNamespaces,
   createNamespace,
@@ -11,8 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { formatDate } from '@/utils/common';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
-import Draggable from 'vuedraggable';
-import { Checkbox as ACheckbox } from 'ant-design-vue';
+import ColumnSettings from '@/components/ColumnSettings.vue';
 
 const drawerVisible = ref(false);
 const editingData = ref<Partial<NameSpace> | null>(null);
@@ -22,8 +22,8 @@ const data = ref<NameSpace[]>([]);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 const searchForm = ref({ name: '', uniqueId: '' });
 const fields = [
-  { key: 'name', type: 'input' as const, placeholder: '请输入空间名称' },
-  { key: 'uniqueId', type: 'input' as const, placeholder: '请输入唯一标识' }
+  { key: 'name', type: 'input' as const, label: '名称', placeholder: '请输入空间名称' },
+  { key: 'uniqueId', type: 'input' as const, label: '唯一标识', placeholder: '请输入唯一标识' }
 ];
 
 const allColumns = ref([
@@ -36,6 +36,7 @@ const allColumns = ref([
   { title: '操作', key: 'operation', visible: true, width: 100, align: 'center' }
 ]);
 const checkedKeys = ref(allColumns.value.filter(c => c.visible).map(c => c.key));
+
 
 const tableColumns = computed(() =>
   allColumns.value.filter(col => checkedKeys.value.includes(col.key))
@@ -87,6 +88,11 @@ function handleEdit(record: NameSpace) {
   editingData.value = { ...record };
   isEdit.value = true;
   drawerVisible.value = true;
+}
+function regenerateUniqueId() {
+  if (!isEdit.value && editingData.value) {
+    editingData.value.uniqueId = uuidv4().replace(/-/g, '');
+  }
 }
 function handleRefresh() {
   fetchData();
@@ -141,36 +147,11 @@ fetchData();
       <div class="table-toolbar">
         <a-button type="primary" style="margin-right: 8px;" @click="handleAdd">新增</a-button>
         <a-button style="margin-right: 8px;" @click="handleRefresh">刷新</a-button>
-        <a-dropdown :trigger="['click']" placement="bottomRight">
-          <template #overlay>
-            <div class="column-setting-popover">
-              <Draggable
-                v-model="allColumns"
-                item-key="key"
-                handle=".drag-handle"
-                animation="200"
-              >
-                <template #item="{ element }">
-                  <div class="column-setting-item">
-                    <span class="drag-handle">☰</span>
-                    <a-checkbox
-                      :checked="checkedKeys.includes(element.key)"
-                      @change="onCheckColumn(element.key, $event.target.checked)"
-                    >
-                      {{ element.title }}
-                    </a-checkbox>
-                  </div>
-                </template>
-              </Draggable>
-            </div>
-          </template>
-          <a-button>
-            <template #icon>
-              <svg width="1em" height="1em" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 928c-229.75 0-416-186.25-416-416S282.25 96 512 96s416 186.25 416 416-186.25 416-416 416zm0-64c194.13 0 352-157.87 352-352S706.13 160 512 160 160 317.87 160 512s157.87 352 352 352zm-32-480v192h64V384h-64zm0 256v64h64v-64h-64z"></path></svg>
-            </template>
-            列设置
-          </a-button>
-        </a-dropdown>
+        <ColumnSettings
+          :columns="allColumns"
+          v-model="checkedKeys"
+          @update:columns="val => allColumns = val as any"
+        />
       </div>
       <CommonPagination
         :columns="tableColumns"
@@ -205,8 +186,12 @@ fetchData();
         <a-form-item label="名称">
           <a-input v-model:value="editingData.name" placeholder="请输入名称" />
         </a-form-item>
-        <a-form-item label="唯一标识">
-          <a-input v-model:value="editingData.uniqueId" placeholder="请输入唯一标识" :disabled="isEdit" />
+        <a-form-item label="唯一标识(默认UUID)">
+          <a-input v-model:value="editingData.uniqueId" placeholder="请输入唯一标识" :disabled="isEdit" >
+            <template #suffix>
+              <ReloadOutlined v-if="!isEdit" @click.stop="regenerateUniqueId" style="cursor:pointer; color:#555;" />
+            </template>
+          </a-input>
         </a-form-item>
         <a-form-item label="描述">
           <a-input v-model:value="editingData.description" placeholder="请输入描述" />
@@ -217,6 +202,8 @@ fetchData();
         </div>
       </a-form>
     </a-drawer>
+
+    
   </div>
 </template>
 

@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import Workflow from '@/components/workflow';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { fetchAddWorkflow } from '@/service/api';
+import { fetchAddWorkflow } from '@/api/job/workflow';
+import Workflow from '@/components/workflow/workflow.vue';
 
-const store = useWorkflowStore();
 const router = useRouter();
 
-onMounted(() => {
-  store.clear();
-  store.setType(0);
-});
-
-const node = ref<Workflow.NodeDataType>({
+const node = ref<any>({
   workflowName: `WF-${new Date().getTime()}`,
   workflowStatus: 1,
   blockStrategy: 1,
@@ -23,10 +17,14 @@ const node = ref<Workflow.NodeDataType>({
   wfContext: '{"init":""}'
 });
 
+onMounted(() => {
+  // 初始化工作流数据
+});
+
 const save = async () => {
   const { error } = await fetchAddWorkflow(node.value);
   if (!error) {
-    window.$message?.info($t('common.addSuccess'));
+    message.success($t('common.addSuccess'));
     router.push('/workflow/task');
   }
 };
@@ -37,7 +35,15 @@ const cancel = () => {
 </script>
 
 <template>
-  <Workflow v-model="node" @save="save" @cancel="cancel" />
+  <Workflow 
+    v-model="node" 
+    :spinning="false"
+    :disabled="false"
+    @save="save" 
+    @cancel="cancel" 
+  />
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 使用 Workflow 组件的默认样式 */
+</style>

@@ -22,6 +22,7 @@ export interface JobBatchSearchParams {
   createdDateEnd: string;
   pageNo: number;
   pageSize: number;
+  sort: string;
 }
 
 /** get Job page */
@@ -36,10 +37,10 @@ export function findById(id: string) {
 
 /** retry job */
 export function retryJobBatch(jobId: string) {
-  return request.post<boolean>('/api/v1/jobBatches/' + jobId + '/retry');
+  return request.put<boolean>('/api/v1/jobBatches/' + jobId + '/retry');
 }
 
 /** delete job */
 export function batchDeleteJobBatch(data: string[]) {
-  return request.post<boolean>('/api/v1/jobBatches/ids', { data });
+  return request.delete<boolean>('/api/v1/jobBatches', { data });
 }

@@ -1,4 +1,4 @@
-const local: App.I18n.Schema = {
+const local = {
   system: {
     title: 'Snail Job',
     desc: '灵活，可靠和快速的分布式任务重试和分布式任务调度平台',
@@ -12,6 +12,7 @@ const local: App.I18n.Schema = {
     add: '新增',
     batchAdd: '批量添加',
     addSuccess: '添加成功',
+    editSuccess: '编辑成功',
     backToHome: '返回首页',
     batchDelete: '批量删除',
     cancel: '取消',
@@ -27,7 +28,9 @@ const local: App.I18n.Schema = {
     batchRollback: '批量回滚',
     rollbackSuccess: '回滚成功',
     deleteSuccess: '删除成功',
+    deleteFailed: '删除失败',
     confirmDelete: '确认删除吗？',
+    deleteConfirm: '确认删除吗？',
     confirmRollback: '确认回滚吗？',
     checkUploadType: '只能上传json格式的文件，请重新上传',
     second: '秒',
@@ -51,6 +54,14 @@ const local: App.I18n.Schema = {
     modifySuccess: '修改成功',
     noData: '无数据',
     operate: '操作',
+    operation: '操作',
+    enabled: '启用',
+    disabled: '禁用',
+    createdDate: '创建时间',
+    updatedDate: '更新时间',
+    pleaseSelect: '请选择',
+    pleaseInput: '请输入',
+    pleaseSelectData: '请选择数据',
     pleaseCheckValue: '请检查输入的值是否合法',
     refresh: '刷新',
     reset: '重置',
@@ -241,8 +252,6 @@ const local: App.I18n.Schema = {
         clientTriggerRetryStop: '客户端触发任务停止'
       }
     },
-    updateDt: '更新时间',
-    createDt: '创建时间',
     today: '今天',
     lastWeek: '最近一周',
     currentMonth: '当月',
@@ -646,18 +655,20 @@ const local: App.I18n.Schema = {
         notifyAttribute: '请输入属性信息',
         recipientName: '请输入接收人名称',
         notifyType: '请选择通知类型',
+        ats: '请输入通知人',
         dingDingAts: "请输入被{'@'}人手机号或钉钉号",
         weComAts: "请输入被{'@'}人企业微信用户id",
         larkAts: "请输入被{'@'}人open_id",
         webhookUrl: '请输入URL',
         secret: '请输入密钥',
         contentType: '请选择请求类型',
+        tos: '请输入通知人邮箱地址',
         applicationJson: 'application/json',
         applicationXWwwFormUrlencoded: 'application/x-www-form-urlencoded'
       },
       addNotifyRecipient: '新增通知接收人',
       editNotifyRecipient: '编辑通知接收人',
-      ats: "{'@'}通知人",
+      ats: "通知人",
       webhookUrl: '通知地址',
       secret: '密钥',
       tos: '通知人邮箱地址',
@@ -714,6 +725,14 @@ const local: App.I18n.Schema = {
         idempotentId: '请输入幂等ID',
         logStr: '日志信息'
       },
+      methodParams: '方法参数',
+      addRetry: '新增重试',
+      editRetry: '编辑重试',
+      addParam: '添加',
+      paramName: '参数名',
+      paramValue: '参数值',
+      generateIdempotentId: '生成幂等ID',
+      generateIdempotentIdTooltip: '通过客户端生成',
       retryStatusType: {
         retrying: '处理中',
         finished: '完成',
@@ -776,6 +795,12 @@ const local: App.I18n.Schema = {
         fixed: '固定时间',
         cron: 'CRON表达式',
         random: '随机等待'
+      },
+      cbTriggerTypeItem: {
+        random: '随机等待',
+        cron: 'CRON表达式',
+        fixed: '固定时间',
+        delayLevel: '延迟等级'
       }
     },
     retryTask: {

@@ -6,9 +6,8 @@ import { getAllGroupConfigs } from '@/api/job/group';
 import { fetchSystemUser } from '@/api/job/systemUser';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
-import Draggable from 'vuedraggable';
-import { Checkbox as ACheckbox } from 'ant-design-vue';
-import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, executorNameOptions, executorTypeEnum, routeKeyEnum } from '@/constants/jobEnums';
+import ColumnSettings from '@/components/ColumnSettings.vue';
+import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, routeKeyEnum } from '@/constants/jobEnums';
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
 
@@ -37,23 +36,26 @@ function buildColumns(rawCols: Array<Record<string, any>>): Array<Record<string,
 }
 
 const allColumns = ref<Array<Record<string, any>>>(buildColumns([
-  { title: '序号', dataIndex: 'index', width: 60, fixed: 'left' },
-  { title: '任务名称', dataIndex: 'jobName', fixed: 'left', width: 180, clickable: true  },
-  { title: '组名称', dataIndex: 'groupName' },
-  { title: '执行器', dataIndex: 'executorInfo' },
-  { title: '负责人', dataIndex: 'ownerName' },
-  { title: '执行时间', dataIndex: 'nextTriggerAt', type: 'date' },
-  { title: '状态', dataIndex: 'jobStatus', type: 'switch' },
-  { title: '任务类型', dataIndex: 'taskType', type: 'enum', enumMap: taskTypeEnum },
-  { title: '触发类型', dataIndex: 'triggerType', type: 'enum', enumMap: triggerTypeEnum },
-  { title: '间隔时长', dataIndex: 'triggerInterval' },
-  { title: '阻塞策略', dataIndex: 'blockStrategy', type: 'enum', enumMap: blockStrategyEnum },
-  { title: '超时时间(秒)', dataIndex: 'executorTimeout' },
-  { title: '创建时间', dataIndex: 'createdDate', type: 'date' },
-  { title: '更新时间', dataIndex: 'updatedDate', type: 'date' },
-  { title: '操作', key: 'operation', width: 100, align: 'center' }
+  { title: '序号', dataIndex: 'index', width: 70 },
+  { title: '任务名称', dataIndex: 'jobName', width: 180, clickable: true },
+  { title: '组名称', dataIndex: 'groupName', width: 140 },
+  { title: '执行器名称', dataIndex: 'executorInfo', width: 160 },
+  { title: '负责人', dataIndex: 'ownerName', width: 120 },
+  { title: '触发时间', dataIndex: 'nextTriggerAt', type: 'date', width: 170 },
+  { title: '状态', dataIndex: 'jobStatus', type: 'switch', width: 80 },
+  { title: '任务类型', dataIndex: 'taskType', type: 'enum', enumMap: taskTypeEnum, width: 110 },
+  { title: '触发类型', dataIndex: 'triggerType', type: 'enum', enumMap: triggerTypeEnum, width: 110 },
+  { title: '间隔时长', dataIndex: 'triggerInterval', width: 100 },
+  { title: '阻塞策略', dataIndex: 'blockStrategy', type: 'enum', enumMap: blockStrategyEnum, width: 110 },
+  { title: '超时时间(秒)', dataIndex: 'executorTimeout', width: 120 },
+  { title: '更新时间', dataIndex: 'updatedDate', type: 'date', width: 170 },
+  { title: '操作', key: 'operation', width: 160, align: 'center' }
 ]));
 const checkedKeys = ref<string[]>(allColumns.value.filter((c: Record<string, any>) => c.visible).map((c: Record<string, any>) => c.key));
+
+// ensure dropdown overlay renders into body to avoid clipping
+const getBodyContainer = () => document.body as HTMLElement;
+const columnSettingVisible = ref(false);
 
 const tableColumns = computed(() =>
   allColumns.value.filter((col: Record<string, any>) => checkedKeys.value.includes(col.key))
@@ -80,7 +82,8 @@ async function fetchData() {
       executorId: searchForm.value.executorId,
       ownerId: searchForm.value.ownerId,
       pageNo: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
+      sort: '-updatedDate'
     };
     const res = await getJobPage(params);
     if (Array.isArray(res)) {
@@ -452,36 +455,11 @@ function handleExport() {
         <a-button style="margin-right: 8px;" @click="handleExport">导出</a-button>
         <a-button style="margin-right: 8px;" danger>批量删除</a-button>
         <a-button style="margin-right: 8px;" @click="handleRefresh">刷新</a-button>
-        <a-dropdown :trigger="['click']" placement="bottomRight">
-          <template #overlay>
-            <div class="column-setting-popover">
-              <Draggable
-                v-model="allColumns"
-                item-key="key"
-                handle=".drag-handle"
-                animation="200"
-              >
-                <template #item="{ element }">
-                  <div class="column-setting-item">
-                    <span class="drag-handle">☰</span>
-                    <a-checkbox
-                      :checked="checkedKeys.includes(element.key)"
-                      @change="onCheckColumn(element.key, $event.target.checked)"
-                    >
-                      {{ element.title }}
-                    </a-checkbox>
-                  </div>
-                </template>
-              </Draggable>
-            </div>
-          </template>
-          <a-button>
-            <template #icon>
-              <svg width="1em" height="1em" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 928c-229.75 0-416-186.25-416-416S282.25 96 512 96s416 186.25 416 416-186.25 416-416 416zm0-64c194.13 0 352-157.87 352-352S706.13 160 512 160 160 317.87 160 512s157.87 352 352 352zm-32-480v192h64V384h-64zm0 256v64h64v-64h-64z"></path></svg>
-            </template>
-            列设置
-          </a-button>
-        </a-dropdown>
+        <ColumnSettings
+          :columns="allColumns as any"
+          v-model="checkedKeys"
+          @update:columns="val => allColumns = val as any"
+        />
       </div>
       <CommonPagination
         title="定时任务列表"
@@ -489,7 +467,7 @@ function handleExport() {
         :data-source="data"
         :loading="loading"
         row-key="id"
-        :row-selection="{ selectedRowKeys, onChange: (keys: string[]) => selectedRowKeys.value = keys }"
+        :row-selection="{ selectedRowKeys, onChange: (keys: string[]) => (selectedRowKeys as any).value = keys }"
         :page-no="pagination.current"
         :page-size="pagination.pageSize"
         :total="pagination.total"
@@ -503,24 +481,26 @@ function handleExport() {
             {{ index + 1 }}
           </template>
           <template v-else-if="column.key === 'operation'">
-            <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-            <a-button type="link" danger @click="handleExecute(record)">执行</a-button>
-            <a-dropdown>
-              <a-button type="link">
-                更多 <DownOutlined />
-              </a-button>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item @click="handleCopy(record)">复制</a-menu-item>
-                  <a-menu-item @click="handleBatch(record)">批次</a-menu-item>
-                  <a-menu-item @click="handleDelete(record)" danger>删除</a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
+            <a-space size="small">
+              <a-button type="link" @click="handleEdit(record)">编辑</a-button>
+              <a-button type="link" @click="handleExecute(record)">执行</a-button>
+              <a-dropdown :trigger="['click']" placement="bottomRight">
+                <a-button type="link">更多 <DownOutlined /></a-button>
+                <template #overlay>
+                  <a-menu>
+                    <a-menu-item @click="handleCopy(record)">复制</a-menu-item>
+                    <a-menu-item @click="handleBatch(record)">批次</a-menu-item>
+                    <a-menu-item danger @click="handleDelete(record)">删除</a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </a-space>
           </template>
         </template>
       </CommonPagination>
     </a-card>
+
+    
     <DetailDrawer
       v-model:visible="detailDrawerVisible"
       :record="detailRecord"

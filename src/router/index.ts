@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { MenuItem } from '@/types/menu';
 import { ls } from '@/utils/stoarge';
 import { MENUS, TOKEN } from '@/utils/constant';
@@ -97,7 +97,6 @@ router.beforeEach(async (to, from, next) => {
   
   // 如果路由未匹配且不是去404页面，尝试重新加载路由
   if (to.matched.length === 0 && to.path !== '/404') {
-    
     // 如果之前标记已加载过，但实际路由未匹配，强制重新加载一次
     if (hasAddedDynamicRoutes) {
       hasAddedDynamicRoutes = false;
@@ -109,8 +108,8 @@ router.beforeEach(async (to, from, next) => {
       }
     }
     
-    // 如果重新加载后仍然未匹配，则可能是真的不存在此路由，去404
-    next('/404');
+    // 如果重新加载后仍然未匹配，则可能是真的不存在此路由，让通配符路由处理
+    next();
     return;
   }
   
@@ -193,9 +192,8 @@ export async function addDynamicRoutes(menus: MenuItem[]) {
                   childPath = childPath.substring(1);
                 }
                 
-                // 为每个子路由创建唯一的name
-                const childName = childRoute.name || 
-                  `${String(route.name || routePath.replace(/\//g, '-'))}-${childPath.replace(/\//g, '-')}`;
+                // 为每个子路由创建唯一的name，使用路径确保唯一性
+                const childName = `${routePath.replace(/\//g, '-')}-${childPath.replace(/\//g, '-')}`;
                 
                 // 添加子路由到主布局
                 router.addRoute('MainLayout', {
@@ -232,11 +230,11 @@ export async function addDynamicRoutes(menus: MenuItem[]) {
       meta: { title: '404' }
     });
     
-    // 4. 最后添加通配符路由
+    // 4. 最后添加通配符路由 - 直接显示NotFound组件而不是重定向
     router.addRoute({
       path: '/:pathMatch(.*)*',
-      redirect: '/404',
       name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
       meta: { hidden: true }
     });
     
@@ -270,49 +268,20 @@ function transformRoutes(routes: any[], parentPath: string = ''): RouteRecordRaw
     // 根据组件路径确定实际组件
     let component;
     if (route.component) {
-      // 构建动态导入路径
+      // 直接使用component字段对应的路径
       const componentPath = route.component.replace(/^\//, '');
       const importPath = `../views/${componentPath}.vue`;
       
-      // 尝试使用多种可能的组件导入路径
-      const attemptComponentImport = () => {
-        // 生成可能的组件路径
-        const possiblePaths = [
-          importPath,
-          `../views/${currentPath.replace(/^\//, '')}.vue`,
-          `../views${currentPath}.vue`,
-        ];
-        
-        // 如果当前路径包含子路径部分(如/system/user)，也尝试直接导入该组件
-        if (currentPath.split('/').length > 2) {
-          const lastPart = currentPath.split('/').pop();
-          if (lastPart) {
-            possiblePaths.push(`../views/${lastPart}.vue`);
-          }
-          
-          // 尝试按目录结构组织的组件路径
-          const pathParts = currentPath.replace(/^\//, '').split('/');
-          if (pathParts.length >= 2) {
-            possiblePaths.push(`../views/${pathParts[0]}/${pathParts.slice(1).join('/')}.vue`);
-          }
-        }
-        
-        // 查找第一个存在的组件路径
-        for (const path of possiblePaths) {
-          if (viewModules[path]) {
-            return () => viewModules[path]();
-          }
-        }
-        
-        // 如果都找不到，返回404组件
-        return () => import('@/views/NotFound.vue');
-      };
-      
-      component = attemptComponentImport();
+      if (viewModules[importPath]) {
+        component = () => viewModules[importPath]();
+      } else {
+        console.warn('未找到组件:', importPath);
+        component = () => import('@/views/NotFound.vue');
+      }
     } else {
-      // 如果没有定义组件但有子路由，使用布局组件
+      // 如果没有定义组件但有子路由，使用轻量容器 RouteView，避免重复渲染主布局
       if (children && children.length > 0) {
-        component = () => import('@/layout/BasicLayout.vue');
+        component = () => import('@/layout/RouteView.vue');
       } else {
         // 既没有组件又没有子路由，使用NotFound
         component = () => import('@/views/NotFound.vue');
@@ -322,7 +291,8 @@ function transformRoutes(routes: any[], parentPath: string = ''): RouteRecordRaw
     // 创建路由对象
     const transformedRoute: any = {
       path: currentPath,
-      name: route.name || currentPath.replace(/^\//, '').replace(/\//g, '-'),
+      // 使用路径生成唯一的路由名称，避免name字段冲突
+      name: currentPath.replace(/^\//, '').replace(/\//g, '-'),
       component,
       meta: {
         title: meta?.title || route.title || route.name,

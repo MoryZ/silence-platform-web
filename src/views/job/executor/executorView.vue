@@ -4,6 +4,7 @@ import { message, Modal, Tag } from 'ant-design-vue';
 import Draggable from 'vuedraggable';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
+import ColumnSettings from '@/components/ColumnSettings.vue';
 import { getJobExecutors, createJobExecutor, updateJobExecutor, deleteJobExecutor, type JobExecutor, type JobExecutorParams } from '@/api/job/executor';
 import { formatDate } from '@/utils/common';
 
@@ -33,6 +34,7 @@ const allColumns = ref([
 ]);
 const checkedKeys = ref(allColumns.value.filter(c => c.visible).map(c => c.key));
 const tableColumns = computed(() => allColumns.value.filter(col => checkedKeys.value.includes(col.key)));
+const columnSettingVisible = ref(false);
 
 function onCheckColumn(key: string, checked: boolean) {
   if (checked) {
@@ -202,36 +204,11 @@ fetchData();
         <a-button type="primary" style="margin-right: 8px;" @click="handleAdd">新增</a-button>
         <a-button danger style="margin-right: 8px;" @click="handleBatchDelete">批量删除</a-button>
         <a-button style="margin-right: 8px;" @click="handleRefresh">刷新</a-button>
-        <a-dropdown :trigger="['click']" placement="bottomRight">
-          <template #overlay>
-            <div class="column-setting-popover">
-              <Draggable
-                v-model="allColumns"
-                item-key="key"
-                handle=".drag-handle"
-                animation="200"
-              >
-                <template #item="{ element }">
-                  <div class="column-setting-item">
-                    <span class="drag-handle">☰</span>
-                    <a-checkbox
-                      :checked="checkedKeys.includes(element.key)"
-                      @change="onCheckColumn(element.key, $event.target.checked)"
-                    >
-                      {{ element.title }}
-                    </a-checkbox>
-                  </div>
-                </template>
-              </Draggable>
-            </div>
-          </template>
-          <a-button>
-            <template #icon>
-              <svg width="1em" height="1em" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 928c-229.75 0-416-186.25-416-416S282.25 96 512 96s416 186.25 416 416-186.25 416-416 416zm0-64c194.13 0 352-157.87 352-352S706.13 160 512 160 160 317.87 160 512s157.87 352 352 352zm-32-480v192h64V384h-64zm0 256v64h64v-64h-64z"></path></svg>
-            </template>
-            列设置
-          </a-button>
-        </a-dropdown>
+        <ColumnSettings
+          :columns="allColumns"
+          v-model="checkedKeys"
+          @update:columns="val => allColumns = val as any"
+        />
       </div>
 
       <CommonPagination
@@ -292,6 +269,8 @@ fetchData();
         </div>
       </a-form>
     </a-drawer>
+
+    
   </div>
 </template>
 
