@@ -140,7 +140,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:visible', 'save', 'timeFilterChange']);
+const emit = defineEmits(['update:visible', 'save', 'timeFilterChange', 'cancel']);
 
 const editorContainer = ref<HTMLElement | null>(null);
 const oldContentEditor = ref<HTMLElement | null>(null);
@@ -270,6 +270,7 @@ const handleOk = () => {
 // 处理取消
 const handleCancel = () => {
   emit('update:visible', false);
+  emit('cancel');
   if (editor) {
     editor.dispose();
     editor = null;

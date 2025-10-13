@@ -641,9 +641,16 @@ onMounted(() => {
   };
   mediaQuery.addEventListener('change', handleChange);
   
+  // 监听打开设置抽屉的自定义事件
+  const handleOpenSettings = () => {
+    open.value = true;
+  };
+  window.addEventListener('open-settings-drawer', handleOpenSettings);
+  
   // 组件卸载时清理
   onUnmounted(() => {
     mediaQuery.removeEventListener('change', handleChange);
+    window.removeEventListener('open-settings-drawer', handleOpenSettings);
   });
 });
 
@@ -662,17 +669,26 @@ const saveSettings = () => {
   open.value = false;
 };
 
-const clearAndLogout = () => {
-  localStorage.removeItem('app-settings');
-  Object.assign(settings, {
-    layout: 'double',
-    contentMode: 'fluid',
-    language: 'zh_CN',
-  });
-  message.success('已清空缓存，即将退出登录');
-  setTimeout(() => {
-    window.location.href = '/login';
-  }, 1500);
+const clearAndLogout = async () => {
+  try {
+    // 清空本地缓存
+    localStorage.removeItem('app-settings');
+    Object.assign(settings, {
+      layout: 'double',
+      contentMode: 'fluid',
+      language: 'zh_CN',
+    });
+    
+    // 调用退出登录 API
+    const { useUserStore } = await import('@/stores/user');
+    const userStore = useUserStore();
+    await userStore.handleLogout();
+    
+    message.success('已清空缓存并退出登录');
+  } catch (error) {
+    console.error('退出登录失败:', error);
+    message.error('退出登录失败');
+  }
 };
 </script>
 

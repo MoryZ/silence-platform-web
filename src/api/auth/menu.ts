@@ -50,7 +50,7 @@ export function getMenuTree(): Promise<Menu[]> {
  * 获取菜单列表
  * @returns 菜单树数据
  */
-export function getMenuList(): Promise<MenuResponse[]> {
+export function getMenuList() {
   return request.get('/api/v1/menus/list');
 }
 

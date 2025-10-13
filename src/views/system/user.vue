@@ -9,66 +9,75 @@
         </a-button>
       </template>
       
-      <!-- 搜索表单 -->
-      <a-form layout="inline" :model="searchForm" @finish="handleSearch">
-        <a-form-item label="用户名" name="username">
-          <a-input v-model:value="searchForm.username" placeholder="请输入用户名" allow-clear />
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-select v-model:value="searchForm.status" placeholder="请选择状态" style="width: 120px" allow-clear>
-            <a-select-option :value="1">启用</a-select-option>
-            <a-select-option :value="0">禁用</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" html-type="submit">查询</a-button>
-          <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-        </a-form-item>
-      </a-form>
+      <!-- 搜索面板 -->
+      <search-panel
+        v-model="searchForm"
+        :fields="searchFields"
+        @search="handleSearch"
+        @reset="handleReset"
+        @update:modelValue="handleSearchFormUpdate"
+      />
 
       <!-- 用户表格 -->
-      <a-table
+      <common-pagination
         :columns="columns"
         :data-source="tableData"
         :loading="loading"
-        :pagination="pagination"
-        @change="handleTableChange"
+        :page-no="pagination.current"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
         row-key="id"
         style="margin-top: 16px"
+        @change="handleTableChange"
       >
-        <template #avatar="{ text }">
-          <a-avatar :src="text" />
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'avatar'">
+            <a-avatar :src="getAvatarUrl(text)" />
+          </template>
+          <template v-else-if="column.key === 'status'">
+            <a-switch 
+              :checked="text === true"
+              :loading="toggleLoading[record.id]"
+              :disabled="record.username === 'admin'"
+              @change="(checked: boolean) => handleToggleStatus(record, checked)"
+              size="small"
+              :style="{
+                backgroundColor: text === true ? '#1677ff' : '#d9d9d9',
+                borderColor: text === true ? '#1677ff' : '#d9d9d9'
+              }"
+            />
+          </template>
+          <template v-else-if="column.key === 'roles'">
+            <span v-if="record.username === 'admin'">超级管理员</span>
+            <span v-else>
+              {{ record.roleIds?.map((id: number) => roleOptions.find(role => role.id === id)?.name).filter(Boolean).join(', ') }}
+            </span>
+          </template>
+          <template v-else-if="column.key === 'createdDate'">
+            {{ formatDate(text) }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a-button type="link" size="small" @click="handleEdit(record)">
+                <template #icon><edit-outlined /></template>
+                编辑
+              </a-button>
+              <a-button type="link" size="small" @click="handleAssignRoles(record)">
+                <template #icon><user-switch-outlined /></template>
+                分配角色
+              </a-button>
+              <a-button type="link" size="small" @click="handleChangePassword(record)">
+                <template #icon><key-outlined /></template>
+                修改密码
+              </a-button>
+              <a-button type="link" status="danger" size="small" @click="handleDelete(record)">
+                <template #icon><delete-outlined /></template>
+                删除
+              </a-button>
+            </a-space>
+          </template>
         </template>
-        <template #status="{ text }">
-          <a-tag :color="text == 1 ? 'success' : 'error'">
-            {{ text == 1 ? '启用' : '禁用' }}
-          </a-tag>
-        </template>
-        <template #roles="{ record }">
-          <span v-if="record.username === 'admin'">超级管理员</span>
-          <span v-else>
-            {{ record.roleIds?.map((id: number) => roleOptions.find(role => role.id === id)?.name).filter(Boolean).join(', ') }}
-          </span>
-        </template>
-        <template #action="{ record }">
-          <a-space>
-            <a-button type="link" size="small" @click="handleEdit(record)">
-              <template #icon><edit-outlined /></template>
-              编辑
-            </a-button>
-            <a-button type="link" size="small" @click="handleToggleStatus(record)">
-              <template #icon>
-                <component :is="record.status == 1 ? 'stop-outlined' : 'check-outlined'" />
-              </template>
-              {{ record.status == 1 ? '禁用' : '启用' }}
-            </a-button>
-            <a-button type="link" status="danger" size="small" @click="handleDelete(record)">
-              <template #icon><delete-outlined /></template>
-              删除
-            </a-button>
-          </a-space>
-        </template>
-      </a-table>
+      </common-pagination>
     </a-card>
 
     <!-- 用户表单弹窗 -->
@@ -86,15 +95,16 @@
         :rules="rules"
         :label-col="{ span: 6 }"
         :wrapper-col="{ span: 16 }"
+        id="user-form"
       >
         <a-form-item label="用户名" name="username">
-          <a-input v-model:value="form.username" placeholder="请输入用户名" />
+          <a-input v-model:value="form.username" placeholder="请输入用户名" autocomplete="username" />
         </a-form-item>
         <a-form-item label="密码" name="password" v-if="!form.id">
-          <a-input-password v-model:value="form.password" placeholder="请输入密码" />
+          <a-input-password v-model:value="form.password" placeholder="请输入密码" autocomplete="new-password" />
         </a-form-item>
         <a-form-item label="昵称" name="nickname">
-          <a-input v-model:value="form.nickname" placeholder="请输入昵称" />
+          <a-input v-model:value="form.nickname" placeholder="请输入昵称" autocomplete="nickname" />
         </a-form-item>
         <a-form-item label="头像" name="avatar">
           <a-radio-group v-model:value="form.avatar" button-style="solid">
@@ -105,10 +115,10 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item label="邮箱" name="email">
-          <a-input v-model:value="form.email" placeholder="请输入邮箱" />
+          <a-input v-model:value="form.email" placeholder="请输入邮箱" autocomplete="email" />
         </a-form-item>
         <a-form-item label="电话" name="phone">
-          <a-input v-model:value="form.phone" placeholder="请输入电话号码" />
+          <a-input v-model:value="form.phone" placeholder="请输入电话号码" autocomplete="tel" />
         </a-form-item>
         <a-form-item label="角色" name="roleIds">
           <a-select
@@ -127,20 +137,95 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 修改密码弹窗 -->
+    <a-modal
+      v-model:open="showPasswordModal"
+      title="修改密码"
+      ok-text="确定"
+      cancel-text="取消"
+      @ok="handlePasswordModalOk"
+      @cancel="handlePasswordModalCancel"
+    >
+      <a-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }"
+      >
+        <a-form-item label="用户名" name="username">
+          <a-input v-model:value="passwordForm.username" disabled />
+        </a-form-item>
+        <a-form-item label="新密码" name="newPassword">
+          <a-input-password v-model:value="passwordForm.newPassword" placeholder="请输入新密码" />
+        </a-form-item>
+        <a-form-item label="确认密码" name="confirmPassword">
+          <a-input-password v-model:value="passwordForm.confirmPassword" placeholder="请再次输入新密码" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 角色分配弹窗 -->
+    <a-modal
+      v-model:open="showRoleModal"
+      title="分配角色"
+      ok-text="确定"
+      cancel-text="取消"
+      @ok="handleRoleModalOk"
+      @cancel="handleRoleModalCancel"
+    >
+      <a-form
+        ref="roleFormRef"
+        :model="roleForm"
+        :rules="roleRules"
+        :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }"
+      >
+        <a-form-item label="用户名" name="username">
+          <a-input v-model:value="roleForm.username" disabled />
+        </a-form-item>
+        <a-form-item label="当前角色" name="currentRoles">
+          <a-tag v-for="role in getCurrentRoleNames()" :key="role" color="blue">
+            {{ role }}
+          </a-tag>
+          <span v-if="!getCurrentRoleNames().length" style="color: #999;">暂无角色</span>
+        </a-form-item>
+        <a-form-item label="分配角色" name="roleIds">
+          <a-select
+            v-model:value="roleForm.roleIds"
+            mode="multiple"
+            placeholder="请选择角色"
+            style="width: 100%"
+            :options="roleOptions"
+            :field-names="{ label: 'name', value: 'id' }"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 扩展 dayjs 插件
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import { 
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  CheckOutlined,
-  StopOutlined
+  KeyOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
 import { 
   disableUser, 
   enableUser, 
@@ -148,9 +233,17 @@ import {
   getUserList, 
   addUser,
   updateUser,
-  User 
+  User, 
+  resetPassword
 } from '@/api/auth/user'
 import { getRoleList, getRoles, Role, RoleResponse } from '@/api/auth/role'
+
+// 静态导入头像图片
+import bubbleImg from '@/assets/images/bubble.png'
+import cuteImg from '@/assets/images/cute.png'
+import doraemonImg from '@/assets/images/doraemon.png'
+import girlImg from '@/assets/images/girl.png'
+import workImg from '@/assets/images/work.png'
 
 // 表格列定义
 const columns = [
@@ -163,7 +256,6 @@ const columns = [
     title: '角色',
     dataIndex: 'roles',
     key: 'roles',
-    slots: { customRender: 'roles' },
   },
   {
     title: '昵称',
@@ -174,7 +266,6 @@ const columns = [
     title: '头像',
     dataIndex: 'avatar',
     key: 'avatar',
-    slots: { customRender: 'avatar' },
   },
   {
     title: '邮箱',
@@ -190,7 +281,6 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    slots: { customRender: 'status' },
   },
   {
     title: '创建时间',
@@ -200,7 +290,6 @@ const columns = [
   {
     title: '操作',
     key: 'action',
-    slots: { customRender: 'action' },
     width: 200,
     fixed: 'right'
   },
@@ -276,23 +365,148 @@ const rules = {
 // 角色选项
 const roleOptions = ref<Role[]>([]);
 
+// 状态切换加载状态
+const toggleLoading = ref<Record<number, boolean>>({});
+
+// 修改密码相关
+const showPasswordModal = ref(false);
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  id: undefined,
+  username: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
+// 角色分配相关
+const showRoleModal = ref(false);
+const roleFormRef = ref<FormInstance>();
+const roleForm = reactive({
+  id: undefined,
+  username: '',
+  roleIds: [] as number[]
+});
+
+// 修改密码验证规则
+const passwordRules = {
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_: any, value: string) => {
+        if (value && value !== passwordForm.newPassword) {
+          return Promise.reject(new Error('两次输入的密码不一致'));
+        }
+        return Promise.resolve();
+      },
+      trigger: 'blur'
+    }
+  ]
+};
+
+// 角色分配验证规则
+const roleRules = {
+  roleIds: [{ required: true, message: '请选择至少一个角色', type: 'array', trigger: 'change' }]
+};
+
+// 搜索字段配置
+const searchFields = [
+  {
+    key: 'username',
+    label: '用户名',
+    type: 'input' as const,
+    placeholder: '请输入用户名'
+  },
+  {
+    key: 'status',
+    label: '状态',
+    type: 'select' as const,
+    placeholder: '请选择状态',
+    options: [
+      { label: '启用', value: 'true' },
+      { label: '禁用', value: 'false' }
+    ]
+  }
+];
+
+// 头像映射
+const avatarMap: Record<string, string> = {
+  '/src/assets/images/bubble.png': bubbleImg,
+  '/src/assets/images/cute.png': cuteImg,
+  '/src/assets/images/doraemon.png': doraemonImg,
+  '/src/assets/images/girl.png': girlImg,
+  '/src/assets/images/work.png': workImg,
+};
+
+// 头像处理函数
+const getAvatarUrl = (avatarPath: string) => {
+  if (!avatarPath) return '';
+  
+  // 如果路径已经是完整的 URL，直接返回
+  if (avatarPath.startsWith('http')) return avatarPath;
+  
+  // 使用静态导入的图片映射
+  if (avatarMap[avatarPath]) {
+    return avatarMap[avatarPath];
+  }
+  
+  // 如果路径以 / 开头，直接返回
+  if (avatarPath.startsWith('/')) {
+    return avatarPath;
+  }
+  
+  // 其他情况，添加 / 前缀
+  return '/' + avatarPath;
+};
+
+// 日期格式化函数
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  try {
+    // 将 UTC 时间转换为本地时间（UTC+8）
+    return dayjs(dateString).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.warn('日期格式化失败:', dateString, error);
+    return dateString;
+  }
+};
+
 // 方法定义
+const handleSearchFormUpdate = (newForm: any) => {
+  Object.assign(searchForm, newForm);
+};
+
 const handleSearch = () => {
-  getUserList(searchForm).then((res) => {
+  // 处理搜索参数，将字符串转换为布尔值
+  const searchParams = {
+    username: searchForm.username || undefined,
+    status: searchForm.status === 'true' ? true : searchForm.status === 'false' ? false : undefined,
+    pageNo: searchForm.pageNo,
+    pageSize: searchForm.pageSize
+  };
+  
+  getUserList(searchParams).then((res) => {
     tableData.value = res.data;
-    pagination.total = res.data;
+    pagination.total = res.total;
   });
 };
 
 const handleReset = () => {
   searchForm.username = '';
   searchForm.status = undefined;
+  searchForm.pageNo = 1;
+  pagination.current = 1;
   handleSearch();
 };
 
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current;
-  pagination.pageSize = pag.pageSize;
+const handleTableChange = (pageNo: number, pageSize: number) => {
+  pagination.current = pageNo;
+  pagination.pageSize = pageSize;
+  searchForm.pageNo = pageNo;
+  searchForm.pageSize = pageSize;
   handleSearch();
 };
 
@@ -334,7 +548,7 @@ const handleModalOk = async () => {
 
     if (form.id) {
       // 编辑用户
-      await updateUser(userData);
+      await updateUser(form.id, userData);
       message.success('更新成功');
     } else {
       // 新增用户
@@ -344,7 +558,9 @@ const handleModalOk = async () => {
     showModal.value = false;
     handleSearch();
   } catch (error: any) {
-    message.error(form.id ? '更新失败' : '新增失败');
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || (form.id ? '更新失败' : '新增失败');
+    message.error(errorMessage);
     console.error('操作失败:', error);
   }
 };
@@ -354,19 +570,24 @@ const handleModalCancel = () => {
   formRef.value?.resetFields();
 };
 
-const handleToggleStatus = async (record: any) => {
+const handleToggleStatus = async (record: any, checked: boolean) => {
+  toggleLoading.value[record.id] = true;
   try {
-    if (record.status === 1) {
-      await disableUser(record.id);
-      message.success('禁用成功');
-    } else {
+    if (checked) {
       await enableUser(record.id);
       message.success('启用成功');
+    } else {
+      await disableUser(record.id);
+      message.success('禁用成功');
     }
     handleSearch();
   } catch (error: any) {
-    message.error(record.status === 1 ? '禁用失败' : '启用失败');
-    console.error('操作失败:', error);
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || (checked ? '启用失败' : '禁用失败');
+    message.error(errorMessage);
+    console.error('状态切换失败:', error);
+  } finally {
+    toggleLoading.value[record.id] = false;
   }
 };
 
@@ -376,16 +597,86 @@ const handleDelete = async (record: any) => {
     message.success('删除成功');
     handleSearch();
   } catch (error: any) {
-    message.error('删除失败');
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || '删除失败';
+    message.error(errorMessage);
     console.error('删除失败:', error);
   }
+};
+
+const handleChangePassword = (record: any) => {
+  passwordForm.id = record.id;
+  passwordForm.username = record.username;
+  passwordForm.newPassword = '';
+  passwordForm.confirmPassword = '';
+  showPasswordModal.value = true;
+};
+
+const handlePasswordModalOk = async () => {
+  try {
+    await passwordFormRef.value?.validate();
+    // 这里应该调用修改密码的 API
+    await resetPassword(passwordForm.id!, passwordForm.newPassword);
+    message.success('密码修改成功');
+    showPasswordModal.value = false;
+    passwordFormRef.value?.resetFields();
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || '密码修改失败';
+    message.error(errorMessage);
+    console.error('密码修改失败:', error);
+  }
+};
+
+const handlePasswordModalCancel = () => {
+  showPasswordModal.value = false;
+  passwordFormRef.value?.resetFields();
+};
+
+// 角色分配相关方法
+const handleAssignRoles = (record: any) => {
+  roleForm.id = record.id;
+  roleForm.username = record.username;
+  roleForm.roleIds = record.roleIds || [];
+  showRoleModal.value = true;
+};
+
+const getCurrentRoleNames = () => {
+  if (!roleForm.roleIds || !roleForm.roleIds.length) return [];
+  return roleForm.roleIds
+    .map((id: number) => roleOptions.value.find(role => role.id === id)?.name)
+    .filter(Boolean);
+};
+
+const handleRoleModalOk = async () => {
+  try {
+    await roleFormRef.value?.validate();
+    // 调用更新用户角色的 API
+    await updateUser(roleForm.id!, {
+      roleIds: roleForm.roleIds
+    });
+    message.success('角色分配成功');
+    showRoleModal.value = false;
+    roleFormRef.value?.resetFields();
+    handleSearch(); // 刷新列表
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || '角色分配失败';
+    message.error(errorMessage);
+    console.error('角色分配失败:', error);
+  }
+};
+
+const handleRoleModalCancel = () => {
+  showRoleModal.value = false;
+  roleFormRef.value?.resetFields();
 };
 
 // 初始化
 onMounted(() => {
   handleSearch();
   getRoleList().then((res) => {
-    roleOptions.value = res.data;
+    roleOptions.value = res;
   });
 });
 </script>
@@ -403,6 +694,48 @@ onMounted(() => {
       &:hover {
         color: #ff7875;
       }
+    }
+  }
+
+  // 状态切换开关样式优化
+  :deep(.ant-switch) {
+    &.ant-switch-checked {
+      background-color: #1677ff !important;
+      border-color: #1677ff !important;
+      
+      .ant-switch-handle {
+        &::before {
+          background-color: #fff;
+        }
+      }
+    }
+    
+    &:not(.ant-switch-checked) {
+      background-color: #d9d9d9 !important;
+      border-color: #d9d9d9 !important;
+      
+      .ant-switch-handle {
+        &::before {
+          background-color: #fff;
+        }
+      }
+    }
+    
+    &.ant-switch-disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .ant-switch-handle {
+      &::before {
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    .ant-switch-inner {
+      color: #fff;
+      font-weight: 500;
     }
   }
 }

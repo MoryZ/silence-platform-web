@@ -9,60 +9,56 @@
         </a-button>
       </template>
 
-      <!-- 搜索表单 -->
-      <a-form layout="inline" :model="searchForm" @finish="handleSearch">
-        <a-form-item label="角色名称" name="name">
-          <a-input v-model:value="searchForm.name" placeholder="请输入角色名称" allow-clear />
-        </a-form-item>
-        <a-form-item label="角色名称" name="code">
-          <a-input v-model:value="searchForm.code" placeholder="请输入角色编码" allow-clear />
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-select v-model:value="searchForm.status" placeholder="请选择状态" style="width: 120px" allow-clear>
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">禁用</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" html-type="submit">查询</a-button>
-          <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-        </a-form-item>
-      </a-form>
+      <!-- 搜索面板 -->
+      <SearchPanel
+        :fields="searchFields"
+        :model-value="searchForm"
+        @update:model-value="handleSearchFormUpdate"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
 
       <!-- 角色表格 -->
-      <a-table
+      <CommonPagination
         :columns="columns"
         :data-source="tableData"
         :loading="loading"
-        :pagination="pagination"
+        :page-no="pagination.pageNo"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
         @change="handleTableChange"
         row-key="id"
         style="margin-top: 16px"
       >
-        <template #status="{ text }">
-          <a-tag :color="text ? 'success' : 'error'">
-            {{ text ? '启用' : '禁用' }}
-          </a-tag>
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'status'">
+            <a-switch 
+              :checked="text === true"
+              :loading="toggleLoading[record.id]"
+              @change="(checked: boolean) => handleToggleStatus(record, checked)"
+              size="small"
+              :style="{
+                backgroundColor: text === true ? '#1677ff' : '#d9d9d9',
+                borderColor: text === true ? '#1677ff' : '#d9d9d9'
+              }"
+            />
+          </template>
+          <template v-else-if="column.key === 'createdDate'">
+            {{ formatDate(text) }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a @click="handleEdit(record)">编辑</a>
+              <a-divider type="vertical" />
+              <a @click="handlePermission(record)">权限设置</a>
+              <a-divider type="vertical" />
+              <a-popconfirm title="确定要删除该角色吗？" @confirm="handleDelete(record)">
+                <a class="danger">删除</a>
+              </a-popconfirm>
+            </a-space>
+          </template>
         </template>
-        <template #action="{ record }">
-          <a-space>
-            <a @click="handleEdit(record)">编辑</a>
-            <a-divider type="vertical" />
-            <a @click="handlePermission(record)">权限设置</a>
-            <a-divider type="vertical" />
-            <a-popconfirm
-              :title="'确定要' + (record.status ? '禁用' : '启用') + '该角色吗？'"
-              @confirm="handleToggleStatus(record)"
-            >
-              <a>{{ record.status ? '禁用' : '启用' }}</a>
-            </a-popconfirm>
-            <a-divider type="vertical" />
-            <a-popconfirm title="确定要删除该角色吗？" @confirm="handleDelete(record)">
-              <a class="danger">删除</a>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
+      </CommonPagination>
     </a-card>
 
     <!-- 角色表单弹窗 -->
@@ -86,6 +82,9 @@
         </a-form-item>
         <a-form-item label="角色编码" name="code">
           <a-input v-model:value="form.code" :disabled="!!form.id" placeholder="请输入角色编码" />
+        </a-form-item>
+        <a-form-item label="所属系统" name="appCode">
+          <a-input v-model:value="form.appCode" placeholder="请输入所属系统" />
         </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea v-model:value="form.description" placeholder="请输入角色描述" :rows="4" />
@@ -142,9 +141,9 @@
             @check="handleCheck"
             @select="handleSelect"
           >
-            <template #title="{ title, icon }">
+            <template #title="{ title, meta }">
               <span class="tree-node-title">
-                <component :is="icon || 'apartment-outlined'" />
+                <component :is="meta?.icon || 'apartment-outlined'" />
                 <span>{{ title }}</span>
               </span>
             </template>
@@ -167,6 +166,12 @@ import {
   ApartmentOutlined
 } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import { 
   getRoles, 
   createRole, 
@@ -179,7 +184,9 @@ import {
   disableRole,
   enableRole
 } from '@/api/auth/role';
-import { getMenuTree, MenuResponse } from '@/api/auth/menu';
+import { getMenuTree, Menu, MenuResponse } from '@/api/auth/menu';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
 
 // 表格列定义
 const columns = [
@@ -194,6 +201,11 @@ const columns = [
     key: 'code',
   },
   {
+    title: '所属系统',
+    dataIndex: 'appCode',
+    key: 'appCode',
+  },
+  {
     title: '描述',
     dataIndex: 'description',
     key: 'description',
@@ -202,7 +214,6 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    slots: { customRender: 'status' },
   },
   {
     title: '创建时间',
@@ -212,7 +223,6 @@ const columns = [
   {
     title: '操作',
     key: 'action',
-    slots: { customRender: 'action' },
   },
 ];
 
@@ -220,10 +230,43 @@ const columns = [
 const searchForm = reactive<RoleParams>({
   name: '',
   code: '',
+  appCode: '',
   status: undefined,
   pageNo: 1,
   pageSize: 10
 });
+
+// 搜索字段配置
+const searchFields = [
+  {
+    label: '角色名称',
+    key: 'name',
+    type: 'input' as const,
+    placeholder: '请输入角色名称'
+  },
+  {
+    label: '角色编码',
+    key: 'code',
+    type: 'input' as const,
+    placeholder: '请输入角色编码'
+  },
+  {
+    label: '所属系统',
+    key: 'appCode',
+    type: 'input' as const,
+    placeholder: '请输入所属系统'
+  },
+  {
+    label: '状态',
+    key: 'status',
+    type: 'select' as const,
+    placeholder: '请选择状态',
+    options: [
+      { label: '启用', value: 'true' },
+      { label: '禁用', value: 'false' }
+    ]
+  }
+];
 
 // 表格数据和分页
 const tableData = ref<Role[]>([]);
@@ -242,18 +285,23 @@ const form = reactive({
   id: undefined,
   name: '',
   code: '',
+  appCode: '',
   description: '',
   status: true,
 });
 
+// 状态切换加载状态
+const toggleLoading = ref<Record<number, boolean>>({});
+
 const rules = {
   name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
+  appCode: [{ required: true, message: '请输入所属系统', trigger: 'blur' }],
 };
 
 // 权限设置相关
 const showPermissionModal = ref(false);
-const permissionTree = ref<MenuResponse[]>([]);
+const permissionTree = ref<any[]>([]);
 const checkedPermissions = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
 const expandedKeys = ref<string[]>([]);
@@ -262,7 +310,7 @@ const currentRole = ref<any>(null);
 // 计算所有可选的权限key
 const allPermissionKeys = computed(() => {
   const keys: string[] = [];
-  const traverse = (nodes: MenuResponse[]) => {
+  const traverse = (nodes: any[]) => {
     nodes.forEach(node => {
       keys.push(node.key);
       if (node.children?.length) {
@@ -278,6 +326,27 @@ const allPermissionKeys = computed(() => {
 const isExpandAll = computed(() => {
   return expandedKeys.value.length === allPermissionKeys.value.length;
 });
+
+// 格式化日期
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  try {
+    return dayjs(dateString).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.warn('日期格式化失败:', dateString, error);
+    return dateString;
+  }
+};
+
+// 转换菜单数据为树组件格式
+const transformMenuToTree = (menus: Menu[]): any[] => {
+  return menus.map(menu => ({
+    key: menu.id.toString(),
+    title: menu.name,
+    meta: menu.meta,
+    children: menu.children?.length ? transformMenuToTree(menu.children) : undefined
+  }));
+};
 
 // 全选
 const handleCheckAll = () => {
@@ -340,8 +409,18 @@ const getChildKeys = (node: any): string[] => {
 };
 
 // 方法定义
+const handleSearchFormUpdate = (newForm: any) => {
+  Object.assign(searchForm, newForm);
+};
+
 const handleSearch = () => {
-  getRoles(searchForm).then((res) => {
+  // 转换状态字段从字符串到数字
+  const searchParams = { ...searchForm };
+  if (searchParams.status !== undefined && typeof searchParams.status === 'string') {
+    searchParams.status = searchParams.status === 'true' ? 1 : 0;
+  }
+  
+  getRoles(searchParams).then((res) => {
     tableData.value = res.data;
     pagination.total = res.total;
   });
@@ -349,13 +428,15 @@ const handleSearch = () => {
 
 const handleReset = () => {
   searchForm.name = '';
-  searchForm.status = 1;
+  searchForm.code = '';
+  searchForm.appCode = '';
+  searchForm.status = undefined;
   handleSearch();
 };
 
-const handleTableChange = (pag: any) => {
-  pagination.pageNo = pag.current;
-  pagination.pageSize = pag.pageSize;
+const handleTableChange = (pageNo: number, pageSize: number) => {
+  searchForm.pageNo = pageNo;
+  searchForm.pageSize = pageSize;
   handleSearch();
 };
 
@@ -364,6 +445,7 @@ const handleAdd = () => {
   form.id = undefined;
   form.name = '';
   form.code = '';
+  form.appCode = '';
   form.description = '';
   form.status = true;
   showModal.value = true;
@@ -383,6 +465,7 @@ const handleModalOk = async () => {
       await updateRole(form.id, {
         name: form.name,
         code: form.code,
+        appCode: form.appCode,
         description: form.description,
         status: form.status
       });
@@ -391,6 +474,7 @@ const handleModalOk = async () => {
       await createRole({
         name: form.name,
         code: form.code,
+        appCode: form.appCode,
         description: form.description,
         status: form.status
       });
@@ -398,7 +482,10 @@ const handleModalOk = async () => {
     showModal.value = false;
     message.success('保存成功');
     handleSearch();
-  } catch (error) {
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || (form.id ? '更新失败' : '新增失败');
+    message.error(errorMessage);
     console.error('操作失败:', error);
   }
 };
@@ -413,15 +500,46 @@ const handlePermission = async (record: Role) => {
   showPermissionModal.value = true;
   
   try {
+    // 确保权限树已加载，如果没有则重新加载
+    if (permissionTree.value.length === 0) {
+      const data = await getMenuTree();
+      permissionTree.value = transformMenuToTree(data);
+      expandedKeys.value = permissionTree.value.map(node => node.key);
+    }
+    
     // 获取角色的权限列表
     const res = await getRolePermissions(record.id);
-    // 确保返回的是数组，如果为空则初始化为空数组
-    checkedPermissions.value = Array.isArray(res.data) ? res.data : [];
+    console.log('原始API响应:', res);
     
-    // 如果权限树已加载，设置展开所有节点
-    if (permissionTree.value.length > 0) {
-      expandedKeys.value = permissionTree.value.map(node => node.key as string);
+    // 处理不同的响应格式
+    let permissionIds: number[] = [];
+    if (Array.isArray(res)) {
+      // 直接返回数组
+      permissionIds = res;
+    } else if (res && Array.isArray(res.data)) {
+      // 返回 {data: []} 格式
+      permissionIds = res.data;
+    } else if (res && res.code === 200 && Array.isArray(res.data)) {
+      // 返回 {code: 200, data: []} 格式
+      permissionIds = res.data;
     }
+    
+    // 将数字权限ID转换为字符串，以匹配树组件的key格式
+    checkedPermissions.value = permissionIds.map((id: number) => id.toString());
+    
+    console.log('处理后的权限数据:', permissionIds);
+    console.log('转换后的权限keys:', checkedPermissions.value);
+    console.log('权限树数据:', permissionTree.value);
+    console.log('权限树所有keys:', allPermissionKeys.value);
+    
+    // 检查哪些权限在树中存在
+    const existingKeys = permissionIds.map((id: number) => id.toString()).filter((key: string) => 
+      allPermissionKeys.value.includes(key)
+    );
+    console.log('在权限树中存在的keys:', existingKeys);
+    
+    // 设置展开所有节点
+    expandedKeys.value = permissionTree.value.map(node => node.key);
   } catch (error) {
     console.error('获取权限列表失败:', error);
     message.error('获取权限列表失败');
@@ -432,12 +550,18 @@ const handlePermission = async (record: Role) => {
 
 const handlePermissionOk = async () => {
   try {
-    await setRolePermissions(currentRole.value.id, checkedPermissions.value);
+    // 将字符串权限keys转换回数字数组，以匹配后端API期望的格式
+    const permissionIds = checkedPermissions.value.map(key => parseInt(key));
+    console.log('保存的权限数据:', permissionIds);
+    
+    await setRolePermissions(currentRole.value.id, permissionIds);
     showPermissionModal.value = false;
     message.success('权限设置成功');
-  } catch (error) {
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || '设置权限失败';
+    message.error(errorMessage);
     console.error('设置权限失败:', error);
-    message.error('设置权限失败');
   }
 };
 
@@ -447,18 +571,24 @@ const handlePermissionCancel = () => {
   currentRole.value = null;
 };
 
-const handleToggleStatus = async (record: Role) => {
+const handleToggleStatus = async (record: Role, checked: boolean) => {
+  toggleLoading.value[record.id] = true;
   try {
-    if (record.status) {
-        await disableRole(record.id);
+    if (checked) {
+      await enableRole(record.id);
+      message.success('启用成功');
     } else {
-        await enableRole(record.id);
+      await disableRole(record.id);
+      message.success('禁用成功');
     }
-    message.success('操作成功');
     handleSearch();
-  } catch (error) {
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || (checked ? '启用失败' : '禁用失败');
+    message.error(errorMessage);
     console.error('状态切换失败:', error);
-    message.error('状态切换失败');
+  } finally {
+    toggleLoading.value[record.id] = false;
   }
 };
 
@@ -467,9 +597,11 @@ const handleDelete = async (record: Role) => {
     await deleteRole(record.id);
     message.success('删除成功');
     handleSearch();
-  } catch (error) {
+  } catch (error: any) {
+    // 显示后端返回的具体错误信息
+    const errorMessage = error?.response?.data?.message || error?.message || '删除失败';
+    message.error(errorMessage);
     console.error('删除失败:', error);
-    message.error('删除失败');
   }
 };
 
@@ -479,9 +611,9 @@ onMounted(async () => {
   try {
     // 获取权限树数据
     const data = await getMenuTree();
-    permissionTree.value = data;
+    permissionTree.value = transformMenuToTree(data);
     // 初始化展开所有节点
-    expandedKeys.value = permissionTree.value.map(node => node.key as string);
+    expandedKeys.value = permissionTree.value.map(node => node.key);
   } catch (error) {
     console.error('获取权限树失败:', error);
     message.error('获取权限树失败');
@@ -647,6 +779,50 @@ onMounted(async () => {
       .ant-tree-indent-unit {
         width: 24px;
       }
+    }
+  }
+
+  // 状态切换开关样式优化
+  :deep(.ant-switch) {
+    &.ant-switch-checked {
+      background-color: #1677ff !important;
+      border-color: #1677ff !important;
+      
+      .ant-switch-handle {
+        &::before {
+          background-color: #fff;
+        }
+      }
+    }
+    
+    &:not(.ant-switch-checked) {
+      background-color: #d9d9d9 !important;
+      border-color: #d9d9d9 !important;
+      
+      .ant-switch-handle {
+        &::before {
+          background-color: #fff;
+        }
+      }
+    }
+    
+    &.ant-switch-disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .ant-switch-handle {
+      &::before {
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+    }
+    
+    .ant-switch-inner {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
     }
   }
 }

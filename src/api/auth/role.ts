@@ -4,6 +4,7 @@ export interface Role {
   id: number;
   name: string;
   code: string;
+  appCode: string;
   description: string;
   status: boolean;
   createdDate: string;
@@ -18,6 +19,7 @@ export interface RoleResponse {
 export interface RoleParams {
   name?: string;
   code?: string;
+  appCode?: string;
   status?: number;
   pageNo?: number;
   pageSize?: number;
@@ -51,7 +53,7 @@ export function enableRole(id: number) {
   return request.put(`/api/v1/roles/${id}/enable`);
 }
 
-export function setRolePermissions(id: number, permissions: string[]) {
+export function setRolePermissions(id: number, permissions: number[]) {
   return request.put(`/api/v1/roles/${id}/permissions`,  permissions );
 }
 

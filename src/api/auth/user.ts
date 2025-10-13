@@ -31,6 +31,10 @@ export interface UserInfo {
   username: string;
   nickname: string;
   avatar: string;
+  email?: string;
+  phone?: string;
+  status?: boolean;
+  createdDate?: string;
   roles: string[];
   permissions: string[];
 }
@@ -86,13 +90,8 @@ export function getUserInfo(): Promise<UserInfo> {
   return request.get('/api/v1/users/info');
 }
 
-export function updatePassword(oldPassword: string, newPassword: string): Promise<any> {
-  return request.post('/api/v1/users/password', {
-    oldPassword,
+export function resetPassword(id: number, newPassword: string): Promise<any> {
+  return request.put(`/api/v1/users/${id}/resetPassword`, {
     newPassword
   });
-}
-
-export function resetPassword(id: number): Promise<any> {
-  return request.post(`/api/v1/users/${id}/reset-password`);
 } 

@@ -72,37 +72,6 @@ const pagination = ref({
 // 选择相关
 const selectedItems = ref<ConfigItem[]>([]);
 
-// 监听器
-watch([selectedComponents, currentEnv], () => {
-  if (selectedComponents.value.length && currentEnv.value) {
-    fetchEnvironments();
-  }
-}, { immediate: true });
-
-// 处理组件变化
-const handleComponentChange = () => {
-  // 组件变化时重置环境和数据
-  environments.value = [];
-  activeTabKey.value = '';
-  dataSource.value = [];
-  selectedItems.value = [];
-};
-
-// 处理环境变化
-const handleEnvChange = () => {
-  // 环境变化时重置数据
-  environments.value = [];
-  activeTabKey.value = '';
-  dataSource.value = [];
-  selectedItems.value = [];
-};
-
-// 处理环境标签页变化
-const handleEnvironmentChange = (key: string | number) => {
-  activeTabKey.value = key;
-  fetchData();
-};
-
 // 获取环境列表
 const fetchEnvironments = async () => {
   if (!selectedComponents.value.length || !currentEnv.value) return;
@@ -186,6 +155,37 @@ const handlePublish = (record: ConfigItem) => {
   // TODO: 实现发布功能
   message.info('发布功能待实现');
 };
+
+// 处理组件变化
+const handleComponentChange = () => {
+  // 组件变化时重置环境和数据
+  environments.value = [];
+  activeTabKey.value = '';
+  dataSource.value = [];
+  selectedItems.value = [];
+};
+
+// 处理环境变化
+const handleEnvChange = () => {
+  // 环境变化时重置数据
+  environments.value = [];
+  activeTabKey.value = '';
+  dataSource.value = [];
+  selectedItems.value = [];
+};
+
+// 处理环境标签页变化
+const handleEnvironmentChange = (key: string | number) => {
+  activeTabKey.value = key;
+  fetchData();
+};
+
+// 监听器 - 在所有函数定义之后
+watch([selectedComponents, currentEnv], () => {
+  if (selectedComponents.value.length && currentEnv.value) {
+    fetchEnvironments();
+  }
+}, { immediate: true });
 
 // 组件挂载时获取数据
 onMounted(() => {
