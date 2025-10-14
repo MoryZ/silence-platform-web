@@ -1,29 +1,15 @@
 <template>
   <div class="config-management">
-    <div class="table-header">
-      <div class="left-actions">
-        <a-button type="primary" @click="handleCloneNamespace">克隆命名空间</a-button>
-        <a-button 
-          type="primary" 
-          :disabled="!selectedRowKeys.length"
-          @click="handleBatchPublish"
-        >
-          批量发布
-        </a-button>
-      </div>
-      <div class="right-actions">
-        <a-button type="primary" @click="handleAdd">新增配置</a-button>
-      </div>
-    </div>
-    
-    <a-table
+    <CommonPagination
       :columns="columns"
       :data-source="dataSource"
-      :pagination="pagination"
-      :row-key="record => record.id"
-      :row-selection="{ selectedRowKeys, onChange: onSelectChange }"
-      @change="handleTableChange"
       :loading="loading"
+      :row-key="'id'"
+      v-model:pageNo="innerPagination.pageNo"
+      v-model:pageSize="innerPagination.pageSize"
+      :total="pagination.total"
+      :table-props="{ rowSelection: { selectedRowKeys, onChange: onSelectChange } }"
+      @change="handleCommonChange"
     >
       <template #bodyCell="{ column, record }">
         <!-- 发布状态列 -->
@@ -60,7 +46,15 @@
           </div>
         </template>
       </template>
-    </a-table>
+    </CommonPagination>
+
+    <!-- 表格下方操作按钮（克隆/比较/同步/批量发布） -->
+    <div class="bottom-actions">
+      <a-button type="primary" @click="handleCloneNamespace">克隆命名空间</a-button>
+      <a-button @click="handleCompare">比较配置</a-button>
+      <a-button @click="handleSync">同步配置</a-button>
+      <a-button type="primary" :disabled="!selectedRowKeys.length" @click="handleBatchPublish">批量发布</a-button>
+    </div>
 
     <!-- 新增配置弹窗 -->
     <a-modal
@@ -153,8 +147,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, nextTick, onUnmounted } from 'vue';
+import { ref, computed, nextTick, onUnmounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import CommonPagination from '@/components/CommonPagination.vue'
 import type { FormInstance } from 'ant-design-vue';
 import { deleteConfigItem, updateConfigContent, createConfigItem } from '../../../api/config/configItem';
 import type { ConfigItem } from '../../../api/config/configItem';
@@ -166,7 +161,7 @@ import * as monaco from 'monaco-editor';
 
 interface Props {
   dataSource: ConfigItem[];
-  pagination: any;
+  pagination: { pageNo: number; pageSize: number; total: number };
   loading: boolean;
   environments: ConfigEnvironment[];
   activeTabKey: string | number;
@@ -175,7 +170,7 @@ interface Props {
 
 interface Emits {
   (e: 'update:dataSource', data: ConfigItem[]): void;
-  (e: 'update:pagination', data: any): void;
+  (e: 'update:pagination', data: { pageNo: number; pageSize: number }): void;
   (e: 'view-release-history', record: ConfigItem): void;
   (e: 'publish', record: ConfigItem): void;
   (e: 'refresh-data'): void;
@@ -183,6 +178,22 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+// 暴露“新增配置”方法供父组件调用
+function openAddModal() {
+  handleAdd()
+}
+defineExpose({ openAddModal })
+
+function handleCompare() {
+  // 预留：比较配置逻辑
+  console.log('比较配置')
+}
+
+function handleSync() {
+  // 预留：同步配置逻辑
+  console.log('同步配置')
+}
 
 // 表格列定义
 const columns = [
@@ -230,13 +241,13 @@ const columns = [
 ];
 
 // 状态映射
-const statusMap = {
+const statusMap: Record<number, { text: string; color: string }> = {
   1: { text: '已保存', color: 'warning' },
   2: { text: '已发布', color: 'success' },
 };
 
 // 格式类型映射
-const formatMap = {
+const formatMap: Record<number, string> = {
   1: 'YML',
   2: 'Properties',
   3: 'TXT',
@@ -245,7 +256,7 @@ const formatMap = {
 };
 
 // 类型映射
-const typeMap = {
+const typeMap: Record<number, string> = {
   1: '私有',
   2: '公共',
 };
@@ -306,15 +317,18 @@ const envName = computed(() =>
   props.environments.find(env => env.id === Number(props.activeTabKey))?.displayName
 );
 
-// 处理分页变化
-const handleTableChange = (pag: any) => {
-  emit('update:pagination', {
-    ...props.pagination,
-    pageNo: pag.pageNo,
-    pageSize: pag.pageSize
-  });
-  emit('refresh-data');
-};
+// 内部分页用于双向绑定 CommonPagination
+const innerPagination = ref({ pageNo: props.pagination.pageNo, pageSize: props.pagination.pageSize })
+
+watch(() => props.pagination, (val) => {
+  innerPagination.value.pageNo = val.pageNo
+  innerPagination.value.pageSize = val.pageSize
+})
+
+const handleCommonChange = (pageNo: number, pageSize: number) => {
+  emit('update:pagination', { pageNo, pageSize })
+  emit('refresh-data')
+}
 
 // 处理查看
 const handleView = async (record: ConfigItem) => {
@@ -547,21 +561,10 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .config-management {
-  .table-header {
-    margin-bottom: 16px;
+  .bottom-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .left-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .right-actions {
-      display: flex;
-      gap: 8px;
-    }
+    gap: 8px;
+    margin-top: 16px;
   }
 
   .action-buttons {

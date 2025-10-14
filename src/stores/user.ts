@@ -21,9 +21,9 @@ interface UserState {
 export const useUserStore = defineStore("user", () => {
   const router = useRouter();
   
-  // 状态
-  const token = ref<string>('');
-  const userInfo = ref<UserInfo | null>(null);
+  // 状态（从本地存储恢复）
+  const token = ref<string>(ls.get(TOKEN) || '');
+  const userInfo = ref<UserInfo | null>(ls.get(USER_INFO) || null);
   
   // 获取
   const getToken = () => token.value;

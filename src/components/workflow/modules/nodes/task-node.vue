@@ -4,6 +4,7 @@ import { message } from 'ant-design-vue';
 import { failStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
 import { fetchNodeRetry, fetchNodeStop } from '@/api/job/workflow';
 import { $t } from '@/locales';
+import { useWorkflowStore } from '@/store/modules/workflow';
 import LabelList from '@/components/common/label-list.vue';
 import TaskDrawer from '../drawer/task-drawer.vue';
 import TaskDetail from '../detail/task-detail.vue';
@@ -46,6 +47,7 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 const nodeConfig = ref<NodeModelType>({});
+const store = useWorkflowStore();
 
 watch(
   () => props.modelValue,
@@ -144,10 +146,10 @@ const detailDrawer = ref<boolean[]>([]);
 
 const showDetail = (node: any, detailIndex: number) => {
   detailIds.value = [];
-  // 简化逻辑，直接显示详情
-  node.jobBatchList
-    ?.sort((a: any, b: any) => a.taskBatchStatus - b.taskBatchStatus)
-    .forEach((item: any) => {
+  if (store.type === 2) {
+    node.jobBatchList
+      ?.sort((a: any, b: any) => a.taskBatchStatus - b.taskBatchStatus)
+      .forEach((item: any) => {
         if (item.id) {
           detailIds.value?.push(item.id);
         } else if (item.jobId) {
@@ -156,6 +158,10 @@ const showDetail = (node: any, detailIndex: number) => {
       });
     if (node.jobTask?.jobId) {
       detailId.value = node.jobTask?.jobId?.toString();
+    }
+    if (!detailIds.value || detailIds.value.length === 0) {
+      detailDrawer.value[detailIndex] = true;
+      return;
     }
     cardDrawer.value = true;
   } else {

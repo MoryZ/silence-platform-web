@@ -18,10 +18,26 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-     '^(/auth|/config|/job|/mq)/api/v1': {
-    target: 'http://localhost:9000',
-    changeOrigin: true,
-  }
+        '^/auth/api/v1': {
+          target: 'http://localhost:8096',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/auth\/api\/v1/, '/api/v1'),
+        },
+        '^/config/api/v1': {
+          target: 'http://localhost:8097',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/config\/api\/v1/, '/api/v1'),
+        },
+        '^/job/api/v1': {
+          target: 'http://localhost:8098',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/job\/api\/v1/, '/api/v1'),
+        },
+        '^/mq/api/v1': {
+          target: 'http://localhost:8099',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/mq\/api\/v1/, '/api/v1'),
+        },
     },
   },
   optimizeDeps: {

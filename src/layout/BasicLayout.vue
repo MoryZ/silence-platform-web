@@ -115,12 +115,24 @@ watch(() => route.path, () => {
 })
 
 function updateMenuList() {
-  // 始终展示完整菜单树（与图一一致），不按当前路由裁剪模块
+  // 根据当前路径所属模块(moduleType)筛选菜单
   const allMenus = ls.get(MENUS)
-  if (Array.isArray(allMenus)) {
-    menuList.value = allMenus
-  } else {
+  if (!Array.isArray(allMenus)) {
     menuList.value = []
+    refreshMenuKey()
+    return
+  }
+
+  // 顶级菜单包含 moduleType: SYSTEM | JOB | CONFIG | MQ
+  // 规则：当前路由命中哪个顶级菜单(path 前缀匹配)，就显示该顶级菜单及其子菜单；
+  // 若命中多个或未命中，则回退展示全部
+  const currentPath = route.path
+  const hitTop = allMenus.find((m: any) => m && m.path && currentPath.startsWith(m.path))
+  if (hitTop && hitTop.moduleType) {
+    const targetType = hitTop.moduleType
+    menuList.value = allMenus.filter((m: any) => m.moduleType === targetType)
+  } else {
+    menuList.value = allMenus
   }
   refreshMenuKey()
 }
@@ -154,14 +166,24 @@ function getMenusByModule(module: any) {
   // 读取 localStorage
   const allMenus = ls.get(MENUS)
   if (!allMenus || !Array.isArray(allMenus)) return []
-  const filtered = allMenus.filter(item => item.path === module.module)
-  return filtered
-
+  // 支持两种来源：
+  // 1) Dashboard 卡片直接传 { moduleType, path }
+  // 2) 旧逻辑传 { module: '/cc-config', path }
+  const moduleType = module.moduleType
+  if (moduleType) {
+    return allMenus.filter((item: any) => item.moduleType === moduleType)
+  }
+  if (module.module) {
+    const root = allMenus.find((item: any) => item.path === module.module)
+    return root && root.moduleType ? allMenus.filter((m: any) => m.moduleType === root.moduleType) : [root].filter(Boolean)
+  }
+  return allMenus
 }
 
 function onSelectModule(module: any) {
   menuList.value = getMenusByModule(module)
-  router.push(module.path) // 如需自动跳转
+  refreshMenuKey()
+  router.push(module.path)
 }
 </script>
 

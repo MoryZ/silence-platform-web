@@ -28,6 +28,8 @@ export interface ConfigItemParams {
   pageNo: number;
   pageSize: number;
   configEnvironmentId: number;
+  namespaceKeyword?: string;
+  configKeyword?: string;
 }
 
 /**

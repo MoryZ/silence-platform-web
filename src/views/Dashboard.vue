@@ -151,6 +151,7 @@ const loadRecentVisited = () => {
 
 // 处理最近访问项点击
 const handleRecentClick = (item: any) => {
+  // recentVisited 里已在保存时尽量补齐 module/moduleType
   emit('selectModule', item)
   router.push(item.path)
 };

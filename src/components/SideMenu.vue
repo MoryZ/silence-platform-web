@@ -70,6 +70,7 @@ import {
   AppstoreOutlined,
   BarsOutlined
 } from '@ant-design/icons-vue';
+import * as Icons from '@ant-design/icons-vue'
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MENUS } from '@/utils/constant';
@@ -334,17 +335,33 @@ const toggleOpen = (key: string) => {
 
 // 根据菜单图标字符串获取对应的图标组件
 const getIcon = (icon?: string) => {
-  const iconMap: Record<string, any> = {
+  // 1) 明确支持的一些简写映射
+  const shortcutMap: Record<string, any> = {
     'dashboard': DashboardOutlined,
     'setting': SettingOutlined,
     'user': UserOutlined,
     'team': TeamOutlined,
     'menu': MenuOutlined,
-    'bars': BarsOutlined
-  };
-  
-  return icon && iconMap[icon] ? iconMap[icon] : AppstoreOutlined;
-};
+    'bars': BarsOutlined,
+  }
+
+  if (!icon) return AppstoreOutlined
+  if (shortcutMap[icon]) return shortcutMap[icon]
+
+  // 2) 支持传入 Ant Design Vue 图标组件名，例如："SettingOutlined"
+  if ((Icons as any)[icon]) return (Icons as any)[icon]
+
+  // 3) 支持 kebab/snake 命名，自动转为 PascalCase + Outlined，例如："user-switch" -> "UserSwitchOutlined"
+  const toPascal = (name: string) => name
+    .replace(/[-_](\w)/g, (_, c) => c.toUpperCase())
+    .replace(/^(\w)/, (_, c) => c.toUpperCase())
+
+  const candidate = `${toPascal(icon)}Outlined`
+  if ((Icons as any)[candidate]) return (Icons as any)[candidate]
+
+  // 兜底
+  return AppstoreOutlined
+}
 
 // 加载菜单数据
 const loadMenus = () => {

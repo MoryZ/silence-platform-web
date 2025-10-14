@@ -1,8 +1,8 @@
 <template>
     <a-dropdown>
       <div class="user-dropdown">
-        <a-avatar :src="getAvatarUrl(user.avatar)" size="large" />
-        <span class="username">{{ user.name }}</span>
+        <a-avatar :src="getAvatarUrl(avatarSrc)" size="large" />
+        <span class="username">{{ displayName }}</span>
       </div>
       <template #overlay>
         <a-menu>
@@ -32,9 +32,9 @@
     >
       <div class="personal-center">
         <div class="user-info-header">
-          <a-avatar :src="getAvatarUrl(user.avatar)" size="80" />
+          <a-avatar :src="getAvatarUrl(avatarSrc)" size="80" />
           <div class="user-details">
-            <h3>{{ user.name }}</h3>
+            <h3>{{ displayName }}</h3>
             <p class="user-role">{{ userInfo?.roles?.join(', ') || '普通用户' }}</p>
           </div>
         </div>
@@ -70,7 +70,7 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
+  import { ref, computed } from 'vue'
   import { Modal } from 'ant-design-vue'
   import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons-vue'
   import workAvatar from '@/assets/images/work.png'
@@ -84,10 +84,15 @@
   dayjs.extend(timezone)
   
   const userStore = useUserStore()
-  
-  const user = ref({
-    name: 'Admin',
-    avatar: workAvatar
+
+  // 直接从 store 读取展示所需信息
+  const displayName = computed(() => {
+    const info = userStore.getUserInfo()
+    return info?.nickname || info?.username || '未命名'
+  })
+  const avatarSrc = computed(() => {
+    const info = userStore.getUserInfo()
+    return info?.avatar || workAvatar
   })
   
   // 个人中心弹窗状态
@@ -96,16 +101,13 @@
   // 获取用户信息
   const userInfo = computed(() => userStore.getUserInfo())
   
-  // 监听用户信息变化，更新显示信息
-  watch(userInfo, (newUserInfo) => {
-    if (newUserInfo) {
-      user.value.name = newUserInfo.nickname || newUserInfo.username || 'Admin'
-      user.value.avatar = newUserInfo.avatar || workAvatar
-    }
-  }, { immediate: true })
+  // 调试：打印一次当前用户信息，便于校验数据来源
+  if (import.meta.env.DEV) {
+    console.debug('[UserDropdown] userInfo =', userInfo.value)
+  }
   
   // 头像URL处理函数
-  const getAvatarUrl = (avatarPath: string) => {
+  const getAvatarUrl = (avatarPath?: string) => {
     if (!avatarPath) return workAvatar
     if (avatarPath.startsWith('http')) return avatarPath
     if (avatarPath.startsWith('/')) return avatarPath
@@ -113,7 +115,7 @@
   }
   
   // 日期格式化函数
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A'
     try {
       return dayjs(dateString).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')

@@ -1,12 +1,15 @@
 <template>
   <div class="cc-config-center">
-    <!-- 环境选择器 -->
+    <!-- 环境选择器（置顶，支持添加） -->
     <div v-if="environments.length > 0" class="environment-selector">
       <a-tabs
         v-model:activeKey="activeTabKey"
         type="card"
         @change="handleEnvironmentChange"
       >
+        <template #rightExtra>
+          <a-button type="text" @click="handleAddEnvironment">+</a-button>
+        </template>
         <a-tab-pane
           v-for="env in environments"
           :key="env.id"
@@ -14,9 +17,33 @@
         />
       </a-tabs>
     </div>
+    
+    <!-- 顶部搜索 + 创建配置（位于环境标签下方） -->
+    <div class="topbar">
+      <div class="filters">
+        <a-input
+          v-model:value="searchForm.namespaceId"
+          placeholder="请输入命名空间关键字"
+          style="width: 220px"
+          @pressEnter="onSearch"
+        />
+        <a-input
+          v-model:value="searchForm.content"
+          placeholder="请输入配置项关键字"
+          style="width: 220px; margin-left: 12px"
+          @pressEnter="onSearch"
+        />
+        <a-button type="primary" style="margin-left: 12px" @click="onSearch">搜索</a-button>
+        <a-button style="margin-left: 8px" @click="onReset">重置</a-button>
+      </div>
+      <div class="actions">
+        <a-button type="primary" @click="openAddFromChild">创建配置</a-button>
+      </div>
+    </div>
 
     <!-- 配置管理 -->
     <config-management
+      ref="childRef"
       v-if="selectedComponents.length && currentEnv && activeTabKey"
       :data-source="dataSource"
       :pagination="pagination"
@@ -29,6 +56,7 @@
       @view-release-history="handleViewReleaseHistory"
       @publish="handlePublish"
       @refresh-data="fetchData"
+        @search-change="handleSearchChange"
     />
 
   </div>
@@ -36,12 +64,14 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { Button, Input } from 'ant-design-vue'
 import { message } from 'ant-design-vue';
 import ConfigManagement from './components/ConfigManagement.vue';
 import { getConfigItems } from '../../api/config/configItem';
 import { getConfigEnvironments } from '../../api/config/configEnvironment';
 import type { ConfigItem } from '../../api/config/configItem';
 import type { ConfigEnvironment } from '../../api/config/configEnvironment';
+//
 
 import { useConfigStore } from '../../stores/config';
 import { useEnvStore } from '../../stores/env';
@@ -68,6 +98,25 @@ const pagination = ref({
   showSizeChanger: true,
   showQuickJumper: true
 });
+
+// 查询条件
+const searchForm = ref<{ namespaceId?: string; content?: string }>({})
+const searchFields = [
+  {
+    key: 'namespaceId',
+    label: '命名空间关键字',
+    type: 'input',
+    placeholder: '支持模糊匹配',
+    style: 'width:220px'
+  },
+  {
+    key: 'content',
+    label: '配置项关键字',
+    type: 'input',
+    placeholder: '配置名/内容关键字',
+    style: 'width:220px'
+  }
+] as any
 
 // 选择相关
 const selectedItems = ref<ConfigItem[]>([]);
@@ -119,7 +168,9 @@ const fetchData = async () => {
     const response = await getConfigItems({
       pageNo: pagination.value.pageNo,
       pageSize: pagination.value.pageSize,
-      configEnvironmentId: Number(activeTabKey.value)
+      configEnvironmentId: Number(activeTabKey.value),
+      namespaceId: searchForm.value.namespaceId,
+      content: searchForm.value.content
     });
     
     if (response?.data) {
@@ -143,6 +194,22 @@ const handlePaginationUpdate = (pag: any) => {
   pagination.value = { ...pagination.value, ...pag };
   fetchData();
 };
+
+function onSearch() {
+  pagination.value.pageNo = 1
+  fetchData()
+}
+
+function onReset() {
+  searchForm.value = {}
+  pagination.value.pageNo = 1
+  fetchData()
+}
+
+function handleSearchChange(payload: { namespaceId?: string; content?: string }) {
+  searchForm.value = { ...payload }
+  onSearch()
+}
 
 // 处理查看发布历史
 const handleViewReleaseHistory = (record: ConfigItem) => {
@@ -191,6 +258,16 @@ watch([selectedComponents, currentEnv], () => {
 onMounted(() => {
   // 初始化时不需要立即获取数据，等组件和环境选择完成后再获取
 });
+
+// 打开子组件新增弹窗
+const childRef = ref<any>()
+function openAddFromChild() {
+  childRef.value?.openAddModal?.()
+}
+
+function handleAddEnvironment() {
+  message.info('添加环境功能待接入')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -219,6 +296,12 @@ onMounted(() => {
         }
       }
     }
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0 16px 0;
   }
   
 }

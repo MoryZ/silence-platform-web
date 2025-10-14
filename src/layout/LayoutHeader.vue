@@ -13,9 +13,11 @@
       </div>
     </div>
     <div class="header-right">
-      <EnvSelector />
-      <SystemComponentSelector />
-      <SearchHistoryPopover />
+      <template v-if="isCcConfig">
+        <EnvSelector />
+        <SystemComponentSelector />
+        <SearchHistoryPopover />
+      </template>
       <NotificationPopover />
       <UserDropdown />
     </div>
@@ -23,7 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { h } from 'vue'
+import { h, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import EnvSelector from '../components/EnvSelector.vue'
 import SystemComponentSelector from '../components/SystemComponentSelector.vue'
 import SearchHistoryPopover from '../components/SearchHistoryPopover.vue'
@@ -33,6 +36,8 @@ import { AppstoreOutlined } from '@ant-design/icons-vue'
 
 const props = defineProps<{ collapsed: boolean }>()
 const emit = defineEmits(['toggleCollapse', 'showAllProducts'])
+const route = useRoute()
+const isCcConfig = computed(() => route.path.startsWith('/cc-config'))
 </script>
 
 <style scoped>

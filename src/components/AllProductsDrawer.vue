@@ -187,8 +187,17 @@
   
   function selectModule(module: string, item: any) {
     emit('update:open', false)
-    emit('selectModule', { ...item, module })
-    addRecentVisited({ ...item, module })
+    // 根据 group.module 推断 moduleType
+    const moduleTypeMap: Record<string, string> = {
+      '/system': 'SYSTEM',
+      '/job': 'JOB',
+      '/cc-config': 'CONFIG',
+      '/mq': 'MQ'
+    }
+    const moduleType = moduleTypeMap[module] || undefined
+    const payload = { ...item, module, moduleType }
+    emit('selectModule', payload)
+    addRecentVisited(payload)
   }
   
   function addRecentVisited(item: ProductItem) {
