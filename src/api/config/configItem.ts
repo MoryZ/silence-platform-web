@@ -28,15 +28,15 @@ export interface ConfigItemParams {
   pageNo: number;
   pageSize: number;
   configEnvironmentId: number;
-  namespaceKeyword?: string;
-  configKeyword?: string;
+  namespaceId?: string;
+  content?: string;
 }
 
 /**
  * 获取配置项列表
  */
-export function getConfigItems(params: ConfigItemParams): Promise<ConfigItemResponse> {
-  return request.get('/api/v1/configItems', { params });
+export function getConfigItems(params: ConfigItemParams) {
+  return request.get<ConfigItemResponse>('/api/v1/configItems', { params });
 }
 
 /**

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue';
-import CodeMirror from 'vue-codemirror6';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { javascript } from '@codemirror/lang-javascript';
+// import CodeMirror from 'vue-codemirror6';
+// import { oneDark } from '@codemirror/theme-one-dark';
+// import { javascript } from '@codemirror/lang-javascript';
 import { expressionRecord } from '@/constants/business';
 
 defineOptions({
@@ -70,15 +70,31 @@ onMounted(() => {
       {{ expressionRecord[modelValue.decision?.expressionType!] }}
     </NDescriptionsItem>
     <NDescriptionsItem label="条件表达式" :span="2" :content-style="{ padding: 0 }">
-      <CodeMirror
-        v-model="nodeExpression"
-        readonly
-        disabled
-        :theme="theme"
-        basic
-        :lang="javascript()"
-        :extensions="[oneDark]"
-      />
+      <div class="code-display">
+        <pre class="code-content">{{ nodeExpression }}</pre>
+      </div>
     </NDescriptionsItem>
   </NDescriptions>
 </template>
+
+<style scoped lang="scss">
+.code-display {
+  background-color: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 12px;
+  min-height: 120px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.code-content {
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+</style>

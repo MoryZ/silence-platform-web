@@ -132,9 +132,8 @@
   
   // 个人设置处理函数
   function handlePersonalSettings() {
-    // 触发设置抽屉打开
-    const event = new CustomEvent('open-settings-drawer')
-    window.dispatchEvent(event)
+    // 跳转到个人页
+    window.open('/account', '_blank')
   }
   
   function handleLogout() {

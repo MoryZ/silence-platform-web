@@ -13,6 +13,7 @@
         v-model:open="drawerOpen"
         @selectModule="onSelectModule"
       />
+      <SettingsDrawer />
     </a-layout>
   </a-layout>
 </template>
@@ -22,14 +23,18 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ls } from '@/utils/stoarge'
 import { MENUS } from '@/utils/constant'
+import { usePermissionStore } from '@/stores/permission'
+import { isSuperAdmin } from '@/utils/permissionCheck'
 import LayoutHeader from './LayoutHeader.vue'
 import LayoutSider from './LayoutSider.vue'
 import LayoutContent from './LayoutContent.vue'
 import LayoutFooter from './LayoutFooter.vue'
 import AllProductsDrawer from '../components/AllProductsDrawer.vue'
+import SettingsDrawer from '../components/SettingsDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()
+const permissionStore = usePermissionStore()
 const isDashboard = computed(() => route.path === '/dashboard')
 const menuKey = ref('side-menu-' + Date.now())
 
@@ -114,25 +119,79 @@ watch(() => route.path, () => {
   updateMenuList()
 })
 
+// 基于权限筛选菜单的函数
+function filterMenusByPermission(menus: any[]): any[] {
+  if (!Array.isArray(menus)) return []
+  
+  return menus.map(menu => {
+    // 如果是超管，显示所有菜单（包括子菜单）
+    if (isSuperAdmin()) {
+      if (menu.children && menu.children.length > 0) {
+        return {
+          ...menu,
+          children: filterMenusByPermission(menu.children)
+        }
+      }
+      return menu
+    }
+    
+    // 检查菜单是否有对应的页面权限
+    const hasPagePermission = checkMenuPagePermission(menu)
+    
+    // 如果有子菜单，递归检查子菜单权限
+    if (menu.children && menu.children.length > 0) {
+      const filteredChildren = filterMenusByPermission(menu.children)
+      
+      // 如果父菜单有权限或者有子菜单通过权限检查，则显示父菜单
+      if (hasPagePermission || filteredChildren.length > 0) {
+        return {
+          ...menu,
+          children: filteredChildren
+        }
+      }
+      return null // 父菜单和子菜单都没有权限
+    }
+    
+    // 没有子菜单的菜单，直接根据权限决定是否显示
+    return hasPagePermission ? menu : null
+  }).filter(menu => menu !== null) // 过滤掉 null 值
+}
+
+// 检查菜单是否有页面权限
+function checkMenuPagePermission(menu: any): boolean {
+  if (!menu) return false
+  
+  // 如果菜单有权限标识，直接检查
+  if (menu.meta?.permission) {
+    return permissionStore.hasPermission(menu.meta.permission)
+  }
+  
+  // 如果没有权限标识，默认显示
+  return true
+}
+
 function updateMenuList() {
-  // 根据当前路径所属模块(moduleType)筛选菜单
+  // 根据当前路径所属模块(moduleType)和用户权限筛选菜单
   const allMenus = ls.get(MENUS)
+  
   if (!Array.isArray(allMenus)) {
     menuList.value = []
     refreshMenuKey()
     return
   }
 
-  // 顶级菜单包含 moduleType: SYSTEM | JOB | CONFIG | MQ
-  // 规则：当前路由命中哪个顶级菜单(path 前缀匹配)，就显示该顶级菜单及其子菜单；
-  // 若命中多个或未命中，则回退展示全部
+  // 首先基于权限筛选菜单
+  const permissionFilteredMenus = filterMenusByPermission(allMenus)
+  
+  // 然后根据当前路径所属模块(moduleType)进一步筛选
   const currentPath = route.path
-  const hitTop = allMenus.find((m: any) => m && m.path && currentPath.startsWith(m.path))
+  const hitTop = permissionFilteredMenus.find((m: any) => m && m.path && currentPath.startsWith(m.path))
+  
   if (hitTop && hitTop.moduleType) {
     const targetType = hitTop.moduleType
-    menuList.value = allMenus.filter((m: any) => m.moduleType === targetType)
+    menuList.value = permissionFilteredMenus.filter((m: any) => m.moduleType === targetType)
   } else {
-    menuList.value = allMenus
+    menuList.value = permissionFilteredMenus
   }
   refreshMenuKey()
 }
@@ -166,18 +225,22 @@ function getMenusByModule(module: any) {
   // 读取 localStorage
   const allMenus = ls.get(MENUS)
   if (!allMenus || !Array.isArray(allMenus)) return []
+  
+  // 首先基于权限筛选菜单
+  const permissionFilteredMenus = filterMenusByPermission(allMenus)
+  
   // 支持两种来源：
   // 1) Dashboard 卡片直接传 { moduleType, path }
   // 2) 旧逻辑传 { module: '/cc-config', path }
   const moduleType = module.moduleType
   if (moduleType) {
-    return allMenus.filter((item: any) => item.moduleType === moduleType)
+    return permissionFilteredMenus.filter((item: any) => item.moduleType === moduleType)
   }
   if (module.module) {
-    const root = allMenus.find((item: any) => item.path === module.module)
-    return root && root.moduleType ? allMenus.filter((m: any) => m.moduleType === root.moduleType) : [root].filter(Boolean)
+    const root = permissionFilteredMenus.find((item: any) => item.path === module.module)
+    return root && root.moduleType ? permissionFilteredMenus.filter((m: any) => m.moduleType === root.moduleType) : [root].filter(Boolean)
   }
-  return allMenus
+  return permissionFilteredMenus
 }
 
 function onSelectModule(module: any) {
@@ -206,8 +269,9 @@ function onSelectModule(module: any) {
   background: #f6fbfa;
 }
 .layout-sider {
-  background: #001529;
+  background: #ffffff;
   height: 100vh;
+  border-right: 1px solid #f0f0f0;
 }
 .side-menu-container {
   height: 100%;

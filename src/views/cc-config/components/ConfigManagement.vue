@@ -147,7 +147,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, nextTick, onUnmounted, watch } from 'vue';
+import { ref, computed, nextTick, onUnmounted, watch, shallowRef } from 'vue';
 import { message } from 'ant-design-vue';
 import CommonPagination from '@/components/CommonPagination.vue'
 import type { FormInstance } from 'ant-design-vue';
@@ -157,7 +157,8 @@ import type { ConfigEnvironment } from '../../../api/config/configEnvironment';
 import { cloneNamespace } from '../../../api/config/configNamespace';
 import { ConfigItemHistory, getConfigItemHistories } from '../../../api/config/configItemHistories';
 import CodeEditor from '../../../components/CodeEditor.vue';
-import * as monaco from 'monaco-editor';
+import monaco from '../../../utils/monaco';
+import { analyzeChanges, getChangeTypeText, getChangeTypeColor, getOperationType } from '../../../utils/changeAnalyzer';
 
 interface Props {
   dataSource: ConfigItem[];
@@ -276,7 +277,7 @@ const editorTitle = ref('');
 const editorContent = ref('');
 const editorReadOnly = ref(false);
 const currentEditItem = ref<ConfigItem | null>(null);
-const modifyHistoryList = ref<ConfigItemHistory[]>([]);
+const modifyHistoryList = shallowRef<ConfigItemHistory[]>([]);
 
 // 新增配置相关
 const showAddConfigModal = ref(false);
@@ -437,20 +438,25 @@ const handleBatchPublish = () => {
 // 获取修改历史
 const fetchModifyHistories = async (configItemId: number) => {
   try {
+    console.log('开始获取修改历史，configItemId:', configItemId);
     const response = await getConfigItemHistories({
-      configItemId: configItemId,
-      pageNo: 1,
-      pageSize: 100
+      configItemId: configItemId
     });
+    console.log('获取修改历史响应:', response);
 
-    if (response?.data?.data) {
-      modifyHistoryList.value = response.data.data;
-    } else {
-      modifyHistoryList.value = [];
-    }
+    // 使用 requestAnimationFrame 确保在下一个渲染周期更新
+    requestAnimationFrame(() => {
+      if (response) {
+        modifyHistoryList.value = response;
+        console.log('设置修改历史列表:', response);
+      } else {
+        modifyHistoryList.value = [];
+        console.log('响应为空，清空修改历史列表');
+      }
+    });
   } catch (error) {
-    message.error('获取修改历史失败');
     console.error('获取修改历史失败:', error);
+    message.error('获取修改历史失败');
   }
 };
 
@@ -462,8 +468,45 @@ const handleSave = async (content: string) => {
   }
 
   try {
-    await updateConfigContent(currentEditItem.value.id, content);
-    message.success('保存成功');
+    // 分析变更
+    const oldContent = currentEditItem.value.content || '';
+    const changeAnalysis = analyzeChanges(oldContent, content);
+    
+    console.log('变更分析结果:', {
+      type: changeAnalysis.type,
+      summary: changeAnalysis.summary,
+      changes: changeAnalysis.changes
+    });
+
+
+    // 如果内容未变更，直接提示并返回
+    if (changeAnalysis.type === 'unchanged') {
+      message.info('您未变更任何内容，无需保存');
+      showEditor.value = false;
+      return;
+    }
+
+    // 根据变更类型设置 operationType
+    const operationType = getOperationType(changeAnalysis.type);
+
+    // 显示变更信息
+    const changeTypeText = getChangeTypeText(changeAnalysis.type);
+    const changeSummary = changeAnalysis.summary;
+    
+    let changeMessage = `变更类型: ${changeTypeText}`;
+    if (changeSummary.totalChanges > 0) {
+      changeMessage += `\n变更统计: 新增${changeSummary.addedLines}行, 删除${changeSummary.removedLines}行, 修改${changeSummary.changedLines}行`;
+    }
+
+    // 执行保存
+    await updateConfigContent(currentEditItem.value.id, content, operationType);
+    
+    // 显示成功消息，包含变更信息
+    message.success({
+      content: `保存成功！\n${changeMessage}`,
+      duration: 4
+    });
+    
     showEditor.value = false;
     emit('refresh-data');
   } catch (error) {

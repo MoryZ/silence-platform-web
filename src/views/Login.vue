@@ -170,7 +170,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed, onMounted, onUnmounted } from 'vue';
+import { reactive, ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import {
   UserOutlined,
   LockOutlined,
@@ -334,6 +334,13 @@ const onFinish = async (values: any) => {
       // 显示登录成功消息
       message.success(getText.value.login.loginSuccess);
       
+      // 等待状态完全更新
+      await nextTick();
+      
+      // 额外等待一小段时间，确保所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // 跳转到仪表盘
       router.replace('/dashboard');
       loginSuccess.value = true;
     } else {

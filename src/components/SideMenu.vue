@@ -3,7 +3,7 @@
     <a-menu
       v-if="!menuError"
       mode="inline"
-      theme="dark"
+      theme="light"
       :inline-collapsed="collapsed"
       :selectedKeys="[activeKey]"
       :openKeys="openKeys"
@@ -71,7 +71,7 @@ import {
   BarsOutlined
 } from '@ant-design/icons-vue';
 import * as Icons from '@ant-design/icons-vue'
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MENUS } from '@/utils/constant';
 import { ls } from '@/utils/stoarge';
@@ -105,7 +105,9 @@ const activeKey = computed(() => route.path);
 // 过滤重复的菜单项，确保每个菜单只显示一次
 const filteredMenuList = computed(() => {
   try {
-    if (!props.menuList || props.menuList.length === 0) return [];
+    if (!props.menuList || props.menuList.length === 0) {
+      return [];
+    }
     
     // 递归去重函数，处理嵌套菜单
     const deduplicateMenus = (menus: any[]): any[] => {
@@ -135,9 +137,9 @@ const filteredMenuList = computed(() => {
       return result;
     };
     
-    return deduplicateMenus(props.menuList);
+    const result = deduplicateMenus(props.menuList);
+    return result;
   } catch (error) {
-    console.error('菜单过滤出错:', error);
     menuError.value = true;
     return [];
   }
@@ -335,32 +337,51 @@ const toggleOpen = (key: string) => {
 
 // 根据菜单图标字符串获取对应的图标组件
 const getIcon = (icon?: string) => {
-  // 1) 明确支持的一些简写映射
-  const shortcutMap: Record<string, any> = {
-    'dashboard': DashboardOutlined,
-    'setting': SettingOutlined,
-    'user': UserOutlined,
-    'team': TeamOutlined,
-    'menu': MenuOutlined,
-    'bars': BarsOutlined,
-  }
-
   if (!icon) return AppstoreOutlined
-  if (shortcutMap[icon]) return shortcutMap[icon]
-
-  // 2) 支持传入 Ant Design Vue 图标组件名，例如："SettingOutlined"
-  if ((Icons as any)[icon]) return (Icons as any)[icon]
-
-  // 3) 支持 kebab/snake 命名，自动转为 PascalCase + Outlined，例如："user-switch" -> "UserSwitchOutlined"
-  const toPascal = (name: string) => name
-    .replace(/[-_](\w)/g, (_, c) => c.toUpperCase())
-    .replace(/^(\w)/, (_, c) => c.toUpperCase())
-
-  const candidate = `${toPascal(icon)}Outlined`
-  if ((Icons as any)[candidate]) return (Icons as any)[candidate]
-
-  // 兜底
-  return AppstoreOutlined
+  
+  try {
+    // 直接使用图标名称从 Icons 对象中获取组件，与菜单管理保持一致
+    const Icon = (Icons as Record<string, any>)[icon]
+    if (Icon) {
+      // 为不同风格的图标设置不同的样式属性，与菜单管理保持一致
+      const props: any = {
+        style: { fontSize: '16px' }
+      }
+      
+      if (icon.endsWith('TwoTone')) {
+        // 双色图标使用双色属性
+        props.twoToneColor = ['#e6f7ff', '#1890ff']
+      } else if (icon.endsWith('Filled')) {
+        // 实底图标使用主色调
+        props.style = { ...props.style, color: '#1890ff' }
+      } else {
+        // 线框图标使用默认颜色（在浅色主题下使用深色）
+        props.style = { ...props.style, color: '#666666' }
+      }
+      
+      return h(Icon, props)
+    }
+    
+    // 如果直接获取失败，尝试一些常见的映射
+    const shortcutMap: Record<string, any> = {
+      'dashboard': DashboardOutlined,
+      'setting': SettingOutlined,
+      'user': UserOutlined,
+      'team': TeamOutlined,
+      'menu': MenuOutlined,
+      'bars': BarsOutlined,
+    }
+    
+    if (shortcutMap[icon]) {
+      return h(shortcutMap[icon], { style: { fontSize: '16px', color: '#666666' } })
+    }
+    
+    // 兜底
+    return h(AppstoreOutlined, { style: { fontSize: '16px', color: '#666666' } })
+  } catch (error) {
+    console.warn(`Icon ${icon} not found in SideMenu`)
+    return h(AppstoreOutlined, { style: { fontSize: '16px', color: '#666666' } })
+  }
 }
 
 // 加载菜单数据
@@ -443,14 +464,17 @@ const navigateTo = (path: string, parentPath?: string) => {
 
 /* 自定义菜单样式 */
 :deep(.custom-menu) {
+  /* 浅色主题背景 */
+  background-color: #ffffff;
+  
   /* 自定义选中状态 */
   .ant-menu-item-selected {
-    background-color: #1890ff !important;
-    color: white !important;
+    background-color: #e6f7ff !important;
+    color: #1890ff !important;
     font-weight: bold;
     position: relative;
     
-    /* 左侧添加亮色边框标记 */
+    /* 左侧添加蓝色边框标记 */
     &::before {
       content: '';
       position: absolute;
@@ -458,7 +482,7 @@ const navigateTo = (path: string, parentPath?: string) => {
       top: 0;
       bottom: 0;
       width: 3px;
-      background-color: #ffffff;
+      background-color: #1890ff;
     }
     
     &::after {
@@ -467,26 +491,26 @@ const navigateTo = (path: string, parentPath?: string) => {
     
     /* 选中项悬停状态增强 */
     &:hover {
-      background-color: #40a9ff !important;
-      box-shadow: 0 0 8px rgba(24, 144, 255, 0.5);
+      background-color: #bae7ff !important;
+      box-shadow: 0 0 8px rgba(24, 144, 255, 0.2);
       transform: translateX(2px);
       
       /* 悬停时左侧边框加粗 */
       &::before {
         width: 4px;
-        background-color: #ffffff;
+        background-color: #1890ff;
       }
     }
     
     /* 选中项的图标颜色 */
     .anticon {
-      color: white !important;
+      color: #1890ff !important;
     }
   }
   
   /* 鼠标悬停状态 */
   .ant-menu-item:hover:not(.ant-menu-item-selected) {
-    background-color: rgba(24, 144, 255, 0.1) !important;
+    background-color: rgba(24, 144, 255, 0.05) !important;
     color: #1890ff !important;
   }
   
@@ -499,10 +523,12 @@ const navigateTo = (path: string, parentPath?: string) => {
   .ant-menu-submenu-selected > .ant-menu-submenu-title {
     color: #1890ff !important;
     font-weight: bold;
+    background-color: #f0f8ff !important;
     
     /* 子菜单标题悬停效果 */
     &:hover {
       color: #40a9ff !important;
+      background-color: #e6f7ff !important;
     }
   }
   

@@ -49,9 +49,10 @@ const addType = (type: number) => {
           priorityLevel: 1,
           decision: {
             expressionType: 1,
-            nodeExpression: undefined,
+            nodeExpression: '',
             logicalCondition: 1,
-            defaultDecision: 0
+            defaultDecision: 0,
+            checkContents: []
           }
         },
         {
@@ -61,7 +62,8 @@ const addType = (type: number) => {
             expressionType: 1,
             nodeExpression: '#true',
             logicalCondition: 1,
-            defaultDecision: 1
+            defaultDecision: 1,
+            checkContents: []
           }
         }
       ],

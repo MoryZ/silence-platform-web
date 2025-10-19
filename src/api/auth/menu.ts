@@ -10,6 +10,7 @@ export interface Menu {
   path: string;
   component: string;
   redirect: string;
+  moduleType?: string; // 菜单所属模块
   meta: {
     title: string;
     icon: string;

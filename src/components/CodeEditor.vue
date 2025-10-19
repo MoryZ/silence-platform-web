@@ -19,30 +19,15 @@
         <div ref="editorContainer" class="monaco-editor"></div>
       </div>
 
-      <!-- 右侧发布历史 -->
+      <!-- 右侧修改历史 -->
       <div class="history-container">
         <div class="history-header">
-          <h3>发布历史</h3>
-          <!-- 时间过滤器 -->
-          <div class="filter-section">
-            <a-select v-model:value="timeFilter" style="width: 120px" @change="handleTimeFilterChange">
-              <a-select-option value="1">最近一天</a-select-option>
-              <a-select-option value="2">最近两天</a-select-option>
-              <a-select-option value="7">最近一周</a-select-option>
-              <a-select-option value="30">最近一月</a-select-option>
-              <a-select-option value="90">最近三月</a-select-option>
-              <a-select-option value="custom">自定义</a-select-option>
-            </a-select>
-            <a-range-picker
-              v-if="timeFilter === 'custom'"
-              v-model:value="dateRange"
-              @change="handleDateRangeChange"
-              :show-time="{ format: 'HH:mm' }"
-              format="YYYY-MM-DD HH:mm"
-            />
-          </div>
+          <h3>修改历史</h3>
         </div>
         <a-timeline class="history-timeline">
+          <div v-if="historyList.length === 0" class="no-history">
+            暂无修改历史
+          </div>
           <a-timeline-item 
             v-for="(history, index) in historyList" 
             :key="index"
@@ -52,11 +37,11 @@
               <ClockCircleOutlined v-if="history.id === selectedHistory?.id" />
             </template>
             <div class="history-item" @click="handleHistoryClick(history)">
-              <div class="history-info">
-                <span class="history-time">{{ formatDate(history.createdDate) }}</span>
-                <span class="history-user">{{ history.createdBy }}</span>
+              <div class="history-content">
+                <span class="history-time">{{ formatDate(history.updatedDate) }}</span>
+                <span class="history-user">{{ history.updatedBy }}</span>
+                <a-button type="link" size="small" class="history-action">查看详情</a-button>
               </div>
-              <div class="release-name">{{ history.releaseName }}</div>
             </div>
           </a-timeline-item>
         </a-timeline>
@@ -65,17 +50,16 @@
       <!-- 历史详情弹窗 -->
       <a-modal
         v-model:open="showHistoryDetail"
-        title="发布详情"
+        title="修改详情"
         :width="1000"
         :footer="null"
       >
         <div class="history-detail">
           <div class="detail-header">
-            <h3>{{ selectedHistory?.releaseName }}</h3>
-            <div class="detail-info">
-              <p>发布人：{{ selectedHistory?.createdBy }}</p>
-              <p>发布时间：{{ selectedHistory?.createdDate ? formatDate(selectedHistory.createdDate) : '无有效日期' }}</p>
-            </div>
+              <div class="detail-info">
+                <p>修改人：{{ selectedHistory?.updatedBy }}</p>
+                <p>修改时间：{{ selectedHistory?.updatedDate ? formatDate(selectedHistory.updatedDate) : '无有效日期' }}</p>
+              </div>
           </div>
           <div class="content-comparison">
             <div class="comparison-section">
@@ -95,23 +79,11 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
-import * as monaco from 'monaco-editor';
+import monaco from '../utils/monaco';
 import { ClockCircleOutlined } from '@ant-design/icons-vue';
-import dayjs from 'dayjs';
-import { ConfigItemHistory } from '@/api/config/configItemHistories';
+import moment from 'moment';
 
-interface ReleaseHistory {
-  id: number;
-  releaseName: string;
-  configItemId: number;
-  oldContent: string;
-  content: string;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-  releaseType: number;
-}
+import { ConfigItemHistory } from '@/api/config/configItemHistories';
 
 const props = defineProps({
   open: {
@@ -140,7 +112,13 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:visible', 'save', 'timeFilterChange', 'cancel']);
+const emit = defineEmits(['update:visible', 'save', 'cancel']);
+
+// 监听 historyList 变化
+watch(() => props.historyList, (newList) => {
+  // 可以在这里处理历史列表变化
+}, { immediate: true });
+
 
 const editorContainer = ref<HTMLElement | null>(null);
 const oldContentEditor = ref<HTMLElement | null>(null);
@@ -149,36 +127,15 @@ let editor: monaco.editor.IStandaloneCodeEditor | null = null;
 let oldEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let newEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 const showHistoryDetail = ref(false);
-const selectedHistory = ref<ReleaseHistory | null>(null);
-const timeFilter = ref('7'); // 默认最近一周
-const dateRange = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+const selectedHistory = ref<ConfigItemHistory | null>(null);
 
 // 格式化日期
 const formatDate = (date: string) => {
-  return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '';
+  if (!date) return '';
+  return moment(date).format('YYYY-MM-DD HH:mm:ss');
 };
 
-// 处理时间过滤器变化
-const handleTimeFilterChange = (value: string) => {
-  if (value !== 'custom') {
-    const end = dayjs();
-    const start = end.subtract(Number(value), 'day');
-    emit('timeFilterChange', {
-      startDate: start.format('YYYY-MM-DD HH:mm:ss'),
-      endDate: end.format('YYYY-MM-DD HH:mm:ss')
-    });
-  }
-};
 
-// 处理自定义日期范围变化
-const handleDateRangeChange = (dates: [dayjs.Dayjs, dayjs.Dayjs] | null) => {
-  if (dates) {
-    emit('timeFilterChange', {
-      startDate: dates[0].format('YYYY-MM-DD HH:mm:ss'),
-      endDate: dates[1].format('YYYY-MM-DD HH:mm:ss')
-    });
-  }
-};
 
 // 初始化编辑器
 const initEditor = async () => {
@@ -250,7 +207,10 @@ const initDiffEditors = async (oldContent: string, newContent: string) => {
 };
 
 // 处理历史记录点击
-const handleHistoryClick = (history: ReleaseHistory) => {
+const handleHistoryClick = (history: ConfigItemHistory) => {
+  if (!history) {
+    return;
+  }
   selectedHistory.value = history;
   showHistoryDetail.value = true;
   nextTick(() => {
@@ -452,10 +412,42 @@ onMounted(() => {
   }
 }
 
-.release-name {
-  margin-top: 4px;
-  font-size: 13px;
-  color: var(--primary-color);
+.history-item {
+  cursor: pointer;
+  padding: 4px 0;
+  
+  &:hover {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 -8px;
+  }
+  
+  .history-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    .history-time {
+      font-size: 12px;
+      color: #999;
+      min-width: 140px;
+    }
+    
+    .history-user {
+      font-size: 14px;
+      color: #333;
+      flex: 1;
+    }
+    
+    .history-action {
+      .ant-btn {
+        padding: 0;
+        height: auto;
+        font-size: 12px;
+      }
+    }
+  }
 }
 
 :deep(.ant-modal-body) {
@@ -473,5 +465,12 @@ onMounted(() => {
 
 :deep(.ant-timeline-item-content) {
   margin-left: 28px;
+}
+
+.no-history {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-size: 14px;
 }
 </style> 

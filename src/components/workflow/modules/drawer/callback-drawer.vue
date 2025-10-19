@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import type { FormInst, FormRules } from 'naive-ui';
+import type { FormInstance } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import { contentTypeOptions, workFlowNodeStatusOptions } from '@/constants/business';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';
@@ -45,25 +46,24 @@ watch(
   { immediate: true }
 );
 
-const formRef = ref<FormInst>();
+const formRef = ref<FormInstance>();
 
 const close = () => {
   emit('update:open', false);
   drawer.value = false;
 };
 
-const save = () => {
-  formRef.value
-    ?.validate(errors => {
-      if (!errors) {
-        close();
-        emit('save', form.value);
-      }
-    })
-    .catch(() => window.$message?.warning('请检查表单信息'));
+const save = async () => {
+  try {
+    await formRef.value?.validate();
+    close();
+    emit('save', form.value);
+  } catch (error) {
+    message.warning('请检查表单信息');
+  }
 };
 
-const rules: FormRules = {
+const rules = {
   workflowNodeStatus: [{ required: true, message: '请选择工作流状态', trigger: 'change' }],
   callback: {
     webhook: [{ required: true, message: '请输入 webhook', trigger: 'change' }],

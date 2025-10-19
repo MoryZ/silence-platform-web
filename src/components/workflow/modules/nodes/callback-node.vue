@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
 import { contentTypeRecord, taskBatchStatusEnum } from '@/constants/business';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
 import CallbackDrawer from '../drawer/callback-drawer.vue';
 import CallbackDetail from '../detail/callback-detail.vue';
@@ -88,7 +88,7 @@ const detailIds = ref<string[]>([]);
 const showDetail = (item: Workflow.ConditionNodeType, index: number) => {
   detailIds.value = [];
   if (store.type === 2) {
-    item.jobBatchList?.forEach(job => {
+    item.jobBatchList?.forEach((job: any) => {
       if (job.id) {
         detailIds.value?.push(job.id);
       } else if (job.jobId) {

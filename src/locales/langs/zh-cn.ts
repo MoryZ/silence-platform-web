@@ -743,9 +743,6 @@ const local = {
         retry: '重试数据',
         callback: '回调数据'
       },
-      generateIdempotentId: '通过客户端生成',
-      addRetry: '新增重试',
-      editRetry: '编辑重试',
       batchAddRetry: '批量新增'
     },
     retryScene: {

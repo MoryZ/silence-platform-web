@@ -1,9 +1,13 @@
 <template>
   <div class="role-management">
-    <a-card :bordered="false">
+    <a-card v-permission="ROLE_PERMISSIONS.PAGE" :bordered="false">
       <template #title>角色管理</template>
       <template #extra>
-        <a-button type="primary" @click="handleAdd">
+        <a-button 
+          v-permission="'system:role:add'"
+          type="primary" 
+          @click="handleAdd"
+        >
           <template #icon><plus-outlined /></template>
           新增角色
         </a-button>
@@ -48,12 +52,12 @@
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a @click="handleEdit(record)">编辑</a>
-              <a-divider type="vertical" />
-              <a @click="handlePermission(record)">权限设置</a>
-              <a-divider type="vertical" />
+              <a v-permission="'system:role:edit'" @click="handleEdit(record)">编辑</a>
+              <a-divider v-if="hasPermission('system:role:edit') && (hasPermission('system:role:setPermissions') || hasPermission('system:role:delete'))" type="vertical" />
+              <a v-permission="'system:role:setPermissions'" @click="handlePermission(record)">权限设置</a>
+              <a-divider v-if="hasPermission('system:role:setPermissions') && hasPermission('system:role:delete')" type="vertical" />
               <a-popconfirm title="确定要删除该角色吗？" @confirm="handleDelete(record)">
-                <a class="danger">删除</a>
+                <a v-permission="'system:role:delete'" class="danger">删除</a>
               </a-popconfirm>
             </a-space>
           </template>
@@ -169,6 +173,7 @@ import type { FormInstance } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { usePermissionStore } from '@/stores/permission';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -187,6 +192,11 @@ import {
 import { getMenuTree, Menu, MenuResponse } from '@/api/auth/menu';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
+import { ROLE_PERMISSIONS } from '@/utils/permissionConstants';
+
+// 权限检查
+const permissionStore = usePermissionStore();
+const hasPermission = (permission: string) => permissionStore.hasPermission(permission);
 
 // 表格列定义
 const columns = [
@@ -369,16 +379,67 @@ const handleExpandAll = () => {
 
 // 处理节点选中
 const handleCheck = (checkedKeys: string[], e: any) => {
-  checkedPermissions.value = checkedKeys;
-  // 如果是父节点被选中/取消，可以自动选中/取消所有子节点
-  if (e.node.children?.length) {
-    const childKeys = getChildKeys(e.node);
-    if (e.checked) {
-      checkedPermissions.value = [...new Set([...checkedPermissions.value, ...childKeys])];
-    } else {
-      checkedPermissions.value = checkedPermissions.value.filter(key => !childKeys.includes(key));
+  // 获取所有权限数据
+  const allPermissions = permissionTree.value;
+  
+  // 获取当前操作的节点信息
+  const { node, checked } = e;
+  const nodeKey = node.key;
+  
+  // 递归获取所有子节点
+  const getAllChildren = (permissions: any[], parentKey: string): string[] => {
+    const children: string[] = [];
+    for (const permission of permissions) {
+      if (permission.key === parentKey && permission.children) {
+        for (const child of permission.children) {
+          children.push(child.key);
+          // 递归获取子节点的子节点
+          if (child.children) {
+            children.push(...getAllChildren([child], child.key));
+          }
+        }
+      }
     }
+    return children;
+  };
+  
+  // 递归获取所有父节点
+  const getAllParents = (permissions: any[], childKey: string): string[] => {
+    const parents: string[] = [];
+    for (const permission of permissions) {
+      if (permission.children) {
+        for (const child of permission.children) {
+          if (child.key === childKey) {
+            parents.push(permission.key);
+            // 递归获取父节点的父节点
+            parents.push(...getAllParents(allPermissions, permission.key));
+          }
+          // 递归检查更深层的子节点
+          if (child.children) {
+            const deeperParents = getAllParents([child], childKey);
+            if (deeperParents.length > 0) {
+              parents.push(permission.key);
+            }
+          }
+        }
+      }
+    }
+    return parents;
+  };
+  
+  let newCheckedKeys = [...checkedKeys];
+  
+  if (checked) {
+    // 选中节点时：自动选中所有子节点
+    const children = getAllChildren(allPermissions, nodeKey);
+    newCheckedKeys = [...new Set([...newCheckedKeys, ...children])];
+  } else {
+    // 取消选中节点时：自动取消选中所有子节点
+    const children = getAllChildren(allPermissions, nodeKey);
+    newCheckedKeys = newCheckedKeys.filter(key => !children.includes(key));
   }
+  
+  checkedPermissions.value = newCheckedKeys;
 };
 
 // 处理节点点击
@@ -406,6 +467,22 @@ const getChildKeys = (node: any): string[] => {
   };
   traverse(node);
   return keys;
+};
+
+// 查找父节点
+const findParentNode = (targetNode: any, tree: any[]): any => {
+  for (const node of tree) {
+    if (node.children?.length) {
+      // 检查直接子节点
+      if (node.children.some((child: any) => child.key === targetNode.key)) {
+        return node;
+      }
+      // 递归查找
+      const found = findParentNode(targetNode, node.children);
+      if (found) return found;
+    }
+  }
+  return null;
 };
 
 // 方法定义
@@ -509,7 +586,6 @@ const handlePermission = async (record: Role) => {
     
     // 获取角色的权限列表
     const res = await getRolePermissions(record.id);
-    console.log('原始API响应:', res);
     
     // 处理不同的响应格式
     let permissionIds: number[] = [];
@@ -527,16 +603,10 @@ const handlePermission = async (record: Role) => {
     // 将数字权限ID转换为字符串，以匹配树组件的key格式
     checkedPermissions.value = permissionIds.map((id: number) => id.toString());
     
-    console.log('处理后的权限数据:', permissionIds);
-    console.log('转换后的权限keys:', checkedPermissions.value);
-    console.log('权限树数据:', permissionTree.value);
-    console.log('权限树所有keys:', allPermissionKeys.value);
-    
     // 检查哪些权限在树中存在
     const existingKeys = permissionIds.map((id: number) => id.toString()).filter((key: string) => 
       allPermissionKeys.value.includes(key)
     );
-    console.log('在权限树中存在的keys:', existingKeys);
     
     // 设置展开所有节点
     expandedKeys.value = permissionTree.value.map(node => node.key);
@@ -550,9 +620,26 @@ const handlePermission = async (record: Role) => {
 
 const handlePermissionOk = async () => {
   try {
+    // 处理 checkedPermissions.value 可能是对象或数组的情况
+    let permissionKeys: string[] = [];
+    
+    if (Array.isArray(checkedPermissions.value)) {
+      // 如果是数组，直接使用
+      permissionKeys = checkedPermissions.value;
+    } else if (checkedPermissions.value && typeof checkedPermissions.value === 'object') {
+      // 如果是对象，提取所有选中的keys
+      const checkedObj = checkedPermissions.value as any;
+      permissionKeys = [
+        ...(checkedObj.checked || []),
+        ...(checkedObj.halfChecked || [])
+      ];
+    } else {
+      // 如果是其他类型，转换为数组
+      permissionKeys = checkedPermissions.value ? [checkedPermissions.value] : [];
+    }
+    
     // 将字符串权限keys转换回数字数组，以匹配后端API期望的格式
-    const permissionIds = checkedPermissions.value.map(key => parseInt(key));
-    console.log('保存的权限数据:', permissionIds);
+    const permissionIds = permissionKeys.map(key => parseInt(key));
     
     await setRolePermissions(currentRole.value.id, permissionIds);
     showPermissionModal.value = false;

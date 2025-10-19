@@ -59,14 +59,33 @@
         @search-change="handleSearchChange"
     />
 
+    <!-- 发布历史组件 -->
+    <ReleaseHistory
+      :data-source="dataSource"
+      :open="showReleaseHistory"
+      :selected-config-item="selectedConfigItemForHistory"
+      @close="showReleaseHistory = false"
+    />
+
+    <!-- 发布管理组件 -->
+    <PublishManagement
+      ref="publishManagementRef"
+      :target-environments="targetEnvironments"
+      :active-tab-key="activeTabKey"
+      :selected-items="selectedItems"
+      @refresh-data="fetchData"
+      @clear-selection="selectedItems = []"
+    />
+
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { Button, Input } from 'ant-design-vue'
 import { message } from 'ant-design-vue';
 import ConfigManagement from './components/ConfigManagement.vue';
+import ReleaseHistory from './components/ReleaseHistory.vue';
+import PublishManagement from './components/PublishManagement.vue';
 import { getConfigItems } from '../../api/config/configItem';
 import { getConfigEnvironments } from '../../api/config/configEnvironment';
 import type { ConfigItem } from '../../api/config/configItem';
@@ -101,25 +120,16 @@ const pagination = ref({
 
 // 查询条件
 const searchForm = ref<{ namespaceId?: string; content?: string }>({})
-const searchFields = [
-  {
-    key: 'namespaceId',
-    label: '命名空间关键字',
-    type: 'input',
-    placeholder: '支持模糊匹配',
-    style: 'width:220px'
-  },
-  {
-    key: 'content',
-    label: '配置项关键字',
-    type: 'input',
-    placeholder: '配置名/内容关键字',
-    style: 'width:220px'
-  }
-] as any
 
 // 选择相关
 const selectedItems = ref<ConfigItem[]>([]);
+
+// 发布历史相关
+const showReleaseHistory = ref(false);
+const selectedConfigItemForHistory = ref<ConfigItem | null>(null);
+
+// 发布管理相关
+const publishManagementRef = ref<any>();
 
 // 获取环境列表
 const fetchEnvironments = async () => {
@@ -213,14 +223,15 @@ function handleSearchChange(payload: { namespaceId?: string; content?: string })
 
 // 处理查看发布历史
 const handleViewReleaseHistory = (record: ConfigItem) => {
-  // TODO: 实现查看发布历史功能
-  message.info('查看发布历史功能待实现');
+  console.log('点击查看发布历史，record:', record);
+  selectedConfigItemForHistory.value = record;
+  showReleaseHistory.value = true;
+  console.log('设置 showReleaseHistory 为 true');
 };
 
 // 处理发布
 const handlePublish = (record: ConfigItem) => {
-  // TODO: 实现发布功能
-  message.info('发布功能待实现');
+  publishManagementRef.value?.openPublishModal(record);
 };
 
 // 处理组件变化

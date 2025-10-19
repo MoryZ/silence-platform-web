@@ -4,6 +4,7 @@ import type { AxiosResponse } from 'axios';
 export interface ConfigItemHistory {
   id: number;
   configEnvironmentId: number;
+  configItemId: number;
   oldContent: string;
   content: string;
   md5: string;
@@ -11,26 +12,23 @@ export interface ConfigItemHistory {
   updatedBy: string;
   createdDate: string;
   updatedDate: string;
+  operationType: number;
 }
 
 export interface ConfigItemHistoryResponse {
   data: ConfigItemHistory[];
   total: number;
-  pageNo: number;
-  pageSize: number;
 }
 
 export interface ConfigItemHistoryParams {
-  pageNo: number;
-  pageSize: number;
   configItemId: number;
 }
 
 /**
  * 获取配置项列表
  */
-export function getConfigItemHistories(params: ConfigItemHistoryParams): Promise<AxiosResponse<ConfigItemHistoryResponse>> {
-  return request.get('/api/v1/configItemHistories', { params });
+export function getConfigItemHistories(params: ConfigItemHistoryParams) {
+  return request.get<ConfigItemHistory[]>('/api/v1/configItemHistories', { params });
 }
 
 /**

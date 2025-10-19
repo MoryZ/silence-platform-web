@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch } from 'vue';
-import { getPaletteColorByNumber } from '@sa/color';
+import { getPaletteColorByNumber } from '@/stores/theme/shared';
 import { $t } from '@/locales';
 import { useAppStore } from '@/store/modules/app';
 import { useEcharts } from '@/hooks/common/echarts';

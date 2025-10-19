@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { failStrategyRecord, workFlowNodeStatusRecord } from '@/constants/business';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
 
 defineOptions({

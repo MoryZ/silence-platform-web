@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue';
 import { failStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
 import { fetchNodeRetry, fetchNodeStop } from '@/api/job/workflow';
 import { $t } from '@/locales';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { useWorkflowStore } from '@/stores/workflow';
 import LabelList from '@/components/common/label-list.vue';
 import TaskDrawer from '../drawer/task-drawer.vue';
 import TaskDetail from '../detail/task-detail.vue';

@@ -41,7 +41,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['monaco-editor/esm/vs/editor/editor.worker']
+    include: ['monaco-editor']
   },
   build: {
     rollupOptions: {

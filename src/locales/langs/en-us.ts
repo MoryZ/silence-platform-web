@@ -735,9 +735,6 @@ const local = {
         retry: 'Retry data',
         callback: 'Callback data'
       },
-      generateIdempotentId: 'Generate by client',
-      addRetry: 'Add Retry task',
-      editRetry: 'Add Retry task',
       batchAddRetry: 'Batch add retry task'
     },
     retryScene: {

@@ -1,8 +1,10 @@
 <script setup lang="tsx">
 import { ref, watch } from 'vue';
-import { type FormInst, NTag, NTooltip } from 'naive-ui';
+import type { FormInstance } from 'ant-design-vue';
+import { Tag, Tooltip, message } from 'ant-design-vue';
 import { failStrategyOptions, taskTypeRecord, workFlowNodeStatusOptions } from '@/constants/business';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import type { Job } from '@/api/job/job';
+import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';
 
@@ -32,7 +34,12 @@ const emit = defineEmits<Emits>();
 const store = useWorkflowStore();
 const drawer = ref<boolean>(false);
 const form = ref<Workflow.ConditionNodeType>({});
-const jobList = ref<Pick<Api.Job.Job, 'id' | 'jobName' | 'executorInfo' | 'taskType'>[]>([]);
+const jobList = ref<Array<{
+  id?: string;
+  jobName?: string;
+  executorInfo?: string;
+  taskType?: number;
+}>>([]);
 
 watch(
   () => store.jobList,
@@ -58,22 +65,21 @@ watch(
   { immediate: true }
 );
 
-const formRef = ref<FormInst>();
+const formRef = ref<FormInstance>();
 
 const close = () => {
   emit('update:open', false);
   drawer.value = false;
 };
 
-const save = () => {
-  formRef.value
-    ?.validate(errors => {
-      if (!errors) {
-        close();
-        emit('save', form.value);
-      }
-    })
-    .catch(() => window.$message?.warning('请检查表单信息'));
+const save = async () => {
+  try {
+    await formRef.value?.validate();
+    close();
+    emit('save', form.value);
+  } catch (error) {
+    message.warning('请检查表单信息');
+  }
 };
 
 const rules = {
@@ -89,27 +95,16 @@ const jobTaskChange = (_: string, option: { jobName: string; labels: string }) =
   form.value.jobTask!.labels = option.labels;
 };
 
-const renderTaskLabel = (option: Api.Job.Job) => {
+const renderTaskLabel = (option: Job) => {
   return (
-    <NTooltip trigger="hover" placement="left">
-      {{
-        trigger: () => (
-          <div class="flex-y-center gap-6px">
-            {option.taskType ? (
-              <NTag type="info" size="small">
-                {$t(taskTypeRecord[option.taskType])}
-              </NTag>
-            ) : null}
-            <span>{option.jobName}</span>
-          </div>
-        ),
-        default: () => (
-          <div>
-            {option.jobName} ( {option.executorInfo} )
-          </div>
-        )
-      }}
-    </NTooltip>
+    <div className="flex-y-center gap-6px">
+      {option.taskType ? (
+        <span className="tag-info">
+          {$t(taskTypeRecord[option.taskType])}
+        </span>
+      ) : null}
+      <span>{option.jobName}</span>
+    </div>
   );
 };
 </script>

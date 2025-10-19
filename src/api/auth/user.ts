@@ -91,7 +91,5 @@ export function getUserInfo(): Promise<UserInfo> {
 }
 
 export function resetPassword(id: number, newPassword: string): Promise<any> {
-  return request.put(`/api/v1/users/${id}/resetPassword`, {
-    newPassword
-  });
+  return request.put(`/api/v1/users/${id}/resetPassword`, { newPassword: newPassword });
 } 

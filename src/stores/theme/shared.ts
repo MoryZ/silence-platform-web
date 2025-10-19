@@ -263,3 +263,6 @@ export function getNaiveTheme(colors: any, recommended = false) {
   };
   return theme;
 }
+
+// 导出工具函数
+export { getPaletteColorByNumber, addColorAlpha, getColorPalette };

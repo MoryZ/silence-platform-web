@@ -1,7 +1,7 @@
 <template>
     <a-drawer
       :open="open"
-      @update:open="val => $emit('update:open', val)"
+      @update:open="(val: boolean) => $emit('update:open', val)"
       placement="left"
       width="800"
       :closable="false"
@@ -97,51 +97,43 @@
   const recentVisited = ref<ProductItem[]>([])
   const favorites = ref<ProductItem[]>([])
   
-  // 示例分组数据
-  const groups = ref([
-    {
-      name: '配置中心CC',
-      module: '/cc-config',
-      items: [
-        { title: '基础配置', path: '/cc-config/center' },
-        { title: '子系统管理', path: '/cc-config/subsystem' },
-        // ...
-      ]
-    },
-    {
-      name: '任务调度SilenceJob',
-      module: '/job',
-      items: [
-        { title: '命名空间', path: '/job/namespace' },
-        // ...
-      ]
-    },
-    {
-      name: '消息队列SilenceMQ',
-      module: '/mq',
-      items: [
-        { title: 'TOPIC管理', path: '/mq/topic' },
-        { title: '消息管理', path: '/mq/message' },
-      ]
-    },
-    {
-      name: '系统管理',
-      module: '/system',
-      items: [
-        { title: '用户管理', path: '/system/user' },
-        { title: '角色管理', path: '/system/role' },
-        { title: '菜单管理', path: '/system/menu' },
-        { title: '通知管理', path: '/system/notice' },
-      ]
-    },
-  ])
+  // 从本地存储动态加载菜单数据
+  const groups = computed(() => {
+    const menus = ls.get('MENUS') || []
+    if (!Array.isArray(menus)) return []
+    
+    // 将菜单数据转换为抽屉需要的格式
+    return menus.map((menu: any) => ({
+      name: menu.meta?.title || menu.name,
+      module: menu.path,
+      moduleType: menu.moduleType,
+      items: (menu.children || [])
+        .filter((child: any) => child.type === 2) // 只显示菜单类型，不显示按钮
+        .map((child: any) => {
+          // 正确拼接路径：父路径 + 子路径
+          let fullPath = child.path
+          if (child.path.startsWith('/')) {
+            // 如果子路径以/开头，直接拼接父路径
+            fullPath = `${menu.path}${child.path}`
+          } else {
+            // 如果子路径不以/开头，添加/分隔符
+            fullPath = `${menu.path}/${child.path}`
+          }
+          
+          return {
+            title: child.meta?.title || child.name,
+            path: fullPath
+          }
+        })
+    }))
+  })
   
   const filteredGroups = computed(() => {
     if (!search.value) return groups.value
     return groups.value
       .map(group => ({
         ...group,
-        items: group.items.filter(item =>
+        items: group.items.filter((item: any) =>
           item.title.includes(search.value)
         )
       }))
@@ -201,13 +193,13 @@
   }
   
   function addRecentVisited(item: ProductItem) {
-    let list = ls.get(RECENT_VISITED_PRODUCTS) || []
+    let list: any = ls.get(RECENT_VISITED_PRODUCTS) || []
     list = Array.isArray(list) ? list : []
     list = list.filter((i: any) => i.path !== item.path)
     list.unshift(item)
     if (list.length > 8) list = list.slice(0, 8)
     ls.set(RECENT_VISITED_PRODUCTS, list)
-    recentVisited.value = list
+    recentVisited.value = list as ProductItem[]
     // 确保 item.module 存在
     if (!item.module) {
       // 尝试根据 path 匹配 groups，补全 module 字段

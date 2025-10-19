@@ -40,41 +40,23 @@ const constantRoutes: RouteRecordRaw[] = [
         }
       },
       {
-        path: 'notification',
-        name: 'Notification',
-        component: () => import('@/views/system/notice.vue'),
+        path: 'account',
+        name: 'Account',
+        component: () => import('@/views/account/index.vue'),
         meta: {
-          title: '通知管理',
+          title: '个人页',
           requiresAuth: true
         }
       },
       {
-        path: 'system/user',
-        name: 'SystemUser',
-        component: () => import('@/views/system/user.vue'),
+        path: 'account/settings',
+        name: 'AccountSettings',
+        component: () => import('@/views/account/settings.vue'),
         meta: {
-          title: '用户管理',
+          title: '个人设置',
           requiresAuth: true
         }
       },
-      {
-        path: 'system/role',
-        name: 'SystemRole',
-        component: () => import('@/views/system/role.vue'),
-        meta: {
-          title: '角色管理',
-          requiresAuth: true
-        }
-      },
-      {
-        path: 'system/menu',
-        name: 'SystemMenu',
-        component: () => import('@/views/system/menu.vue'),
-        meta: {
-          title: '菜单管理',
-          requiresAuth: true
-        }
-      }
     ]
   }
   // 注意：404和通配符路由将在所有动态路由加载后再添加
@@ -95,6 +77,13 @@ let hasAddedDynamicRoutes = false;
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
+  console.log('路由守卫执行:', { 
+    从: from.path, 
+    到: to.path, 
+    匹配路由: to.matched.length ? 'yes' : 'no',
+    hasAddedDynamicRoutes,
+    token: ls.get(TOKEN) ? 'exists' : 'none'
+  });
   
   // 白名单直接放行
   if (whiteList.includes(to.path as WhiteListPath)) {
@@ -106,6 +95,7 @@ router.beforeEach(async (to, from, next) => {
   const token = ls.get(TOKEN);
   
   if (!token) {
+    console.log('无token，重定向到登录页');
     // 无token，重定向到登录页
     next('/login');
     return;
@@ -114,38 +104,28 @@ router.beforeEach(async (to, from, next) => {
   // 如果路由还没有加载完成，加载动态路由
   if (!hasAddedDynamicRoutes) {
     const localMenus = ls.get(MENUS);
+    console.log('本地菜单数据:', localMenus);
     if (localMenus && Array.isArray(localMenus) && localMenus.length > 0) {
       await addDynamicRoutes(localMenus);
       // 重新导航以匹配新添加的路由
-      next({ ...to, replace: true });
+      next(to.path);
+      return;
+    } else {
+      next('/login');
       return;
     }
-  }
-  
-  // 如果路由未匹配且不是去404页面，尝试重新加载路由
-  if (to.matched.length === 0 && to.path !== '/404') {
-    // 如果之前标记已加载过，但实际路由未匹配，强制重新加载一次
-    if (hasAddedDynamicRoutes) {
-      hasAddedDynamicRoutes = false;
-      const localMenus = ls.get(MENUS);
-      if (localMenus && Array.isArray(localMenus) && localMenus.length > 0) {
-        await addDynamicRoutes(localMenus);
-        next({ ...to, replace: true });
-        return;
-      }
-    }
-    
-    // 如果重新加载后仍然未匹配，则可能是真的不存在此路由，让通配符路由处理
-    next();
-    return;
   }
   
   // 正常放行
   next();
 });
 
-export async function addDynamicRoutes(menus: MenuItem[]) {
-  if (hasAddedDynamicRoutes) return
+export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false) {
+  console.log('addDynamicRoutes 被调用:', { hasAddedDynamicRoutes, force, menusLength: menus?.length });
+  
+  if (hasAddedDynamicRoutes && !force) {
+    return;
+  }
   
   let menuData: MenuItem[] = [];
   try {
@@ -268,28 +248,35 @@ export async function addDynamicRoutes(menus: MenuItem[]) {
     
     hasAddedDynamicRoutes = true;
   } catch (error) {
+    console.error('添加动态路由失败:', error);
+    hasAddedDynamicRoutes = false; // 确保失败时重置标志
   }
 }
 
 // 转换后端路由为前端路由格式
 function transformRoutes(routes: any[], parentPath: string = ''): RouteRecordRaw[] {
-  return routes.map(route => {
-    const { meta, children } = route;
-    
-    // 处理路径，确保子路由包含父路由前缀
-    let currentPath = route.path;
-    
-    // 如果不是以/开头的路径，且有父路径，则拼接父路径
-    if (!currentPath.startsWith('/') && parentPath) {
-      currentPath = `${parentPath}/${currentPath}`;
-    }
-    // 如果是以/开头，但应该是子路由
-    else if (currentPath.startsWith('/') && parentPath && !currentPath.startsWith(parentPath)) {
-      // 检查是否需要拼接父路径
-      // 只有在父路径不是'/'的情况下才拼接，避免重复前导斜杠
-      if (parentPath !== '/') {
-        currentPath = `${parentPath}${currentPath}`;
+  return routes
+    .filter(route => {
+      // 过滤掉路径为空的路由
+      if (!route.path) {
+        return false;
       }
+      return true;
+    })
+    .map(route => {
+      const { meta, children } = route;
+      
+      // 处理路径，确保子路由包含父路由前缀
+      let currentPath = route.path;
+    
+    // 如果有父路径，需要拼接
+    if (parentPath) {
+      // 如果子路径以/开头，去掉开头的/
+      if (currentPath.startsWith('/')) {
+        currentPath = currentPath.substring(1);
+      }
+      // 拼接父路径和子路径
+      currentPath = `${parentPath}/${currentPath}`;
     }
     
     // 根据组件路径确定实际组件

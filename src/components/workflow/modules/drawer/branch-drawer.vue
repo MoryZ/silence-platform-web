@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import type { FormInst, FormRules } from 'naive-ui';
+import type { FormInstance } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import { expressionOptions } from '@/constants/business';
-import { fetchCheckNodeExpression } from '@/service/api';
+import { fetchCheckNodeExpression } from '@/api/job/workflow';
 import EditableInput from '@/components/common/editable-input.vue';
 
 defineOptions({
@@ -54,22 +55,21 @@ watch(
   { immediate: true }
 );
 
-const formRef = ref<FormInst>();
+const formRef = ref<FormInstance>();
 
 const close = () => {
   emit('update:open', false);
   drawer.value = false;
 };
 
-const save = () => {
-  formRef.value
-    ?.validate(errors => {
-      if (!errors) {
-        close();
-        emit('save', form.value);
-      }
-    })
-    .catch(() => window.$message?.warning('请检查表单信息'));
+const save = async () => {
+  try {
+    await formRef.value?.validate();
+    close();
+    emit('save', form.value);
+  } catch (error) {
+    message.warning('请检查表单信息');
+  }
 };
 
 const nodeExpressionFeedback = ref('');
@@ -95,7 +95,7 @@ const checkNodeExpression = async () => {
   nodeExpressionFeedback.value = '表达式校验通过';
 };
 
-const rules: FormRules = {
+const rules = {
   decision: {
     expressionType: [{ required: true, message: '请选择表达式类型', trigger: 'change', type: 'number' }],
     nodeExpression: [{ required: true, message: '请填写条件表达式', trigger: 'blur' }]
@@ -146,7 +146,12 @@ const rules: FormRules = {
           :validation-status="nodeExpressionStatus"
           :feedback="nodeExpressionFeedback"
         >
-          <CodeMirror v-model="form.decision!.nodeExpression" placeholder="请输入条件表达式" />
+          <a-textarea 
+            v-model:value="form.decision!.nodeExpression" 
+            placeholder="请输入条件表达式"
+            :rows="4"
+            style="font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;"
+          />
         </NFormItem>
         <NFormItem
           path="decision.checkContents"

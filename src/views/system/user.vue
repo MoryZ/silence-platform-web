@@ -1,9 +1,13 @@
 <template>
   <div class="user-management">
-    <a-card :bordered="false">
+    <a-card v-permission="USER_PERMISSIONS.PAGE" :bordered="false">
       <template #title>用户管理</template>
       <template #extra>
-        <a-button type="primary" @click="handleAdd">
+        <a-button 
+          v-permission="USER_PERMISSIONS.ADD"
+          type="primary" 
+          @click="handleAdd"
+        >
           <template #icon><plus-outlined /></template>
           新增用户
         </a-button>
@@ -38,7 +42,7 @@
             <a-switch 
               :checked="text === true"
               :loading="toggleLoading[record.id]"
-              :disabled="record.username === 'admin'"
+              :disabled="record.username === 'admin' || !hasUserStatusPermission()"
               @change="(checked: boolean) => handleToggleStatus(record, checked)"
               size="small"
               :style="{
@@ -58,19 +62,40 @@
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" size="small" @click="handleEdit(record)">
+              <a-button 
+                v-permission="'system:user:edit'"
+                type="link" 
+                size="small" 
+                @click="handleEdit(record)"
+              >
                 <template #icon><edit-outlined /></template>
                 编辑
               </a-button>
-              <a-button type="link" size="small" @click="handleAssignRoles(record)">
+              <a-button 
+                v-permission="'system:user:edit'"
+                type="link" 
+                size="small" 
+                @click="handleAssignRoles(record)"
+              >
                 <template #icon><user-switch-outlined /></template>
                 分配角色
               </a-button>
-              <a-button type="link" size="small" @click="handleChangePassword(record)">
+              <a-button 
+                v-permission="'system:user:reset-password'"
+                type="link" 
+                size="small" 
+                @click="handleChangePassword(record)"
+              >
                 <template #icon><key-outlined /></template>
                 修改密码
               </a-button>
-              <a-button type="link" status="danger" size="small" @click="handleDelete(record)">
+              <a-button 
+                v-permission="'system:user:delete'"
+                type="link" 
+                status="danger" 
+                size="small" 
+                @click="handleDelete(record)"
+              >
                 <template #icon><delete-outlined /></template>
                 删除
               </a-button>
@@ -226,6 +251,8 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
+import { USER_PERMISSIONS } from '@/utils/permissionConstants';
+import { hasPermission } from '@/utils/permissionCheck';
 import { 
   disableUser, 
   enableUser, 
@@ -367,6 +394,12 @@ const roleOptions = ref<Role[]>([]);
 
 // 状态切换加载状态
 const toggleLoading = ref<Record<number, boolean>>({});
+
+// 检查用户状态操作权限
+const hasUserStatusPermission = () => {
+  return hasPermission(USER_PERMISSIONS.ENABLE) || hasPermission(USER_PERMISSIONS.DISABLE);
+};
+
 
 // 修改密码相关
 const showPasswordModal = ref(false);

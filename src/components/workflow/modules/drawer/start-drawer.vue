@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue';
-import { type FormInst, type FormItemRule } from 'naive-ui';
+import type { FormInstance } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import {
   blockStrategyRecordOptions,
   workflowTriggerTypeOptions as triggerTypeOptions,
   workFlowNodeStatusOptions
 } from '@/constants/business';
-import { fetchGetAllGroupNameList, fetchGetNotifyConfigSystemTaskTypeList } from '@/service/api';
-import { useWorkflowStore } from '@/store/modules/workflow';
-import { isNotNull, parseContent, stringToContent } from '@/utils/common';
+import { fetchAllGroupName } from '@/api/job/dashboard';
+import { fetchGetNotifyConfigSystemTaskTypeList } from '@/api/job/notify';
+import { useWorkflowStore } from '@/stores/workflow';
+import { isNotNull, parseContent, stringToContent, type Option } from '@/utils/common';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';
 
@@ -21,7 +23,7 @@ interface Props {
   open?: boolean;
 }
 
-const notifyNameList = ref<CommonType.Option<number>[]>([]);
+const notifyNameList = ref<Option<number>[]>([]);
 const props = withDefaults(defineProps<Props>(), {
   open: false,
   modelValue: () => ({
@@ -42,7 +44,7 @@ onMounted(() => {
 
 async function getNotifyConfigSystemTaskTypeList() {
   const res = await fetchGetNotifyConfigSystemTaskTypeList(4);
-  notifyNameList.value = res.data as CommonType.Option<number>[];
+  notifyNameList.value = res.data as Option<number>[];
 }
 const emit = defineEmits<Emits>();
 
@@ -90,29 +92,30 @@ watch(
   { immediate: true }
 );
 
-const formRef = ref<FormInst>();
+const formRef = ref<FormInstance>();
 
 const close = () => {
   emit('update:open', false);
   drawer.value = false;
 };
 
-const save = () => {
-  formRef.value
-    ?.validate(errors => {
-      if (!errors) {
-        form.value.wfContext = JSON.stringify(parseContent(form.value.wfContexts) || {});
-        close();
-        emit('save', form.value);
-      }
-    })
-    .catch(() => window.$message?.warning('请检查表单信息'));
+const save = async () => {
+  try {
+    await formRef.value?.validate();
+    form.value.wfContext = JSON.stringify(parseContent(form.value.wfContexts) || {});
+    close();
+    emit('save', form.value);
+  } catch (error) {
+    message.warning('请检查表单信息');
+  }
 };
 
 const getGroupNameList = async () => {
-  const { data, error } = await fetchGetAllGroupNameList();
-  if (!error) {
+  try {
+    const data = await fetchAllGroupName();
     groupNameList.value = data;
+  } catch (error) {
+    console.error('获取组名列表失败:', error);
   }
 };
 
@@ -133,7 +136,7 @@ type Model = Pick<
 
 type RuleKey = keyof Model;
 
-const rules: Record<RuleKey, FormItemRule> = {
+const rules: Record<RuleKey, any> = {
   groupName: { required: true, message: '请选择组' },
   triggerType: { required: true, message: '请选择触发类型' },
   triggerInterval: { required: true, message: '请输入触发间隔' },

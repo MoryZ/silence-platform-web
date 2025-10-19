@@ -5,6 +5,7 @@ import App from './App.vue'
 import router from './router'
 import { setupI18n } from './locales';
 import { piniaPluginPersist } from './stores/config'
+import { permissionDirective } from './directives/permission'
 
 // 引入样式
 import 'ant-design-vue/dist/reset.css' // Ant Design Vue 样式
@@ -26,6 +27,9 @@ app.use(router)
 app.use(Antd)
 
 setupI18n(app);
+
+// 注册权限指令
+app.directive('permission', permissionDirective)
 
 // 挂载应用
 app.mount('#app') 

@@ -13,8 +13,6 @@
   </template>
   
   <script setup lang="ts">
-  import { defineProps } from 'vue'
-  
   // 允许父组件传递 keep-alive 缓存页面名数组
   defineProps<{
     cachedViews?: string[]

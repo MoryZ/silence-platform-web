@@ -65,7 +65,7 @@ function joinUrl(base: string, path: string): string {
 function createRequest(baseURL?: string): CustomAxiosInstance {
   const instance = axios.create({
     baseURL: baseURL ?? import.meta.env.VITE_API_BASE_URL,
-    timeout: 10000,
+    timeout: 30000, // 增加到30秒
     headers: {
       'Content-Type': 'application/json'
     }

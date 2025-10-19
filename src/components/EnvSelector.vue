@@ -1,33 +1,28 @@
 <template>
-    <a-button
-      type="link"
-      class="env-button"
-      @click="showEnvModal = true"
+    <a-dropdown
+      v-model:open="showDropdown"
+      placement="bottomRight"
+      :trigger="['click']"
     >
-      <environment-outlined />
-      {{ envStore.envDisplayName }}
-      <down-outlined />
-    </a-button>
-    <a-modal
-      v-model:open="showEnvModal"
-      title="切换环境"
-      width="400"
-      :footer="null"
-      :mask-closable="false"
-    >
-      <a-radio-group
-        v-model:value="selectedEnv"
-        style="width: 100%"
-        @change="onEnvChange"
+      <a-button
+        type="link"
+        class="env-button"
       >
-        <a-radio-button v-for="env in envOptions" :key="env.value" :value="env.value">
-          {{ env.label }}
-        </a-radio-button>
-      </a-radio-group>
-      <div style="text-align: right; margin-top: 24px;">
-        <a-button @click="showEnvModal = false">取消</a-button>
-      </div>
-    </a-modal>
+        <environment-outlined />
+        {{ envStore.envDisplayName }}
+        <down-outlined />
+      </a-button>
+      <template #overlay>
+        <a-menu
+          v-model:selectedKeys="selectedKeys"
+          @click="handleMenuClick"
+        >
+          <a-menu-item v-for="env in envOptions" :key="env.value">
+            {{ env.label }}
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
   </template>
   
   <script setup lang="ts">
@@ -36,23 +31,23 @@
   import { useEnvStore } from '@/stores/env'
   
   const envStore = useEnvStore()
-  const showEnvModal = ref(false)
+  const showDropdown = ref(false)
   const envOptions = [
     { label: '开发环境', value: '1' },
     { label: '测试环境', value: '2' },
     { label: '生产环境', value: '3' }
   ]
-  const selectedEnv = ref(envStore.currentEnv)
+  const selectedKeys = ref([envStore.currentEnv])
   
-  // 监听 store 的 currentEnv，切换后同步 selectedEnv
+  // 监听 store 的 currentEnv，切换后同步 selectedKeys
   watch(() => envStore.currentEnv, (val) => {
-    selectedEnv.value = val
+    selectedKeys.value = [val]
   })
   
-  function onEnvChange(e: any) {
-    const value = e.target ? e.target.value : e
-    envStore.setCurrentEnv(value)
-    showEnvModal.value = false
+  // 菜单点击处理
+  const handleMenuClick = ({ key }: { key: string }) => {
+    envStore.setCurrentEnv(key as any)
+    showDropdown.value = false
   }
   </script>
 

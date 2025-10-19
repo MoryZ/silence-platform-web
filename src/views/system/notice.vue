@@ -1,16 +1,35 @@
 <!-- 通知管理页面 -->
 <template>
   <div class="notification-page">
-    <div class="notification-card">
+    <div v-permission="NOTICE_PERMISSIONS.PAGE" class="notification-card">
       <div class="card-header">
         <h2 class="card-title">通知管理</h2>
         <div class="header-actions">
-          <a-button type="primary" class="action-button" @click="showCreateModal = true">
+          <a-button 
+            v-permission="'system:notice:add'"
+            type="primary" 
+            class="action-button" 
+            @click="showCreateModal = true"
+          >
             <plus-outlined />
             新增通知
           </a-button>
-          <a-button type="primary" class="action-button" @click="handleMarkAllAsRead">全部标记已读</a-button>
-          <a-button danger class="action-button" @click="handleClearAll">清空通知</a-button>
+          <a-button 
+            v-permission="'system:notice:markRead'"
+            type="primary" 
+            class="action-button" 
+            @click="handleMarkAllAsRead"
+          >
+            全部标记已读
+          </a-button>
+          <a-button 
+            v-permission="'system:notice:clear'"
+            danger 
+            class="action-button" 
+            @click="handleClearAll"
+          >
+            清空通知
+          </a-button>
         </div>
       </div>
 
@@ -73,6 +92,7 @@ import { message } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
 import CommonPagination from '../../components/CommonPagination.vue';
+import { NOTICE_PERMISSIONS } from '@/utils/permissionConstants';
 import {
   getNotices,
   createNotice,

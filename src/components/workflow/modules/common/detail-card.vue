@@ -1,11 +1,13 @@
 <script setup lang="tsx">
 import { nextTick, ref, useSlots, watch } from 'vue';
-import { NTag } from 'naive-ui';
-import hljs from 'highlight.js/lib/core';
-import json from 'highlight.js/lib/languages/json';
+import { Tag, message } from 'ant-design-vue';
+// import hljs from 'highlight.js/lib/core';
+// import json from 'highlight.js/lib/languages/json';
 import { jobExecutorEnum, jobOperationReasonEnum, jobStatusEnum, taskBatchStatusEnum } from '@/constants/business';
-import { fetchGetJobBatchDetail, fetchGetJobDetail, fetchWorkflowNodeRetry } from '@/service/api';
-import { useWorkflowStore } from '@/store/modules/workflow';
+import { fetchWorkflowNodeRetry } from '@/api/job/workflow';
+import { getJobDetail } from '@/api/job/job';
+import { findById } from '@/api/job/job-batch';
+import { useWorkflowStore } from '@/stores/workflow';
 import { isNotNull } from '@/utils/common';
 import { $t } from '@/locales';
 
@@ -13,7 +15,7 @@ defineOptions({
   name: 'DetailCard'
 });
 
-hljs.registerLanguage('json', json);
+// hljs.registerLanguage('json', json);
 
 interface Props {
   id?: string;
@@ -77,18 +79,31 @@ const onUpdateShow = () => {
 
 async function getDetail(id: string) {
   spinning.value = true;
-  const { data, error } = await fetchGetJobDetail(id);
-  if (!error) {
+  try {
+    const data = await getJobDetail(id);
     jobData.value = data;
+  } catch (error) {
+    console.error('获取任务详情失败:', error);
+  } finally {
     spinning.value = false;
   }
 }
 
 async function getBatchDetail(id: string) {
   spinning.value = true;
-  const { data, error } = await fetchGetJobBatchDetail(id);
-  if (!error) {
-    jobData.value = data;
+  try {
+    const data = await findById(id);
+    // 转换类型以匹配 JobTaskType
+    jobData.value = {
+      ...data,
+      id: data.id?.toString(),
+      taskBatchId: data.id?.toString(),
+      createDt: data.createdDate,
+      executionAt: data.updatedDate
+    } as Workflow.JobTaskType;
+  } catch (error) {
+    console.error('获取批次详情失败:', error);
+  } finally {
     spinning.value = false;
   }
 }
@@ -116,9 +131,12 @@ const getLogRows = (task: Workflow.JobTaskType) => {
 };
 
 const retry = async () => {
-  const { error } = await fetchWorkflowNodeRetry(store.id!, jobData.value.workflowNodeId!);
-  if (!error) {
-    window.$message?.success('执行重试成功');
+  try {
+    await fetchWorkflowNodeRetry(store.id!, jobData.value.workflowNodeId!);
+    message.success('执行重试成功');
+  } catch (error) {
+    console.error('重试失败:', error);
+    message.error('重试失败');
   }
 };
 
