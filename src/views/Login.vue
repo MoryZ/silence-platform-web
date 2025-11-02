@@ -973,13 +973,14 @@ onMounted(() => {
   color: var(--text-color);
   opacity: 0.65;
   font-size: 14px;
+}
+
+// 将嵌套的 a 选择器提取出来，避免 CSS 压缩警告
+.register-link a {
+  color: #1890ff;
   
-  & a {
-    color: #1890ff;
-    
-    &:hover {
-      color: #40a9ff;
-    }
+  &:hover {
+    color: #40a9ff;
   }
 }
 

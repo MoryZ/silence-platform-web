@@ -253,7 +253,7 @@
     padding: 2px 0;
     min-height: 32px;
   }
-  .product-item a {
+  .product-item :is(a) {
     color: #222;
     cursor: pointer;
     flex: 1;

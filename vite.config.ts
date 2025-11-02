@@ -33,6 +33,10 @@ export default defineConfig({
         api: 'modern-compiler', // 使用现代 API 避免 legacy-js-api 警告
         silenceDeprecations: ['legacy-js-api'], // 静默 legacy-js-api 弃用警告
       },
+      less: {
+        // Less 配置
+        javascriptEnabled: true,
+      },
     },
   },
   build: {
@@ -46,6 +50,13 @@ export default defineConfig({
           tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
           editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
         },
+      },
+      onwarn(warning, warn) {
+        // 忽略 CSS 嵌套规则的警告（这些是已知的 esbuild CSS 压缩器警告，不影响功能）
+        if (warning.message && warning.message.includes('nested style rule cannot start with')) {
+          return
+        }
+        warn(warning)
       },
     },
   },

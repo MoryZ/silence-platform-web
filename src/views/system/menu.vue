@@ -987,15 +987,15 @@ function handleIconPageChange(page: number) {
 }
 
 /* 双色图标的特殊处理 */
-.icon-twotone .anticon svg {
+.icon-twotone .anticon :is(svg) {
   fill: #1890ff;
 }
 
-.icon-twotone .anticon svg path:first-child {
+.icon-twotone .anticon :is(svg) path:first-child {
   fill: #e6f7ff;
 }
 
-.icon-twotone .anticon svg path:last-child {
+.icon-twotone .anticon :is(svg) path:last-child {
   fill: #1890ff;
 }
 
