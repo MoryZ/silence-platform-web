@@ -146,7 +146,7 @@ function getBatchStatusText(status: number): string {
             <DownOutlined />
           </a-button>
           <template #overlay>
-            <a-menu @click="({ key }: { key: string }) => handleSyncSelect(Number(key))">
+            <a-menu @click="(e: any) => handleSyncSelect(Number(e.key))">
               <a-menu-item v-for="option in syncOptions" :key="option.key">
                 {{ option.label }}
               </a-menu-item>

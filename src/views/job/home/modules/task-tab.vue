@@ -1,5 +1,7 @@
 <script setup lang="tsx">
+import { ref, computed, reactive, watch } from 'vue';
 import { $t } from '@/locales';
+import { useAppStore } from '@/stores/app';
 import { fetchAllGroupName, fetchJobLine, fetchRetryLine } from '@/api/job/dashboard';
 import TaskLineChart from './task-line-chart.vue';
 import TaskPieChart from './task-pie-chart.vue';
@@ -9,38 +11,44 @@ defineOptions({
 });
 
 interface Props {
-  modelValue: Api.Dashboard.CardCount;
+  modelValue: any;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-const taskType = ref<Api.Dashboard.TaskType>('JOB');
+const taskType = ref<string>('JOB');
 const appStore = useAppStore();
-const gap = computed(() => (appStore.isMobile ? 0 : 16));
-const data = ref<Api.Dashboard.DashboardLine>();
-const groupOptions = ref();
-const tabParams = ref({
+const gap = computed(() => {
+  // 检测是否为移动设备
+  const isMobile = window.innerWidth < 768;
+  return isMobile ? 0 : 16;
+});
+const data = ref<any>();
+const groupOptions = ref<any[]>([]);
+const tabParams = ref<any>({
   pageNo: 1,
   pageSize: 10,
   taskType: 1
 });
 
 const getData = async () => {
-  const { data: lineData, error } =
-    taskType.value === 'RETRY' ? await fetchRetryLine(tabParams.value) : await fetchJobLine(tabParams.value);
-
-  if (!error) {
+  try {
+    const lineData =
+      taskType.value === 'RETRY' ? await fetchRetryLine(tabParams.value) : await fetchJobLine(tabParams.value);
     data.value = lineData;
+  } catch (error) {
+    console.error('Failed to fetch line data:', error);
   }
 };
 
 const getGroupNames = async () => {
-  const { data: groupNames, error } = await fetchAllGroupName();
-
-  if (!error) {
+  try {
+    const groupNames = await fetchAllGroupName();
     groupOptions.value = groupNames.map(groupName => {
       return { label: groupName, value: groupName };
     });
+  } catch (error) {
+    console.error('Failed to fetch group names:', error);
   }
 };
 
@@ -115,7 +123,7 @@ const createPanels = () => [
 
 const panels = ref(createPanels());
 
-const createColumns = (): TableColumnsType<Api.Dashboard.Task> => [
+const createColumns = (): any[] => [
   {
     title: $t('page.home.retryTab.task.groupName'),
     dataIndex: 'groupName',
@@ -126,21 +134,21 @@ const createColumns = (): TableColumnsType<Api.Dashboard.Task> => [
     dataIndex: 'run',
     key: 'run',
     align: 'center',
-    customRender: ({ text }) => <span class="task-table-number">{text}</span>
+    customRender: ({ text }: any) => <span className="task-table-number">{text}</span>
   },
   {
     title: $t('page.home.retryTab.task.total'),
     dataIndex: 'total',
     key: 'total',
     align: 'center',
-    customRender: ({ text }) => <span class="task-table-number">{text}</span>
+    customRender: ({ text }: any) => <span className="task-table-number">{text}</span>
   }
 ];
 
 const columns = ref(createColumns());
 
 watch(
-  () => appStore.locale,
+  () => appStore.language,
   () => {
     panels.value = createPanels();
     columns.value = createColumns();
@@ -165,7 +173,7 @@ getGroupNames();
       <a-tab-pane v-for="panel in panels" :key="panel.name" :tab="panel.tab" :name="panel.name">
         <a-row :gutter="[gap, 16]">
           <a-col :xs="24" :sm="24" :md="16">
-            <TaskLineChart v-model="data!" :type="taskType" />
+            <TaskLineChart :model-value="data" :type="taskType" />
           </a-col>
           <a-col :xs="24" :sm="24" :md="8">
             <div class="task-tab-rank">
@@ -203,7 +211,7 @@ getGroupNames();
           <a-col :xs="24" :sm="24" :md="8">
             <h4 class="task-tab-title">{{ $t('page.home.retryTab.pie.title') }}</h4>
             <a-divider />
-            <TaskPieChart v-model="modelValue!" :type="taskType" />
+            <TaskPieChart :model-value="props.modelValue" :type="taskType" />
           </a-col>
         </a-row>
       </a-tab-pane>
@@ -301,9 +309,6 @@ getGroupNames();
     }
   }
 
-  &__list {
-    @include scrollbar();
-  }
 }
 
 .dark {
@@ -325,10 +330,6 @@ getGroupNames();
       &--item:hover {
         box-shadow: 1px 1px 8px transparent;
       }
-    }
-
-    &__list {
-      @include scrollbar();
     }
   }
 }

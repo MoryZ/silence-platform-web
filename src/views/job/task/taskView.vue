@@ -105,6 +105,10 @@ function handleSearch() {
   pagination.current = 1;
   fetchData();
 }
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...newForm }
+}
+
 function handleReset() {
   searchForm.value = { groupName: '', jobName: '', executorInfo: '', jobStatus: undefined, executorId: '', ownerId: '' };
   handleSearch();
@@ -442,7 +446,8 @@ function handleExport() {
   <div class="job-task-page">
     <a-card :bordered="false">
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
+        @update:model-value="handleSearchFormUpdate"
         :fields="fields as any"
         @search="handleSearch"
         @reset="handleReset"

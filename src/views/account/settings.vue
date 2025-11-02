@@ -228,11 +228,12 @@ const notificationSettings = reactive({
 onMounted(() => {
   const userInfo = userStore.getUserInfo()
   if (userInfo) {
+    const user = userInfo as any
     basicForm.nickname = userInfo.nickname || userInfo.username || ''
     basicForm.email = userInfo.email || ''
     basicForm.phone = userInfo.phone || ''
-    basicForm.bio = userInfo.bio || ''
-    basicForm.address = userInfo.address || ''
+    basicForm.bio = user?.bio || ''
+    basicForm.address = user?.address || ''
   }
 })
 

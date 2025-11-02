@@ -517,7 +517,7 @@ onUnmounted(() => {
       padding-bottom: 12px;
       border-bottom: 1px solid #f0f0f0;
 
-      h3 {
+      :is(h3) {
         margin: 0 0 8px 0;
         font-size: 16px;
         font-weight: 500;

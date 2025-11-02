@@ -180,7 +180,7 @@
       margin-bottom: 16px;
       
       .user-details {
-        h3 {
+        :is(h3) {
           margin: 0 0 8px 0;
           font-size: 20px;
           font-weight: 600;

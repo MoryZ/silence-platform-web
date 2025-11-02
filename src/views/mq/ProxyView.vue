@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
-import type { ProxyNode, ProxyConfig, ProxyStats, ProxyConnection } from '@/types/proxy'
+import type { ProxyNode, ProxyConfig, ProxyStats, ProxyConnection } from '@/types/mq/proxy'
 
 // State
+const loading = ref(false)
 const proxyNodes = ref<ProxyNode[]>([])
 const proxyStats = ref<ProxyStats[]>([])
 const selectedProxy = ref('')
@@ -34,6 +35,7 @@ const totalItems = ref(0)
 
 // Methods
 const loadProxyNodes = async () => {
+  loading.value = true
   try {
     const response = await fetch('/proxy/list.query')
     const data = await response.json()
@@ -43,12 +45,15 @@ const loadProxyNodes = async () => {
     } else {
       message.error('Error loading proxy nodes: ' + data.errMsg)
     }
-  } catch (error) {
-    message.error('Error loading proxy nodes: ' + error.message)
+  } catch (error: any) {
+    message.error('Error loading proxy nodes: ' + (error?.message || error))
+  } finally {
+    loading.value = false
   }
 }
 
 const loadProxyStats = async () => {
+  loading.value = true
   try {
     const response = await fetch('/proxy/stats.query')
     const data = await response.json()
@@ -58,8 +63,10 @@ const loadProxyStats = async () => {
     } else {
       message.error('Error loading proxy stats: ' + data.errMsg)
     }
-  } catch (error) {
-    message.error('Error loading proxy stats: ' + error.message)
+  } catch (error: any) {
+    message.error('Error loading proxy stats: ' + (error?.message || error))
+  } finally {
+    loading.value = false
   }
 }
 
@@ -73,8 +80,8 @@ const loadProxyConfig = async (proxyAddr: string) => {
     } else {
       message.error('Error loading proxy config: ' + data.errMsg)
     }
-  } catch (error) {
-    message.error('Error loading proxy config: ' + error.message)
+  } catch (error: any) {
+    message.error('Error loading proxy config: ' + (error?.message || error))
   }
 }
 
@@ -88,8 +95,8 @@ const loadConnections = async (proxyAddr: string) => {
     } else {
       message.error('Error loading connections: ' + data.errMsg)
     }
-  } catch (error) {
-    message.error('Error loading connections: ' + error.message)
+  } catch (error: any) {
+    message.error('Error loading connections: ' + (error?.message || error))
   }
 }
 
@@ -109,8 +116,8 @@ const updateProxyConfig = async () => {
     } else {
       message.error('Error updating proxy config: ' + data.errMsg)
     }
-  } catch (error) {
-    message.error('Error updating proxy config: ' + error.message)
+  } catch (error: any) {
+    message.error('Error updating proxy config: ' + (error?.message || error))
   }
 }
 

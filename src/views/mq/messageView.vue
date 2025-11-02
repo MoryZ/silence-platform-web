@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, reactive } from 'vue'
 import { message} from 'ant-design-vue'
 import { queryMessages, viewMessage, findByKeyAndTopic } from '@/api/mq/message'
-import type { MessageQuery, Message, MessageView } from '@/api/mq/message'
+import type { MessageQuery, Message, MessageView } from '@/types/mq/message'
 import { queryTopicList } from '@/api/mq/topic'
 import { SearchOutlined } from '@ant-design/icons-vue'
 import moment from 'moment'
@@ -16,7 +16,7 @@ moment.locale('zh-cn')
 // State
 const loading = ref(false)
 const topics = ref<string[]>([])
-const searchForm = ref<{
+const searchForm = reactive<{
   topic: string
   startTime: dayjs.Dayjs | null
   endTime: dayjs.Dayjs | null
@@ -58,7 +58,7 @@ const loadTopics = async () => {
 
 const searchMessages = async () => {
   // 校验必填项
-  if (!searchForm.value.topic) {
+  if (!searchForm.topic) {
     message.warning('请选择Topic')
     return
   }
@@ -76,12 +76,12 @@ const searchMessages = async () => {
     if (activeTab.value === 'topic') {
       // topic tab 查询
       const query: MessageQuery = {
-        topic: searchForm.value.topic,
+        topic: searchForm.topic,
         pageNo: currentPage.value,
         pageSize: pageSize.value,
         taskId: '',
-        begin: searchForm.value.startTime ? searchForm.value.startTime.valueOf() : 0,
-        end: searchForm.value.endTime ? searchForm.value.endTime.valueOf() : 0,
+        begin: searchForm.startTime ? searchForm.startTime.valueOf() : 0,
+        end: searchForm.endTime ? searchForm.endTime.valueOf() : 0,
         messageId: '',
         key: '',
         tag: ''
@@ -94,7 +94,7 @@ const searchMessages = async () => {
       }
     } else if (activeTab.value === 'messageKey') {
       // messageKey tab 查询
-      const messageView = await findByKeyAndTopic(key.value, searchForm.value.topic)
+      const messageView = await findByKeyAndTopic(key.value, searchForm.topic)
       if (messageView) {
         messages.value = messageView
         totalCount.value = 1
@@ -105,7 +105,7 @@ const searchMessages = async () => {
       }
     } else if (activeTab.value === 'messageId') {
       // messageId tab 查询
-      const result = await viewMessage(messageId.value, searchForm.value.topic)
+      const result = await viewMessage(messageId.value, searchForm.topic)
       if (result && result.messageView) {
         currentMessage.value = result.messageView
         showMessageDetailDialog.value = true
@@ -140,7 +140,7 @@ const viewMessageDetail = async (msg: Message) => {
 
 const openSendDialog = () => {
   newMessage.value = {
-    topic: searchForm.value.topic,
+    topic: searchForm.topic,
     messageBody: '',
     key: '',
     tag: '',
@@ -166,9 +166,9 @@ const handleSendMessage = async () => {
 }
 
 const resetForm = () => {
-  searchForm.value.topic = ''
-  searchForm.value.startTime = null
-  searchForm.value.endTime = null
+  searchForm.topic = ''
+  searchForm.startTime = null
+  searchForm.endTime = null
   messageId.value = ''
   key.value = ''
   tag.value = ''
@@ -182,8 +182,8 @@ onMounted(() => {
   const now = new Date();
   const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
 
-  searchForm.value.startTime = dayjs(threeHoursAgo)
-  searchForm.value.endTime = dayjs(now)
+  searchForm.startTime = dayjs(threeHoursAgo)
+  searchForm.endTime = dayjs(now)
 
 });
 
@@ -212,12 +212,12 @@ watch(activeTab, (newTab) => {
     key.value = ''
     messageId.value = ''
   } else if (newTab === 'messageKey') {
-    searchForm.value.startTime = null
-    searchForm.value.endTime = null
+    searchForm.startTime = null
+    searchForm.endTime = null
     messageId.value = ''
   } else if (newTab === 'messageId') {
-    searchForm.value.startTime = null
-    searchForm.value.endTime = null
+    searchForm.startTime = null
+    searchForm.endTime = null
     key.value = ''
   }
 })

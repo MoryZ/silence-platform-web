@@ -77,6 +77,10 @@ function handleSearch() {
   fetchData();
 }
 
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...newForm }
+}
+
 function handleReset() {
   searchForm.value = { groupName: '' };
   handleSearch();
@@ -96,10 +100,11 @@ fetchData();
   <div class="pods-page">
     <a-card :bordered="false">
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
         :fields="fields"
         @search="handleSearch"
         @reset="handleReset"
+        @update:model-value="handleSearchFormUpdate"
       />
 
       <CommonPagination

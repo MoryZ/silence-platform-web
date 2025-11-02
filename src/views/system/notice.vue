@@ -19,11 +19,11 @@
 
       <!-- 通用搜索面板 -->
       <SearchPanel
-        v-model="searchParams"
+        :model-value="searchParams"
         :fields="searchFields"
         @search="handleSearch"
         @reset="resetSearch"
-        @update:modelValue="handleSearchFormUpdate"
+        @update:model-value="handleSearchFormUpdate"
       />
 
       <div class="table-container">

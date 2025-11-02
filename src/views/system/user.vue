@@ -15,11 +15,11 @@
       
       <!-- 搜索面板 -->
       <search-panel
-        v-model="searchForm"
+        :model-value="searchForm"
         :fields="searchFields"
         @search="handleSearch"
         @reset="handleReset"
-        @update:modelValue="handleSearchFormUpdate"
+        @update:model-value="handleSearchFormUpdate"
       />
 
       <!-- 用户表格 -->

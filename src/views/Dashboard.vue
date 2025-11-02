@@ -145,7 +145,7 @@ const emit = defineEmits(['selectModule'])
 const loadRecentVisited = () => {
   const recent = ls.get(RECENT_VISITED_PRODUCTS)
   if (recent) {
-    recentVisited.value = recent
+    recentVisited.value = recent as any[]
   }
 };
 

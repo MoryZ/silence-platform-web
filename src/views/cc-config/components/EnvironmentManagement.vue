@@ -240,7 +240,7 @@ const handleAddEnvironment = async () => {
     };
     
     const response = await createConfigEnvironment(params);
-    if (response?.data) {
+    if (response) {
       // 先重置表单
       formRef.value.resetFields();
       newEnvironment.value = { 
@@ -262,7 +262,7 @@ const handleAddEnvironment = async () => {
       
       // 如果有新环境，设置为当前激活的环境
       if (environments.value.length > 0) {
-        const newEnv = environments.value.find(env => env.id === response.data.id);
+        const newEnv = environments.value.find((env: any) => env.id === response.id);
         if (newEnv) {
           activeTabKey.value = newEnv.id;
           emit('update:activeTabKey', newEnv.id);

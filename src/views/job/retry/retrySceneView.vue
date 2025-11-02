@@ -238,7 +238,7 @@ const columnKeys = ref<string[]>([
   'updatedDate',
   'operation'
 ]);
-const columns = ref([
+const columns = ref<any[]>([
     {
       key: 'sceneName',
     title: $t('page.retryScene.sceneName'),

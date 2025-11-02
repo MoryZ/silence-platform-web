@@ -21,10 +21,9 @@ const showResendDialog = ref(false)
 const showMessageDetailDialog = ref(false)
 const currentMessage = ref<MessageView | null>(null)
 const resendConfig = ref<ResendDLQMessageRequest>({
-  messageId: '',
-  topic: '',
-  consumerGroup: '',
-  delayLevel: 0
+  msgId: '',
+  topicName: '',
+  consumerGroup: ''
 })
 
 // Methods
@@ -100,10 +99,9 @@ const viewMessageDetail = (message: MessageView) => {
 
 const openResendDialog = (message: MessageView) => {
   resendConfig.value = {
-    messageId: message.messageId,
-    topic: message.topic,
-    consumerGroup: selectedGroup.value,
-    delayLevel: 0
+    msgId: message.messageId,
+    topicName: message.topic,
+    consumerGroup: selectedGroup.value
   }
   showResendDialog.value = true
 }
@@ -320,7 +318,7 @@ const delayLevels = [
       <a-form :model="resendConfig" label-width="100px">
         <a-form-item label="Topic">
           <a-input
-            v-model="resendConfig.topic"
+            v-model="resendConfig.topicName"
             readonly
           />
         </a-form-item>
@@ -330,20 +328,6 @@ const delayLevels = [
             v-model="resendConfig.consumerGroup"
             readonly
           />
-        </a-form-item>
-
-        <a-form-item label="延时级别">
-          <a-select
-            v-model="resendConfig.delayLevel"
-            style="width: 100%"
-          >
-            <a-option
-              v-for="level in delayLevels"
-              :key="level.value"
-              :label="level.label"
-              :value="level.value"
-            />
-          </a-select>
         </a-form-item>
       </a-form>
       <template #footer>

@@ -974,7 +974,7 @@ onMounted(() => {
   opacity: 0.65;
   font-size: 14px;
   
-  a {
+  & a {
     color: #1890ff;
     
     &:hover {

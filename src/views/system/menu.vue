@@ -13,10 +13,11 @@
 
       <!-- 搜索面板 -->
       <SearchPanel 
-        v-model="searchForm" 
+        :model-value="searchForm" 
         :fields="searchFields" 
         @search="handleSearch" 
-        @reset="handleReset" 
+        @reset="handleReset"
+        @update:model-value="handleSearchFormUpdate"
       />
 
       <!-- 表格和分页 -->
@@ -565,6 +566,10 @@ async function syncMenusToLocalStorage() {
 }
 
 // 搜索
+const handleSearchFormUpdate = (newForm: any) => {
+  Object.assign(searchForm, newForm)
+}
+
 function handleSearch() {
   // 重置分页到第一页
   pagination.pageNo = 1

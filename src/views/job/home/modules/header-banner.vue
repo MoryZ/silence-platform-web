@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { $t } from '@/locales';
-import { useAppStore } from '@/store/modules/app';
-import { useAuthStore } from '@/store/modules/auth';
+import { useAppStore } from '@/stores/app';
+import { useUserStore } from '@/stores/user';
 
 defineOptions({
   name: 'HeaderBanner'
 });
 
 const appStore = useAppStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 
-const gap = computed(() => (appStore.isMobile ? 0 : 16));
+const gap = computed(() => {
+  // 检测是否为移动设备
+  const isMobile = window.innerWidth < 768;
+  return isMobile ? 0 : 16;
+});
 
 const timeFix = () => {
   const time = new Date();
@@ -68,7 +72,7 @@ const href = (url: string) => {
                 <SvgIcon class="text-66px color-#00aeec" local-icon="bilibili" />
               </template>
               <template #header>
-                <div class="bilibili-title color-#00aeec font-semibold">Open Snail</div>
+                <div class="bilibili-title color-#00aeec font-semibold">Open Silence</div>
                 <div class="flow-long-title ml-3px font-semibold">bilibili 官方账号</div>
               </template>
             </NThing>

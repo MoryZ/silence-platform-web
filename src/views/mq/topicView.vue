@@ -1065,7 +1065,7 @@ onMounted(async () => {
       :footer="null"
     >
       <template #title>
-        {{ currentTopic.value.topicName }}消费者管理
+        {{ currentTopic.topicName }}消费者管理
       </template>
       <template v-if="currentTopicConsumers.length > 0">
         <div v-for="group in currentTopicConsumers" :key="group.groupName" style="margin-bottom: 24px;">

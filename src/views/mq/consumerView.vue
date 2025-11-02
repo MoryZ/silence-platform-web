@@ -60,9 +60,19 @@ const isAddMode = ref(false)
 const clusterOptions = ref<string[]>([])
 const brokerOptions = ref<string[]>([])
 
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalCount = ref(0)
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  // 如果需要，可以在这里重新加载数据
+}
+
 // Computed
 const filteredConsumerGroups = computed(() => {
-  return consumerGroups.value.filter(group => {
+  const filtered = consumerGroups.value.filter(group => {
     const matchesFilter = !filterStr.value || group.group.toLowerCase().includes(filterStr.value.toLowerCase())
     const isSystemGroup = group.group.startsWith('%SYS%')
     const isFIFOGroup = group.subGroupType === 'FIFO'
@@ -72,6 +82,8 @@ const filteredConsumerGroups = computed(() => {
     if (!isSystemGroup && !isFIFOGroup && !filterNormal.value) return false
     return true
   })
+  totalCount.value = filtered.length
+  return filtered
 })
 
 // Methods
@@ -352,7 +364,7 @@ const onClusterChange = (val: string[]) => {
           :pageSize="pageSize"
           :total="totalCount"
           @change="handlePageChange"
-          show-size-changer="false"
+          :show-size-changer="false"
         />
       </div>
     </a-card>
@@ -446,7 +458,7 @@ const onClusterChange = (val: string[]) => {
       <div style="margin: 16px 0 0 0; color: #888;">
         <div>ConsumeType: {{ currentConnection?.consumeType }}</div>
         <div>MessageModel: {{ currentConnection?.messageModel }}</div>
-        <div>ConsumeFromWhere: {{ currentConnection?.consumeFromWhere }}</div>
+        <div>ConsumeFromWhere: {{ (currentConnection as any)?.consumeFromWhere || 'N/A' }}</div>
       </div>
 
       <template #footer>

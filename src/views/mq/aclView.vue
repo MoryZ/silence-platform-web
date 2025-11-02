@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import type { ACLConfig, ACLAccount, AclResponse } from '@/types/mq/acl'
+import type { ACLConfig, ACLAccount, AclResponse, AclConfig } from '@/types/mq/acl'
 import { message } from 'ant-design-vue'
 import { addAclAccount, queryAclConfigs } from '@/api/mq/acl'
 
@@ -40,9 +40,14 @@ const globalWhiteRemoteAddressesStr = computed({
 const activeTab = ref('account')
 const filterAccessKey = ref('')
 
-const filteredAccounts = computed(() =>
-  config.value.globalWhiteAddrs.includes(filterAccessKey.value)
-)
+const filteredAccounts = computed(() => {
+  if (!filterAccessKey.value) {
+    return config.value.plainAccessConfigs || []
+  }
+  return (config.value.plainAccessConfigs || []).filter(
+    account => account.accessKey.includes(filterAccessKey.value)
+  )
+})
 
 const columns = [
   { title: 'Access Key', dataIndex: 'accessKey', key: 'accessKey' },
@@ -67,10 +72,10 @@ const loadConfig = async () => {
     if (response) {
       config.value = response
     } else {
-      console.error('Error loading ACL config:', data.errMsg)
+      console.error('Error loading ACL config: No response')
     }
-  } catch (error) {
-    console.error('Error loading ACL config:', error)
+  } catch (error: any) {
+    console.error('Error loading ACL config:', error?.message || error)
   }
 }
 
@@ -201,12 +206,143 @@ const handleCreateAccount = async () => {
     message.error('Access Key 和 Secret Key 必填')
     return
   }
+  // 构建完整的 ACLAccount 对象
+  const accountData: ACLAccount = {
+    username: newAccount.value.accessKey, // 使用 accessKey 作为 username
+    accessKey: newAccount.value.accessKey,
+    secretKey: newAccount.value.secretKey,
+    admin: newAccount.value.admin,
+    defaultTopicPerm: newAccount.value.defaultTopicPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    defaultGroupPerm: newAccount.value.defaultGroupPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    topicPerms: {},
+    groupPerms: {},
+    createTime: Date.now(),
+    updateTime: Date.now()
+  }
   // 调用后端接口
-  await createAccount(newAccount.value)
+  await createAccount(accountData)
   showCreateDialog.value = false
 }
 
 const whiteList = ref<string[]>([]) // 假设你有白名单数据
+
+// 添加缺失的方法和变量
+const showAddAccountDialog = ref(false)
+const showEditPermDialog = ref(false)
+const accountForm = ref({
+  accessKey: '',
+  secretKey: '',
+  whiteRemoteAddress: '',
+  admin: false,
+  defaultTopicPerm: 'DENY' as const,
+  defaultGroupPerm: 'SUB' as const
+})
+const permissionForm = ref({
+  type: 'TOPIC' as 'TOPIC' | 'GROUP',
+  resource: '',
+  perm: 'DENY' as const
+})
+const currentAccountForPerm = ref<string>('')
+
+const showTopicPerms = (record: AclConfig) => {
+  selectedAccount.value = {
+    username: record.accessKey,
+    accessKey: record.accessKey,
+    secretKey: record.secretKey || '',
+    admin: record.admin,
+    defaultTopicPerm: record.defaultTopicPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    defaultGroupPerm: record.defaultGroupPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    topicPerms: record.topicPerms || {},
+    groupPerms: record.groupPerms || {},
+    createTime: Date.now(),
+    updateTime: Date.now()
+  } as ACLAccount
+  showPermDialog.value = true
+}
+
+const showGroupPerms = (record: AclConfig) => {
+  selectedAccount.value = {
+    username: record.accessKey,
+    accessKey: record.accessKey,
+    secretKey: record.secretKey || '',
+    admin: record.admin,
+    defaultTopicPerm: record.defaultTopicPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    defaultGroupPerm: record.defaultGroupPerm as 'PUB' | 'SUB' | 'PUB|SUB' | 'DENY',
+    topicPerms: record.topicPerms || {},
+    groupPerms: record.groupPerms || {},
+    createTime: Date.now(),
+    updateTime: Date.now()
+  } as ACLAccount
+  showPermDialog.value = true
+}
+
+const handleDeleteAccount = (accessKey: string) => {
+  deleteAccount(accessKey)
+}
+
+const handleDeletePermission = async (accessKey: string, type: 'TOPIC' | 'GROUP', resource: string) => {
+  try {
+    // TODO: 实现删除权限的API调用
+    message.info('删除权限功能待实现')
+    await loadConfig()
+  } catch (error: any) {
+    message.error(error?.message || '删除权限失败')
+  }
+}
+
+const openEditPermissions = (accessKey: string) => {
+  currentAccountForPerm.value = accessKey
+  showEditPermDialog.value = true
+  permissionForm.value = {
+    type: 'TOPIC',
+    resource: '',
+    perm: 'DENY'
+  }
+}
+
+const handleAddAccount = async () => {
+  if (!accountForm.value.accessKey || !accountForm.value.secretKey) {
+    message.error('Access Key 和 Secret Key 必填')
+    return
+  }
+  const accountData: ACLAccount = {
+    username: accountForm.value.accessKey,
+    accessKey: accountForm.value.accessKey,
+    secretKey: accountForm.value.secretKey,
+    admin: accountForm.value.admin,
+    defaultTopicPerm: accountForm.value.defaultTopicPerm,
+    defaultGroupPerm: accountForm.value.defaultGroupPerm,
+    topicPerms: {},
+    groupPerms: {},
+    createTime: Date.now(),
+    updateTime: Date.now()
+  }
+  await createAccount(accountData)
+  showAddAccountDialog.value = false
+  accountForm.value = {
+    accessKey: '',
+    secretKey: '',
+    whiteRemoteAddress: '',
+    admin: false,
+    defaultTopicPerm: 'DENY',
+    defaultGroupPerm: 'SUB'
+  }
+}
+
+const handleAddPermission = async () => {
+  if (!permissionForm.value.resource) {
+    message.error('请输入资源名称')
+    return
+  }
+  try {
+    // TODO: 实现添加权限的API调用
+    message.info('添加权限功能待实现')
+    showEditPermDialog.value = false
+    await loadConfig()
+  } catch (error: any) {
+    message.error(error?.message || '添加权限失败')
+  }
+}
 
 onMounted(() => {
   loadConfig()
@@ -325,7 +461,7 @@ onMounted(() => {
     </a-modal>
 
     <div class="accounts">
-      <div v-for="account in config.accounts" :key="account.accessKey" class="account-card">
+      <div v-for="account in config.plainAccessConfigs" :key="account.accessKey" class="account-card">
         <div class="account-header">
           <h5>{{ account.accessKey }}</h5>
           <div class="account-actions">
@@ -345,7 +481,7 @@ onMounted(() => {
           </div>
           <div class="info-item">
             <label>White Remote Address:</label>
-            <span>{{ account.whiteRemoteAddress || '-' }}</span>
+            <span>{{ (account.whiteRemoteAddresses || []).join(', ') || '-' }}</span>
           </div>
           <div class="info-item">
             <label>Default Topic Permission:</label>
@@ -357,7 +493,7 @@ onMounted(() => {
           </div>
           <div class="info-item">
             <label>Last Updated:</label>
-            <span>{{ new Date(account.updateTime).toLocaleString() }}</span>
+            <span>-</span>
           </div>
         </div>
 

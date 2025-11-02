@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { fetchCardCount } from '@/api/';
+import { fetchCardCount } from '@/api/job/dashboard';
 import CardData from './modules/card-data.vue';
 import TaskTab from './modules/task-tab.vue';
 
-const cardCount = ref<Api.Dashboard.CardCount>();
+const cardCount = ref<any>();
 
 const getCardData = async () => {
   const { data: cardData, error } = await fetchCardCount();

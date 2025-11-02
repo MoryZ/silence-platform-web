@@ -6,19 +6,19 @@
       placeholder="请输入间隔时间（秒）"
       type="number"
       :min="1"
-      @change="handleChange"
+      @change="(e: any) => handleChange(e.target.value)"
     />
     <Input
       v-else-if="triggerType === 3"
       v-model:value="cronValue"
       placeholder="请输入 Cron 表达式"
-      @change="handleChange"
+      @change="(e: any) => handleChange(e.target.value)"
     />
     <Input
       v-else
       v-model:value="customValue"
       placeholder="请输入触发间隔"
-      @change="handleChange"
+      @change="(e: any) => handleChange(e.target.value)"
     />
   </div>
 </template>

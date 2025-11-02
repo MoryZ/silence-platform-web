@@ -8,6 +8,7 @@ import {
   addThemeVarsToGlobal,
   createThemeToken,
   getNaiveTheme,
+  getPaletteColorByNumber,
   initThemeSettings,
   toggleAuxiliaryColorModes,
   toggleCssDarkMode
@@ -19,7 +20,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
   const osTheme = usePreferredColorScheme();
 
   /** Theme settings */
-  const settings: Ref<App.Theme.ThemeSetting> = ref(initThemeSettings());
+  const settings: Ref<any> = ref(initThemeSettings());
 
   /** Dark mode */
   const darkMode = computed(() => {
@@ -38,7 +39,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
   /** Theme colors */
   const themeColors = computed(() => {
     const { themeColor, otherColor, isInfoFollowPrimary } = settings.value;
-    const colors: App.Theme.ThemeColor = {
+    const colors: any = {
       primary: themeColor,
       ...otherColor,
       info: isInfoFollowPrimary ? themeColor : otherColor.info
@@ -77,7 +78,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
    *
    * @param themeScheme
    */
-  function setThemeScheme(themeScheme: UnionKey.ThemeScheme) {
+  function setThemeScheme(themeScheme: 'light' | 'dark' | 'auto') {
     settings.value.themeScheme = themeScheme;
   }
 
@@ -101,7 +102,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
   /** Toggle theme scheme */
   function toggleThemeScheme() {
-    const themeSchemes: UnionKey.ThemeScheme[] = ['light', 'dark', 'auto'];
+    const themeSchemes: ('light' | 'dark' | 'auto')[] = ['light', 'dark', 'auto'];
 
     const index = themeSchemes.findIndex(item => item === settings.value.themeScheme);
 
@@ -118,13 +119,12 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
    * @param key Theme color key
    * @param color Theme color
    */
-  function updateThemeColors(key: App.Theme.ThemeColorKey, color: string) {
+  function updateThemeColors(key: string, color: string) {
     let colorValue = color;
 
     if (settings.value.recommendColor) {
       // get a color palette by provided color and color name, and use the suitable color
-
-      colorValue = getPaletteColorByNumber(color, 500, true);
+      colorValue = getPaletteColorByNumber(color, 500);
     }
 
     if (key === 'primary') {
@@ -139,7 +139,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
    *
    * @param mode Theme layout mode
    */
-  function setThemeLayout(mode: UnionKey.ThemeLayoutMode) {
+  function setThemeLayout(mode: string) {
     settings.value.layout.mode = mode;
   }
 

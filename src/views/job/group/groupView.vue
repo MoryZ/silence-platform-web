@@ -73,7 +73,7 @@ const allColumns = ref([
   { title: '创建时间', dataIndex: 'createdDate', key: 'createdDate', visible: true, customRender: ({ text }: { text: string }) => text ? formatDate(text) : '' },
   { title: '更新时间', dataIndex: 'updatedDate', key: 'updatedDate', visible: true, customRender: ({ text }: { text: string }) => text ? formatDate(text) : '' },
   { title: '描述', dataIndex: 'description', key: 'description', visible: true },
-  { title: '操作', key: 'operation', visible: true, width: 100, align: 'center' }
+  { title: '操作', key: 'operation', visible: true, width: 100, align: 'center' } as any
 ]);
 const checkedKeys = ref(allColumns.value.filter(c => c.visible).map(c => c.key));
 
@@ -116,6 +116,10 @@ function handleSearch() {
   pagination.current = 1;
   fetchData();
 }
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...newForm }
+}
+
 function handleReset() {
   searchForm.value = { groupName: '', groupStatus: null };
   handleSearch();
@@ -231,10 +235,11 @@ fetchData();
   <div class="group-page">
     <a-card :bordered="false">
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
         :fields="fields"
         @search="handleSearch"
         @reset="handleReset"
+        @update:model-value="handleSearchFormUpdate"
       />
       <div class="table-toolbar">
         <a-button type="primary" style="margin-right: 8px;" @click="handleAdd">新增</a-button>

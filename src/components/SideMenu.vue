@@ -447,12 +447,12 @@ const navigateTo = (path: string, parentPath?: string) => {
   align-items: center;
   background-color: #001529;
 
-  img {
+  :is(img) {
     width: 32px;
     height: 32px;
   }
 
-  h1 {
+  :is(h1) {
     margin: 0 0 0 12px;
     color: white;
     font-weight: 600;

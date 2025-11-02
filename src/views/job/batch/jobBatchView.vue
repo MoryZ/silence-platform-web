@@ -338,6 +338,10 @@ function handleSearch() {
   fetchData();
 }
 
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...newForm }
+}
+
 function handleReset() {
   searchForm.value = { 
     groupName: '', 
@@ -420,10 +424,11 @@ onMounted(() => {
     </div>
 
     <SearchPanel
-      v-model="searchForm"
+      :model-value="searchForm"
       :fields="fields"
       @search="handleSearch"
       @reset="handleReset"
+      @update:model-value="handleSearchFormUpdate"
     />
 
     <div class="table-container">

@@ -11,9 +11,10 @@ import { useUserStore } from '@/stores/user';
  */
 function isTokenExpiredError(error: AxiosError): boolean {
   // 获取错误消息（不区分大小写）
+  const errorData = error.response?.data as any;
   const errorMessage = (
-    error.response?.data?.message ||
-    error.response?.data?.msg ||
+    (errorData?.message) ||
+    (errorData?.msg) ||
     error.message ||
     ''
   ).toLowerCase();

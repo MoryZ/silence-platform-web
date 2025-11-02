@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { queryClusterList } from '@/api/mq/cluster'
+import { queryClusterList, type ClusterData } from '@/api/mq/cluster'
 
-const clusterInfo = ref('')
+const clusterInfo = ref<string>('')
 
 onMounted(async () => {
   try {
       const response = await queryClusterList()
-      clusterInfo.value = response
-  } catch (error) {
+      clusterInfo.value = JSON.stringify(response, null, 2)
+  } catch (error: any) {
     console.error('Error fetching cluster info:', error)
   }
 })

@@ -16,7 +16,7 @@ defineOptions({
 });
 
 interface Props {
-  modelValue?: Api.Dashboard.CardCount;
+  modelValue?: any;
 }
 
 const state = reactive({ width: 0 });
@@ -108,22 +108,22 @@ const cardData = computed<CardData[]>(() => [
       {
         label: $t('common.success'),
         value: props.modelValue?.jobTask.successNum ?? 0,
-        click: () => router.replace('job_batch', { state: { taskBatchStatus: 3 } })
+        click: () => router.replace({ path: 'job_batch', state: { taskBatchStatus: 3 } } as any)
       },
       {
         label: $t('common.fail'),
         value: props.modelValue?.jobTask.failNum ?? 0,
-        click: () => router.replace('job_batch', { state: { taskBatchStatus: 4 } })
+        click: () => router.replace({ path: 'job_batch', state: { taskBatchStatus: 4 } } as any)
       },
       {
         label: $t('common.stop'),
         value: props.modelValue?.jobTask.stopNum ?? 0,
-        click: () => router.replace('job_batch', { state: { taskBatchStatus: 5 } })
+        click: () => router.replace({ path: 'job_batch', state: { taskBatchStatus: 5 } } as any)
       },
       {
         label: $t('common.cancel'),
         value: props.modelValue?.jobTask.cancelNum ?? 0,
-        click: () => router.replace('job_batch', { state: { taskBatchStatus: 6 } })
+        click: () => router.replace({ path: 'job_batch', state: { taskBatchStatus: 6 } } as any)
       }
     ]
   },
@@ -143,22 +143,22 @@ const cardData = computed<CardData[]>(() => [
       {
         label: $t('common.success'),
         value: props.modelValue?.retryTask.finishNum ?? 0,
-        click: () => router.replace('retry_info', { state: { retryStatus: 1 } })
+        click: () => router.replace({ path: 'retry_info', state: { retryStatus: 1 } } as any)
       },
       {
         label: $t('common.running'),
         value: props.modelValue?.retryTask.runningNum ?? 0,
-        click: () => router.replace('retry_info', { state: { retryStatus: 0 } })
+        click: () => router.replace({ path: 'retry_info', state: { retryStatus: 0 } } as any)
       },
       {
         label: $t('page.home.retryTask.status.maxRetryTimes'),
         value: props.modelValue?.retryTask.maxCountNum ?? 0,
-        click: () => router.replace('retry_info', { state: { retryStatus: 2 } })
+        click: () => router.replace({ path: 'retry_info', state: { retryStatus: 2 } } as any)
       },
       {
         label: $t('page.home.retryTask.status.pauseRetry'),
         value: props.modelValue?.retryTask.suspendNum ?? 0,
-        click: () => router.replace('retry_info', { state: { retryStatus: 3 } })
+        click: () => router.replace({ path: 'retry_info', state: { retryStatus: 3 } } as any)
       }
     ]
   },
@@ -178,22 +178,22 @@ const cardData = computed<CardData[]>(() => [
       {
         label: $t('common.success'),
         value: props.modelValue?.workFlowTask.successNum ?? 0,
-        click: () => router.replace('workflow_batch', { state: { taskBatchStatus: 3 } })
+        click: () => router.replace({ path: 'workflow_batch', state: { taskBatchStatus: 3 } } as any)
       },
       {
         label: $t('common.fail'),
         value: props.modelValue?.workFlowTask.failNum ?? 0,
-        click: () => router.replace('workflow_batch', { state: { taskBatchStatus: 4 } })
+        click: () => router.replace({ path: 'workflow_batch', state: { taskBatchStatus: 4 } } as any)
       },
       {
         label: $t('common.stop'),
         value: props.modelValue?.workFlowTask.stopNum ?? 0,
-        click: () => router.replace('workflow_batch', { state: { taskBatchStatus: 5 } })
+        click: () => router.replace({ path: 'workflow_batch', state: { taskBatchStatus: 5 } } as any)
       },
       {
         label: $t('common.cancel'),
         value: props.modelValue?.workFlowTask.cancelNum ?? 0,
-        click: () => router.replace('workflow_batch', { state: { taskBatchStatus: 6 } })
+        click: () => router.replace({ path: 'workflow_batch', state: { taskBatchStatus: 6 } } as any)
       }
     ]
   },
@@ -231,8 +231,8 @@ interface GradientBgProps {
 const [DefineGradientBg, GradientBg] = createReusableTemplate<GradientBgProps>();
 
 function getGradientColor(color: CardData['color']) {
-  const start = themeStore.darkMode ? getPaletteColorByNumber(color.start, 700) : color.start;
-  const end = themeStore.darkMode ? getPaletteColorByNumber(color.end, 700) : color.end;
+  const start = (themeStore as any).darkMode ? getPaletteColorByNumber(color.start, 700) : color.start;
+  const end = (themeStore as any).darkMode ? getPaletteColorByNumber(color.end, 700) : color.end;
   return `linear-gradient(to bottom right, ${start}, ${end})`;
 }
 

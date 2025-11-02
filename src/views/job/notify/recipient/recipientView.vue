@@ -142,6 +142,10 @@ const detailData = ref<NotifyRecipient | null>(null);
 /** 详情页可见状态 */
 const { bool: detailVisible, setTrue: openDetail } = useBoolean(false);
 
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...searchForm.value, ...newForm }
+}
+
 // 事件处理函数
 const handleSearch = () => {
   pagination.current = 1;
@@ -231,7 +235,8 @@ getData();
     <a-card :bordered="false">
       <!-- 搜索面板 -->
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
+        @update:model-value="handleSearchFormUpdate"
         :fields="searchFields"
         @search="handleSearch"
         @reset="handleReset"

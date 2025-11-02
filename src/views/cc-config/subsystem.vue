@@ -11,7 +11,8 @@
 
       <!-- 搜索面板 -->
       <search-panel
-        v-model="searchForm"
+        :model-value="searchForm"
+        @update:model-value="handleSearchFormUpdate"
         :fields="searchFields"
         @search="handleSearch"
         @reset="handleReset"
@@ -356,6 +357,10 @@ const fetchComponents = async (subsystemId: number) => {
     componentLoading.value = false;
   }
 };
+
+const handleSearchFormUpdate = (newForm: any) => {
+  Object.assign(searchForm, newForm)
+}
 
 const handleSearch = () => {
   searchParams.pageNo = 1;

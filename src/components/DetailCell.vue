@@ -42,9 +42,13 @@
   import type { PropType } from 'vue';
   import { $t } from '@/locales';
 
+  type EnumMapValue = { label: string; color: string };
+  
   interface ColumnType {
     type?: string;
-    enumMap?: Record<string | number | boolean, { label: string; color: string }>;
+    // enumMap 支持 string | number | boolean 作为键
+    // 由于 TypeScript 的类型系统限制，使用 any 类型并在访问时进行类型检查
+    enumMap?: Record<string | number, EnumMapValue> | any;
   }
 
   const props = defineProps({

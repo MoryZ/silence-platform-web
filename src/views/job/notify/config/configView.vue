@@ -3,10 +3,11 @@
     <a-card :bordered="false">
       <!-- 搜索面板 -->
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
         :fields="searchFields"
         @search="handleSearch"
         @reset="handleReset"
+        @update:model-value="handleSearchFormUpdate"
       />
       
       <!-- 操作工具栏 -->
@@ -496,6 +497,10 @@ const detailData = ref<NotifyConfig | null>(null);
 const { bool: detailVisible, setTrue: openDetail } = useBoolean(false);
 
 // 事件处理函数
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...searchForm.value, ...newForm }
+}
+
 const handleSearch = () => {
   pagination.current = 1;
   getData();

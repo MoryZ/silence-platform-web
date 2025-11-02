@@ -13,7 +13,6 @@
               v-bind="getComponentProps(field)"
               :placeholder="field.placeholder"
               :options="field.options"
-              :rows="field.type === 'textarea' ? 3 : undefined"
               @change="(val: any) => handleFieldChange(field, val)"
             />
             <span class="addon-slot">
@@ -29,7 +28,6 @@
             v-bind="getComponentProps(field)"
             :placeholder="field.placeholder"
             :options="field.options"
-            :rows="field.type === 'textarea' ? 3 : undefined"
             @change="(val: any) => handleFieldChange(field, val)"
           />
           <a-radio-group
@@ -112,6 +110,9 @@ function getComponentProps(field: FieldConfig) {
   }
   if (field.type === 'input' || field.type === 'textarea') {
     props.allowClear = true;
+  }
+  if (field.type === 'textarea') {
+    props.rows = 3;
   }
   return props;
 }

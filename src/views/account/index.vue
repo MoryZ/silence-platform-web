@@ -63,15 +63,15 @@
                   {{ userInfo?.roles?.join(', ') || 'N/A' }}
                 </a-descriptions-item>
                 <a-descriptions-item label="状态">
-                  <a-tag :color="userInfo?.status === 1 ? 'green' : 'red'">
-                    {{ userInfo?.status === 1 ? '正常' : '禁用' }}
+                  <a-tag :color="userInfo?.status ? 'green' : 'red'">
+                    {{ userInfo?.status ? '正常' : '禁用' }}
                   </a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="创建时间" :span="2">
                   {{ formatDate(userInfo?.createdDate) }}
                 </a-descriptions-item>
                 <a-descriptions-item label="最后登录" :span="2">
-                  {{ formatDate(userInfo?.lastLoginTime) }}
+                  {{ formatDate((userInfo as any)?.lastLoginTime) }}
                 </a-descriptions-item>
               </a-descriptions>
             </div>
@@ -249,11 +249,12 @@ const formatDate = (dateString?: string) => {
 // 初始化用户信息
 onMounted(() => {
   if (userInfo.value) {
+    const user = userInfo.value as any
     basicForm.nickname = userInfo.value.nickname || userInfo.value.username || ''
     basicForm.email = userInfo.value.email || ''
     basicForm.phone = userInfo.value.phone || ''
-    basicForm.bio = userInfo.value.bio || ''
-    basicForm.address = userInfo.value.address || ''
+    basicForm.bio = user?.bio || ''
+    basicForm.address = user?.address || ''
   }
 })
 

@@ -14,7 +14,6 @@ import zhCN from 'ant-design-vue/es/locale/zh_CN';
 import { useThemeStore } from './stores/theme';
 const locale = ref(zhCN);
 const themeStore = useThemeStore();
-const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefined));
 
 </script>
 

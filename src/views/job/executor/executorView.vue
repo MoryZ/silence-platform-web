@@ -16,8 +16,8 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 // 与 groupView 保持一致的 SearchPanel 接口
 const searchForm = ref<{ namespaceId: string; executorName: string }>({ namespaceId: '', executorName: '' });
 const fields = [
-  { key: 'namespaceId', type: 'input' as const, placeholder: '请输入组名称/ID' },
-  { key: 'executorName', type: 'input' as const, placeholder: '请输入执行器名称' }
+  { key: 'namespaceId', label: '组名称/ID', type: 'input' as const, placeholder: '请输入组名称/ID' },
+  { key: 'executorName', label: '执行器名称', type: 'input' as const, placeholder: '请输入执行器名称' }
 ];
 
 // 列设置（支持拖拽与显隐）
@@ -30,7 +30,7 @@ const allColumns = ref([
   { title: '更新人', dataIndex: 'updatedBy', key: 'updatedBy', visible: false },
   { title: '创建时间', dataIndex: 'createdDate', key: 'createdDate', visible: true },
   { title: '更新时间', dataIndex: 'updatedDate', key: 'updatedDate', visible: true },
-  { title: '操作', key: 'operation', visible: true, width: 120, align: 'center' }
+  { title: '操作', key: 'operation', visible: true, width: 120, align: 'center' } as any
 ]);
 const checkedKeys = ref(allColumns.value.filter(c => c.visible).map(c => c.key));
 const tableColumns = computed(() => allColumns.value.filter(col => checkedKeys.value.includes(col.key)));
@@ -165,6 +165,10 @@ async function fetchData() {
   }
 }
 
+const handleSearchFormUpdate = (newForm: any) => {
+  searchForm.value = { ...newForm }
+}
+
 function handleSearch() {
   pagination.current = 1;
   fetchData();
@@ -194,10 +198,11 @@ fetchData();
   <div class="executor-page">
     <a-card :bordered="false">
       <SearchPanel
-        v-model="searchForm"
+        :model-value="searchForm"
         :fields="fields"
         @search="handleSearch"
         @reset="handleReset"
+        @update:model-value="handleSearchFormUpdate"
       />
 
       <div class="table-toolbar">

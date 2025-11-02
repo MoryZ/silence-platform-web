@@ -319,7 +319,7 @@ onMounted(() => {
     background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     
-    h3 {
+    :is(h3) {
       margin: 0 0 12px 0;
       color: var(--text-color);
     }
@@ -375,7 +375,7 @@ onMounted(() => {
   .detail-header {
     margin-bottom: 20px;
     
-    h3 {
+    :is(h3) {
       margin: 0 0 12px 0;
       color: var(--text-color);
       font-size: 18px;

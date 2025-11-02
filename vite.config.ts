@@ -18,32 +18,25 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-        '^/auth/api/v1': {
-          target: 'http://localhost:8096',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/auth\/api\/v1/, '/api/v1'),
-        },
-        '^/config/api/v1': {
-          target: 'http://localhost:8097',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/config\/api\/v1/, '/api/v1'),
-        },
-        '^/job/api/v1': {
-          target: 'http://115.190.196.117:8098',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/job\/api\/v1/, '/api/v1'),
-        },
-        '^/mq/api/v1': {
-          target: 'http://115.190.196.117:8099',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/mq\/api\/v1/, '/api/v1'),
-        },
+      '^/(auth|config|job|mq)/api/v1': {
+        target: 'http://115.190.196.117:9000', 
+        changeOrigin: true,
+      },
     },
   },
   optimizeDeps: {
     include: ['monaco-editor']
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler', // 使用现代 API 避免 legacy-js-api 警告
+        silenceDeprecations: ['legacy-js-api'], // 静默 legacy-js-api 弃用警告
+      },
+    },
+  },
   build: {
+    cssMinify: 'esbuild', // 使用 esbuild CSS 压缩器
     rollupOptions: {
       output: {
         manualChunks: {
