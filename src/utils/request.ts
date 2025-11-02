@@ -1,9 +1,90 @@
 import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { message } from 'ant-design-vue';
 import { ls } from './stoarge';
 import { TOKEN } from './constant';
 import { useUserStore } from '@/stores/user';
+
+/**
+ * 判断是否是 token 过期导致的错误
+ * 通过检查错误消息中是否包含 token 过期相关的关键词来判断
+ */
+function isTokenExpiredError(error: AxiosError): boolean {
+  // 获取错误消息（不区分大小写）
+  const errorMessage = (
+    error.response?.data?.message ||
+    error.response?.data?.msg ||
+    error.message ||
+    ''
+  ).toLowerCase();
+
+  // 明确的 token 过期关键词（这些关键词明确表示 token 过期）
+  const explicitTokenExpiredKeywords = [
+    'token expired',
+    'token is expired',
+    'token过期',
+    'token 过期',
+    '登录已过期',
+    '登录过期',
+    'token失效',
+    'token 失效',
+    'token无效',
+    'token 无效',
+    'expired token',
+    'invalid token',
+    '认证失败',
+    '认证过期',
+    '认证已过期',
+    '身份验证失败',
+    '身份验证过期',
+  ];
+
+  // 检查是否包含明确的 token 过期关键词
+  const hasExplicitTokenExpiredKeyword = explicitTokenExpiredKeywords.some(
+    (keyword) => errorMessage.includes(keyword)
+  );
+
+  if (hasExplicitTokenExpiredKeyword) {
+    return true;
+  }
+
+  // 如果错误消息中包含 "token" 和 "expired"/"过期"/"失效" 等词汇，也认为是 token 过期
+  if (
+    errorMessage.includes('token') &&
+    (errorMessage.includes('expired') ||
+      errorMessage.includes('过期') ||
+      errorMessage.includes('失效') ||
+      errorMessage.includes('invalid'))
+  ) {
+    return true;
+  }
+
+  // 如果错误消息中包含 "登录" 和 "过期"/"失效" 等词汇，也认为是 token 过期
+  if (
+    errorMessage.includes('登录') &&
+    (errorMessage.includes('过期') || errorMessage.includes('失效'))
+  ) {
+    return true;
+  }
+
+  // 如果只是简单的 "unauthorized" 或 "未授权"，且没有其他标识，认为是权限问题，不是 token 过期
+  // 注意：这个判断放在最后，避免误判
+  if (
+    (errorMessage === 'unauthorized' ||
+      errorMessage === '未授权' ||
+      errorMessage.trim() === 'unauthorized' ||
+      errorMessage.trim() === '未授权') &&
+    !errorMessage.includes('token') &&
+    !errorMessage.includes('登录') &&
+    !errorMessage.includes('认证')
+  ) {
+    return false;
+  }
+
+  // 默认情况下，如果是 401 但没有明确的 token 过期标识，保守地认为是权限问题
+  // 但这里已经在外层判断了，所以默认返回 false
+  return false;
+}
 // 创建自定义的 axios 实例类型
 interface CustomAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete'> {
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
@@ -50,7 +131,46 @@ function attachInterceptors(instance: AxiosInstance) {
       return response.data;
     },
     (error) => {
-      message.error(error.message || '请求失败');
+      // 处理 HTTP 状态码层面的 401 错误
+      if (error.response?.status === 401) {
+        // 判断是否是 token 过期导致的 401
+        const isTokenExpired = isTokenExpiredError(error);
+        
+        if (isTokenExpired) {
+          // token 过期，清除登录状态并跳转
+          const userStore = useUserStore();
+          message.error('登录已过期，请重新登录');
+          userStore.handleLogout();
+        } else {
+          // 其他 401 错误（如权限不足），只显示错误消息，不跳转
+          const errorMessage = 
+            error.response?.data?.message || 
+            error.response?.data?.msg || 
+            '无权限访问该资源';
+          message.error(errorMessage);
+        }
+        return Promise.reject(error);
+      }
+      
+      // 处理业务层面的错误响应
+      if (error.response?.data && typeof error.response.data === 'object' && 'code' in error.response.data) {
+        const errorData = error.response.data;
+        message.error(errorData.msg || errorData.message || '请求失败');
+        
+        // 只有确认是 token 过期时才登出
+        if (errorData.code === 401) {
+          const isTokenExpired = isTokenExpiredError(error);
+          if (isTokenExpired) {
+            const userStore = useUserStore();
+            userStore.handleLogout();
+          }
+        }
+        return Promise.reject(new Error(errorData.msg || errorData.message || '请求失败'));
+      }
+      
+      // 处理其他错误情况
+      const errorMessage = error.response?.data?.message || error.message || '请求失败';
+      message.error(errorMessage);
       return Promise.reject(error);
     }
   );

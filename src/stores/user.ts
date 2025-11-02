@@ -75,9 +75,11 @@ export const useUserStore = defineStore("user", () => {
         await addDynamicRoutes(menus, true);
       } else {
         console.log('没有菜单数据');
+        // 清空之前的菜单数据
+        ls.remove(MENUS);
       }
       
-      return true;
+      return { success: true, hasMenus: Array.isArray(menus) && menus.length > 0 };
     } catch (error) {
       console.error('Login failed:', error);
       return false;

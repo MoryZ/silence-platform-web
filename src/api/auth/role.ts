@@ -29,9 +29,13 @@ export function getRoles(params: RoleParams): Promise<RoleResponse> {
   return request.get('/api/v1/roles', { params });
 }
 
+export function getMinimumRoles(): Promise<Role[]> {
+  return request.get('/api/v1/roles/minimum');
+}
+
 export function getRoleList(): Promise<Role[]> {
     return request.get('/api/v1/roles');
-  }
+}
 
 export function createRole(data: Partial<Role>): Promise<Role> {
   return request.post('/api/v1/roles', data);

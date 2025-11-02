@@ -35,7 +35,6 @@ export function getAllConfigSubsystem(): Promise<ConfigSubsystem[]> {
 }
 
 
-
 /**
  * 分页获取配置项列表
  */

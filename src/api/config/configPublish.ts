@@ -7,6 +7,17 @@ interface BatchPublishParams {
   environmentId: number;
 }
 
+interface PublishParams {
+  releaseName: string;
+  configItemId: number;
+  oldContent: string;
+  content: string;
+  releaseType: number;
+}
 export function batchPublishConfigs(params: BatchPublishParams) {
-  return request.post('/api/v1/configPublish/batch', params);
+  return request.post('/api/v1/configItemReleaseHistories/batch', params);
+} 
+
+export function publishConfig(data: Partial<PublishParams>) {
+  return request.put('/api/v1/configItemReleaseHistories/release', data);
 } 

@@ -7,6 +7,9 @@ import { setupI18n } from './locales';
 import { piniaPluginPersist } from './stores/config'
 import { permissionDirective } from './directives/permission'
 
+// 在应用启动时初始化 Monaco Editor 配置
+import './utils/monaco'
+
 // 引入样式
 import 'ant-design-vue/dist/reset.css' // Ant Design Vue 样式
 import './assets/main.css' // 全局样式

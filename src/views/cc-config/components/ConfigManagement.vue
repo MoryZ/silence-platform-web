@@ -90,7 +90,7 @@
         </a-form-item>
 
         <a-form-item label="配置内容" name="content">
-          <div ref="addConfigEditor" class="config-editor"></div>
+          <div ref="addConfigEditor" class="config-editor" style="height: 400px;"></div>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -180,11 +180,15 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// 暴露“新增配置”方法供父组件调用
+// 暴露"新增配置"方法供父组件调用
 function openAddModal() {
-  handleAdd()
+  if (!props.activeTabKey) {
+    message.warning('请先选择环境');
+    return;
+  }
+  handleAdd();
 }
-defineExpose({ openAddModal })
+defineExpose({ openAddModal });
 
 function handleCompare() {
   // 预留：比较配置逻辑
@@ -244,7 +248,8 @@ const columns = [
 // 状态映射
 const statusMap: Record<number, { text: string; color: string }> = {
   1: { text: '已保存', color: 'warning' },
-  2: { text: '已发布', color: 'success' },
+  2: { text: '发布中', color: 'processing' },
+  3: { text: '已发布', color: 'success' },
 };
 
 // 格式类型映射
@@ -379,10 +384,11 @@ const handlePublish = (record: ConfigItem) => {
 // 处理新增
 const handleAdd = () => {
   newConfigForm.value.configEnvironmentId = Number(props.activeTabKey);
+  newConfigForm.value.type = 1;
+  newConfigForm.value.namespaceId = '';
+  newConfigForm.value.formatType = 1;
+  newConfigForm.value.content = '';
   showAddConfigModal.value = true;
-  nextTick(() => {
-    initConfigEditor();
-  });
 };
 
 // 处理克隆命名空间
@@ -498,7 +504,7 @@ const handleSave = async (content: string) => {
       changeMessage += `\n变更统计: 新增${changeSummary.addedLines}行, 删除${changeSummary.removedLines}行, 修改${changeSummary.changedLines}行`;
     }
 
-    // 执行保存
+    // 执行保存，更新内容（后端会自动将状态设置为1）
     await updateConfigContent(currentEditItem.value.id, content, operationType);
     
     // 显示成功消息，包含变更信息
@@ -514,29 +520,103 @@ const handleSave = async (content: string) => {
   }
 };
 
+// 监听弹窗打开状态，初始化编辑器
+watch(() => showAddConfigModal.value, async (isOpen) => {
+  if (isOpen) {
+    // 等待弹窗完全渲染后再初始化编辑器
+    await nextTick();
+    // 使用 requestAnimationFrame 确保 DOM 完全渲染和布局完成
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        initConfigEditor();
+      }, 50);
+    });
+  } else {
+    // 弹窗关闭时清理编辑器
+    if (configMonacoEditor) {
+      try {
+        configMonacoEditor.dispose();
+      } catch (e) {
+        console.warn('Error disposing editor:', e);
+      }
+      configMonacoEditor = null;
+    }
+  }
+});
+
+// 监听格式类型变化，更新编辑器语言
+watch(() => newConfigForm.value.formatType, (newType) => {
+  if (configMonacoEditor) {
+    const language = getLanguage(newType);
+    monaco.editor.setModelLanguage(configMonacoEditor.getModel()!, language);
+  }
+});
+
 // 初始化配置编辑器
 const initConfigEditor = () => {
-  if (!addConfigEditor.value) return;
-
-  if (configMonacoEditor) {
-    configMonacoEditor.dispose();
+  if (!addConfigEditor.value) {
+    console.error('Editor container not found');
+    return;
   }
 
-  configMonacoEditor = monaco.editor.create(addConfigEditor.value, {
-    value: newConfigForm.value.content,
-    language: getLanguage(newConfigForm.value.formatType),
-    theme: 'vs-dark',
-    minimap: { enabled: false },
-    lineNumbers: 'on',
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    fontSize: 14
-  });
+  // 检查容器是否可见且有尺寸
+  const rect = addConfigEditor.value.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    console.warn('Editor container has no size, retrying...');
+    setTimeout(() => initConfigEditor(), 100);
+    return;
+  }
 
-  // 监听编辑器内容变化
-  configMonacoEditor.onDidChangeModelContent(() => {
-    newConfigForm.value.content = configMonacoEditor.getValue();
-  });
+  // 如果编辑器已存在，先清理
+  if (configMonacoEditor) {
+    try {
+      configMonacoEditor.dispose();
+    } catch (e) {
+      console.warn('Error disposing editor:', e);
+    }
+    configMonacoEditor = null;
+  }
+
+  try {
+    // 确保 Monaco 已经加载
+    if (!monaco || !monaco.editor) {
+      console.error('Monaco Editor not loaded');
+      message.error('编辑器未加载，请刷新页面重试');
+      return;
+    }
+
+    configMonacoEditor = monaco.editor.create(addConfigEditor.value, {
+      value: newConfigForm.value.content || '',
+      language: getLanguage(newConfigForm.value.formatType),
+      theme: 'vs-dark',
+      minimap: { enabled: false },
+      lineNumbers: 'on',
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      fontSize: 14,
+      wordWrap: 'on',
+      // 禁用一些可能导致问题的功能
+      quickSuggestions: false,
+      suggestOnTriggerCharacters: false,
+    });
+
+    // 监听编辑器内容变化
+    configMonacoEditor.onDidChangeModelContent(() => {
+      if (configMonacoEditor) {
+        newConfigForm.value.content = configMonacoEditor.getValue();
+      }
+    });
+
+    // 强制布局更新
+    setTimeout(() => {
+      if (configMonacoEditor) {
+        configMonacoEditor.layout();
+      }
+    }, 100);
+  } catch (error) {
+    console.error('Failed to initialize Monaco editor:', error);
+    message.error('编辑器初始化失败，请刷新页面重试');
+  }
 };
 
 // 获取编辑器语言
@@ -576,6 +656,15 @@ const handleAddConfigSubmit = async () => {
 
 // 处理新增配置取消
 const handleAddConfigCancel = () => {
+  // 先清理编辑器
+  if (configMonacoEditor) {
+    try {
+      configMonacoEditor.dispose();
+    } catch (e) {
+      console.warn('Error disposing editor on cancel:', e);
+    }
+    configMonacoEditor = null;
+  }
   showAddConfigModal.value = false;
   resetConfigForm();
 };
@@ -631,8 +720,10 @@ onUnmounted(() => {
 
   .config-editor {
     height: 400px;
+    min-height: 400px;
     border: 1px solid var(--border-color);
     border-radius: 2px;
+    width: 100%;
   }
 
   .text-muted {

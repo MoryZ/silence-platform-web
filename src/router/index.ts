@@ -24,6 +24,33 @@ const constantRoutes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: () => import('@/views/ChangePassword.vue'),
+    meta: {
+      title: '修改密码',
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPassword.vue'),
+    meta: {
+      title: '重置密码',
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/apply-permission',
+    name: 'ApplyPermission',
+    component: () => import('@/views/ApplyPermission.vue'),
+    meta: {
+      title: '申请权限',
+      requiresAuth: false
+    }
+  },
+  {
     path: '/',
     name: 'MainLayout',
     // 使用异步导入替代直接导入
@@ -63,7 +90,7 @@ const constantRoutes: RouteRecordRaw[] = [
 ];
 
 // 白名单路由
-const whiteList = ['/login', '/404'] as const;
+const whiteList = ['/login', '/404', '/change-password', '/apply-permission', '/forgot-password'] as const;
 type WhiteListPath = typeof whiteList[number];
 
 // 创建路由实例

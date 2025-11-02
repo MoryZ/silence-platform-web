@@ -753,7 +753,7 @@ async function handleModalOk() {
       moduleType: formState.moduleType,
       sort: formState.sort,
       meta: {
-        title: formState.title,
+        title: formState.title || formState.name, // 如果 title 为空，使用菜单名称
         icon: formState.icon || '',
         show: formState.visible,
         requiresAuth: true,

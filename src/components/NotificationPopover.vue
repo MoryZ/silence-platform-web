@@ -3,7 +3,8 @@
     v-model:open="visible"
     trigger="click"
     placement="bottomRight"
-    :overlay-style="{ width: '336px' }"
+    :overlay-style="{ width: '336px', padding: 0 }"
+    overlay-class-name="notification-popover-overlay"
   >
     <template #content>
       <div class="notification-popup">
@@ -147,8 +148,6 @@ onMounted(() => fetchNotifications(0))
 <style scoped>
 .notification-popup {
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 0;
   min-width: 360px;
   max-width: 420px;
@@ -249,5 +248,17 @@ onMounted(() => fetchNotifications(0))
   font-size: 15px;
   font-weight: 500;
   box-shadow: 0 2px 8px rgba(22,119,255,0.08);
+}
+</style>
+
+<style>
+/* 全局样式：覆盖 a-popover 的默认样式 */
+.notification-popover-overlay .ant-popover-inner {
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 0;
+}
+.notification-popover-overlay .ant-popover-inner-content {
+  padding: 0;
 }
 </style>

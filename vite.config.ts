@@ -29,12 +29,12 @@ export default defineConfig({
           rewrite: (path) => path.replace(/^\/config\/api\/v1/, '/api/v1'),
         },
         '^/job/api/v1': {
-          target: 'http://localhost:8098',
+          target: 'http://115.190.196.117:8098',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/job\/api\/v1/, '/api/v1'),
         },
         '^/mq/api/v1': {
-          target: 'http://localhost:8099',
+          target: 'http://115.190.196.117:8099',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/mq\/api\/v1/, '/api/v1'),
         },

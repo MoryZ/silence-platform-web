@@ -63,6 +63,6 @@ export function deleteConfigItem(id: number) {
 /**
  * 更新配置内容
  */
-export function updateConfigContent(id: number, content: string) {
-  return request.put<ConfigItem>(`/api/v1/configItems/${id}/content`, { content });
+export function updateConfigContent(id: number, content: string, operationType: number) {
+  return request.put<ConfigItem>(`/api/v1/configItems/${id}/content`, { content: content, operationType: operationType });
 } 

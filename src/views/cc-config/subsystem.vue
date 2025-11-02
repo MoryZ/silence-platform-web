@@ -1,77 +1,52 @@
 <template>
   <div class="subsystem-container">
-    <!-- 顶部操作栏 -->
-    <div class="action-bar">
-      <div class="left">
-        <div class="search-item">
-          <a-input
-            v-model:value="searchParams.name"
-            placeholder="请输入子系统名称"
-            style="width: 200px"
-            allow-clear
-            @pressEnter="handleSearch"
-          />
-          <close-circle-filled
-            v-if="searchParams.name"
-            class="clear-icon"
-            @click="() => clearSearchItem('name')"
-          />
-        </div>
-        <div class="search-item">
-          <a-input
-            v-model:value="searchParams.code"
-            placeholder="请输入子系统编码"
-            style="width: 200px"
-            allow-clear
-            @pressEnter="handleSearch"
-          />
-          <close-circle-filled
-            v-if="searchParams.code"
-            class="clear-icon"
-            @click="() => clearSearchItem('code')"
-          />
-        </div>
-        <a-space>
-          <a-button type="primary" @click="handleSearch">
-            <template #icon><search-outlined /></template>
-            搜索
-          </a-button>
-          <a-button @click="handleReset">
-            <template #icon><redo-outlined /></template>
-            重置
-          </a-button>
-        </a-space>
-      </div>
-      <div class="right">
+    <a-card :bordered="false">
+      <template #title>子系统管理</template>
+      <template #extra>
         <a-button type="primary" @click="handleAddSubsystem">
           <plus-outlined />
           新增子系统
         </a-button>
-      </div>
-    </div>
+      </template>
 
-    <!-- 主体内容区 -->
-    <div class="content-area">
+      <!-- 搜索面板 -->
+      <search-panel
+        v-model="searchForm"
+        :fields="searchFields"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
+
       <!-- 子系统列表 -->
-      <div class="subsystem-list">
-        <a-card :bordered="false" title="子系统列表">
-          <template #extra>
-            <a-button type="link" @click="refreshSubsystems">
-              <reload-outlined />
-              刷新
-            </a-button>
+      <common-pagination
+        :columns="columns"
+        :data-source="subsystems"
+        :loading="loading"
+        :page-no="searchParams.pageNo"
+        :page-size="searchParams.pageSize"
+        :total="pagination.total"
+        row-key="id"
+        style="margin-top: 16px"
+        @change="handlePageChange"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <a-space>
+              <a @click="handleViewComponents(record)">查看组件</a>
+              <a-divider type="vertical" />
+              <a @click="handleEditSubsystem(record)">编辑</a>
+              <a-divider type="vertical" />
+              <a-popconfirm
+                title="确定要删除该子系统吗？"
+                @confirm="handleDeleteSubsystem(record)"
+              >
+                <a class="danger-link">删除</a>
+              </a-popconfirm>
+            </a-space>
           </template>
-          <common-pagination
-            :onUpdate:pageNo="(val: number) => searchParams.pageNo = val"
-            :columns="columns"
-            :data-source="subsystems"
-            v-model:pageNo="searchParams.pageNo"
-            v-model:pageSize="searchParams.pageSize"
-            :total="pagination.total"
-            @change="handlePageChange"
-          />
-        </a-card>
-      </div>
+        </template>
+      </common-pagination>
+    </a-card>
 
       <!-- 组件列表抽屉 -->
       <a-drawer
@@ -178,7 +153,6 @@
           </a-form-item>
         </a-form>
       </a-modal>
-    </div>
   </div>
 </template>
 
@@ -200,14 +174,9 @@ import {
   deleteConfigComponent,
   type ConfigComponent,
 } from '../../api/config/configComponent';
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-  RedoOutlined,
-  CloseCircleFilled,
-} from '@ant-design/icons-vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import SearchPanel from '../../components/SearchPanel.vue';
 import CommonPagination from '../../components/CommonPagination.vue';
 
 // 表格列定义
@@ -231,6 +200,7 @@ const columns = [
     title: '创建时间',
     dataIndex: 'createdDate',
     key: 'createdDate',
+    type: 'date',
   },
   {
     title: '操作',
@@ -277,6 +247,31 @@ const pagination = reactive({
   pageSize: 10,
   total: 0,
 });
+
+// 搜索表单
+const searchForm = reactive<Record<string, any>>({
+  name: '',
+  code: '',
+  description: '',
+});
+
+// 搜索字段配置
+const searchFields = [
+  {
+    key: 'name',
+    label: '子系统名称',
+    type: 'input' as const,
+    placeholder: '请输入子系统名称',
+    style: 'width: 200px',
+  },
+  {
+    key: 'code',
+    label: '子系统编码',
+    type: 'input' as const,
+    placeholder: '请输入子系统编码',
+    style: 'width: 200px',
+  },
+];
 
 // 搜索参数
 const searchParams = reactive<ConfigSubsystemParams>({
@@ -364,24 +359,26 @@ const fetchComponents = async (subsystemId: number) => {
 
 const handleSearch = () => {
   searchParams.pageNo = 1;
+  searchParams.name = searchForm.name || '';
+  searchParams.code = searchForm.code || '';
+  searchParams.description = searchForm.description || '';
   fetchSubsystems();
 };
 
 const handleReset = () => {
+  searchForm.name = '';
+  searchForm.code = '';
+  searchForm.description = '';
+  searchParams.pageNo = 1;
   searchParams.name = '';
   searchParams.code = '';
   searchParams.description = '';
-  searchParams.pageNo = 1;
   fetchSubsystems();
 };
 
 const handlePageChange = (page: number, size: number) => {
   searchParams.pageNo = page;
   searchParams.pageSize = size;
-  fetchSubsystems();
-};
-
-const refreshSubsystems = () => {
   fetchSubsystems();
 };
 
@@ -408,17 +405,29 @@ const handleSubsystemSubmit = async () => {
   try {
     await subsystemFormRef.value?.validate();
     if (subsystemForm.id) {
-      await updateConfigSubsystem(subsystemForm.id, subsystemForm);
+      await updateConfigSubsystem(subsystemForm.id, {
+        name: subsystemForm.name,
+        code: subsystemForm.code,
+        description: subsystemForm.description,
+      });
       message.success('更新成功');
     } else {
-      await createConfigSubsystem(subsystemForm);
+      await createConfigSubsystem({
+        name: subsystemForm.name,
+        code: subsystemForm.code,
+        description: subsystemForm.description,
+      });
       message.success('创建成功');
     }
     subsystemModal.visible = false;
     fetchSubsystems();
   } catch (error) {
     console.error('提交失败:', error);
-    message.error('提交失败');
+    if (error instanceof Error) {
+      message.error(error.message || '提交失败');
+    } else {
+      message.error('提交失败');
+    }
   }
 };
 
@@ -502,11 +511,6 @@ const handleDeleteComponent = async (record: ConfigComponent) => {
   }
 };
 
-// 清除单个搜索条件
-const clearSearchItem = (field: keyof ConfigSubsystemParams) => {
-  searchParams[field] = '';
-};
-
 onMounted(() => {
   fetchSubsystems();
 });
@@ -515,43 +519,6 @@ onMounted(() => {
 <style lang="scss" scoped>
 .subsystem-container {
   padding: 24px;
-
-  .action-bar {
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .left {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-
-      .search-item {
-        position: relative;
-
-        .clear-icon {
-          position: absolute;
-          right: 8px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: rgba(0, 0, 0, 0.25);
-          cursor: pointer;
-          font-size: 12px;
-          
-          &:hover {
-            color: rgba(0, 0, 0, 0.45);
-          }
-        }
-      }
-    }
-  }
-
-  .content-area {
-    background: #fff;
-    padding: 24px;
-    border-radius: 4px;
-  }
 
   .danger-link {
     color: #ff4d4f;

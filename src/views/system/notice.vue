@@ -14,22 +14,6 @@
             <plus-outlined />
             新增通知
           </a-button>
-          <a-button 
-            v-permission="'system:notice:markRead'"
-            type="primary" 
-            class="action-button" 
-            @click="handleMarkAllAsRead"
-          >
-            全部标记已读
-          </a-button>
-          <a-button 
-            v-permission="'system:notice:clear'"
-            danger 
-            class="action-button" 
-            @click="handleClearAll"
-          >
-            清空通知
-          </a-button>
         </div>
       </div>
 
@@ -39,6 +23,7 @@
         :fields="searchFields"
         @search="handleSearch"
         @reset="resetSearch"
+        @update:modelValue="handleSearchFormUpdate"
       />
 
       <div class="table-container">
@@ -53,8 +38,9 @@
           @change="handlePaginationChange"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'action' && record.status === 0">
-              <a @click="handleMarkAsRead(record)">标记已读</a>
+            <template v-if="column.key === 'action'">
+              <a v-if="record.status === 0" @click="handleMarkAsRead(record)">标记已读</a>
+              <span v-else style="color: #999;">已读</span>
             </template>
           </template>
         </CommonPagination>
@@ -81,13 +67,30 @@
             :auto-size="{ minRows: 4, maxRows: 8 }" 
           />
         </a-form-item>
+        <a-form-item label="发送人" name="senderName">
+          <a-select
+            v-model:value="createForm.senderName"
+            placeholder="请选择发送人"
+            show-search
+            :filter-option="filterUserOption"
+            :loading="userListLoading"
+          >
+            <a-select-option
+              v-for="user in userOptions"
+              :key="user.id"
+              :value="user.username"
+            >
+              {{ user.nickname || user.username }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, reactive, computed } from 'vue';
+import { ref, watch, reactive, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
@@ -97,17 +100,16 @@ import {
   getNotices,
   createNotice,
   markNoticeAsRead,
-  markAllNoticeAsRead,
-  clearNotice,
   type Notice,
   type NoticeParams
 } from '../../api/auth/notice';
+import { getUserList, type User } from '../../api/auth/user';
 import dayjs from 'dayjs';
 import SearchPanel from '../../components/SearchPanel.vue';
 
 // 搜索参数
 const searchParams = reactive({
-  status: null as number | null,  // 默认无选中条件 (status: 0=未读, 1=已读)
+  status: undefined as string | number | null | undefined,  // 默认无选中条件 (status: 0=未读, 1=已读)
   title: '',
   content: ''
 });
@@ -128,8 +130,13 @@ const createLoading = ref(false);
 const createFormRef = ref<FormInstance>();
 const createForm = ref({
   title: '',
-  content: ''
+  content: '',
+  senderName: undefined as string | undefined
 });
+
+// 用户列表相关状态
+const userOptions = ref<User[]>([]);
+const userListLoading = ref(false);
 
 // 表单校验规则
 const rules = {
@@ -140,7 +147,21 @@ const rules = {
   content: [
     { required: true, message: '请输入通知内容', trigger: 'blur' },
     { max: 500, message: '内容长度不能超过500个字符', trigger: 'blur' }
+  ],
+  senderName: [
+    { required: true, message: '请选择发送人', trigger: 'change' }
   ]
+};
+
+// 用户选择框过滤函数
+const filterUserOption = (input: string, option: any) => {
+  const username = option.value;
+  const user = userOptions.value.find(u => u.username === username);
+  if (!user) return false;
+  const searchText = input.toLowerCase();
+  const userUsername = (user.username || '').toLowerCase();
+  const userNickname = (user.nickname || '').toLowerCase();
+  return userUsername.includes(searchText) || userNickname.includes(searchText);
 };
 
 // 表格列定义
@@ -161,7 +182,12 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: '10%'
+    width: '10%',
+    type: 'enum',
+    enumMap: {
+      0: { label: '未读', color: 'orange' },
+      1: { label: '已读', color: 'green' }
+    }
   },
   {
     title: '发送人',
@@ -192,9 +218,9 @@ const fetchNotifications = async () => {
       pageSize: pagination.value.pageSize,
     };
 
-    // 只有当status不为null时才添加到参数中
-    if (searchParams.status !== null) {
-      params.status = searchParams.status;
+    // 处理 status 参数：将字符串转换为数字，空字符串转为 undefined
+    if (searchParams.status !== null && searchParams.status !== undefined && searchParams.status !== '') {
+      params.status = typeof searchParams.status === 'string' ? parseInt(searchParams.status) : searchParams.status;
     }
 
     // 添加搜索条件
@@ -247,11 +273,29 @@ const handleSearch = () => {
 
 // 重置搜索
 const resetSearch = () => {
-  searchParams.status = null;
+  searchParams.status = undefined;
   searchParams.title = '';
   searchParams.content = '';
   pagination.value.current = 1;
   fetchNotifications();
+};
+
+// 获取用户列表
+const fetchUserList = async () => {
+  userListLoading.value = true;
+  try {
+    // 获取所有用户，设置一个较大的 pageSize
+    const response = await getUserList({
+      pageNo: 1,
+      pageSize: 1000
+    });
+    userOptions.value = response.data || [];
+  } catch (error) {
+    console.error('获取用户列表失败:', error);
+    message.error('获取用户列表失败');
+  } finally {
+    userListLoading.value = false;
+  }
 };
 
 // 新增通知
@@ -262,7 +306,8 @@ const handleCreateNotice = async () => {
     
     await createNotice({
       title: createForm.value.title,
-      content: createForm.value.content
+      content: createForm.value.content,
+      senderName: createForm.value.senderName
     });
     
     message.success('通知创建成功');
@@ -283,10 +328,18 @@ const handleCreateNotice = async () => {
 const resetCreateForm = () => {
   createForm.value = {
     title: '',
-    content: ''
+    content: '',
+    senderName: undefined
   };
   createFormRef.value?.resetFields();
 };
+
+// 监听弹窗打开，加载用户列表
+watch(showCreateModal, (open) => {
+  if (open && userOptions.value.length === 0) {
+    fetchUserList();
+  }
+});
 
 // 标记单个通知为已读
 const handleMarkAsRead = async (notice: Notice) => {
@@ -300,59 +353,45 @@ const handleMarkAsRead = async (notice: Notice) => {
   }
 };
 
-// 标记所有为已读
-const handleMarkAllAsRead = async () => {
-  try {
-    await markAllNoticeAsRead();
-    message.success('全部标记已读成功');
-    fetchNotifications();
-  } catch (error) {
-    console.error('全部标记已读失败:', error);
-    message.error('全部标记已读失败');
-  }
-};
-
-// 清空所有通知
-const handleClearAll = async () => {
-  try {
-    await clearNotice();
-    message.success('清空通知成功');
-    fetchNotifications();
-  } catch (error) {
-    console.error('清空通知失败:', error);
-    message.error('清空通知失败');
-  }
+// 搜索表单更新处理
+const handleSearchFormUpdate = (newForm: any) => {
+  Object.assign(searchParams, newForm);
 };
 
 // 在 <script setup> 中定义 searchFields
 const searchFields = [
   {
     key: 'status',
-    type: 'select',
-    placeholder: '全部',
+    label: '状态',
+    type: 'select' as const,
+    placeholder: '请选择状态',
     options: [
-      { label: '全部', value: null },
-      { label: '未读通知', value: 0 },
-      { label: '已读通知', value: 1 }
+      { label: '全部', value: '' },
+      { label: '未读通知', value: '0' },
+      { label: '已读通知', value: '1' }
     ],
     style: 'width: 150px'
   },
   {
     key: 'title',
-    type: 'input',
+    label: '标题',
+    type: 'input' as const,
     placeholder: '请输入标题关键词',
     style: 'width: 200px'
   },
   {
     key: 'content',
-    type: 'input',
+    label: '内容',
+    type: 'input' as const,
     placeholder: '请输入内容关键词',
     style: 'width: 200px'
   }
 ]
 
 // 初始加载
-fetchNotifications();
+onMounted(() => {
+  fetchNotifications();
+});
 </script>
 
 <style lang="scss" scoped>
