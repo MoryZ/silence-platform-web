@@ -20,15 +20,16 @@
   </script>
   
   <style scoped>
-  .layout-content {
-    flex: 1;
-    padding: 24px;
-    background: #fff;
-    min-height: 280px;
-  }
-  .content-container {
-    height: 100%;
-  }
+.layout-content {
+  flex: 1;
+  padding: 24px;
+  background: #fff;
+  min-height: 0;
+  overflow: auto;
+}
+.content-container {
+  min-height: 100%;
+}
   .fade-enter-active, .fade-leave-active {
     transition: opacity 0.2s;
   }

@@ -197,7 +197,7 @@ const getClass = (item: any) => {
             <div class="condition-node-box">
               <div class="auto-judge" :class="getClass(item)" @click="showDetail(item, index)">
                 <div v-if="index !== 0" class="sort-left" @click.stop="arrTransfer(index, -1)">
-                  <icon-ant-design:left-outlined />
+                  <SvgIcon icon="ant-design:left-outlined" />
                 </div>
                 <div class="title">
                   <span class="node-title">

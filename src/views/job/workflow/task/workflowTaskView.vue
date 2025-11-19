@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
 import { triggerTypeRecord } from '@/constants/business';
-import { tagColor } from '@/utils/common';
 import { fetchGetWorkflowPageList, fetchBatchDeleteWorkflow } from '@/api/job/workflow';
 import WorkflowSearch from './modules/workflow-search.vue';
 import WorkflowTriggerModal from './modules/workflow-trigger-modal.vue';
+import WorkflowFormModal from './modules/workflow-form-modal.vue';
 
 const router = useRouter();
+type FormMode = 'add' | 'edit' | 'detail' | 'copy';
 
 // 数据状态
 const data = ref<any[]>([]);
 const loading = ref(false);
 const checkedRowKeys = ref<string[]>([]);
 const searchParams = ref({
-  page: 1,
-  size: 10,
+  pageNo: 1,
+  pageSize: 10,
   workflowName: null,
   groupName: null,
   workflowStatus: null
@@ -26,6 +27,16 @@ const searchParams = ref({
 // 触发模态框状态
 const triggerVisible = ref(false);
 const triggerData = ref<any>(null);
+
+const formModalState = reactive<{
+  visible: boolean;
+  mode: FormMode;
+  recordId: string | null;
+}>({
+  visible: false,
+  mode: 'add',
+  recordId: null
+});
 
 // 分页配置
 const mobilePagination = ref({
@@ -142,21 +153,16 @@ async function handleDelete(id: string) {
   getData();
 }
 
-function edit(id: string) {
-  router.push({ path: '/workflow/form/edit', query: { id } });
+function openForm(mode: FormMode, id?: string) {
+  formModalState.mode = mode;
+  formModalState.recordId = id ?? null;
+  formModalState.visible = true;
 }
 
-function handleAdd() {
-  router.push({ path: '/workflow/form/add' });
-}
-
-function detail(id: string) {
-  router.push({ path: '/workflow/form/detail', query: { id } });
-}
-
-function copy(id: string) {
-  router.push({ path: '/workflow/form/copy', query: { id } });
-}
+const edit = (id: string) => openForm('edit', id);
+const handleAdd = () => openForm('add');
+const detail = (id: string) => openForm('detail', id);
+const copy = (id: string) => openForm('copy', id);
 
 async function execute(row: any) {
   triggerData.value = row;
@@ -265,6 +271,12 @@ function getTriggerTypeLabel(triggerType: number): string {
     
     <!-- 触发模态框 -->
     <WorkflowTriggerModal v-model:visible="triggerVisible" :row-data="triggerData" @submitted="getData" />
+    <WorkflowFormModal
+      v-model:visible="formModalState.visible"
+      :mode="formModalState.mode"
+      :record-id="formModalState.recordId"
+      @submitted="getData"
+    />
   </div>
 </template>
 

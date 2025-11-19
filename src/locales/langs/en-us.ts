@@ -252,6 +252,8 @@ const local = {
     },
     updatedDate: 'Updated Time',
     createdDate: 'Created Time',
+    startTime: 'Start Time',
+    endTime: 'End Time',
     today: 'Today',
     lastWeek: 'Last Week',
     currentMonth: 'Current Month',

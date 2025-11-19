@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
+import dayjs, { Dayjs } from 'dayjs';
 import type { SelectProps } from 'ant-design-vue';
 import { $t } from '@/locales';
 
@@ -21,6 +22,23 @@ const workflowList = ref<any[]>([]);
 
 const model = defineModel<any>('model', { required: true });
 const keywords = ref<string>(model.value.workflowName as any);
+
+const datetimeRangeProxy = computed<Dayjs[] | null>({
+  get() {
+    if (!Array.isArray(model.value.datetimeRange)) {
+      return null;
+    }
+    const [start, end] = model.value.datetimeRange;
+    return [start ? dayjs(start) : null, end ? dayjs(end) : null].filter(Boolean) as Dayjs[];
+  },
+  set(value) {
+    if (!value) {
+      model.value.datetimeRange = null;
+      return;
+    }
+    model.value.datetimeRange = value.map(item => (item ? item.format('YYYY-MM-DD HH:mm:ss') : null));
+  }
+});
 
 function reset() {
   keywords.value = '';
@@ -100,7 +118,7 @@ function renderLabel(option: any) {
         name="datetimeRange"
       >
         <a-range-picker
-          v-model:value="model.datetimeRange"
+          v-model:value="datetimeRangeProxy"
           show-time
           format="YYYY-MM-DD HH:mm:ss"
           :placeholder="[$t('common.startTime'), $t('common.endTime')]"

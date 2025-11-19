@@ -1,63 +1,74 @@
 <template>
-  <a-button
-    type="link"
-    class="env-button"
-    @click="showComponentFilter = true"
-  >
-    <apartment-outlined />
-    <span v-if="selectedComponents.length && selectedComponentName">
-      {{ selectedSystemName }} / {{ selectedComponentName }}
-    </span>
-    <span v-else>
-      {{ selectedSystemName || '请选择子系统/组件' }}
-    </span>
-    <down-outlined />
-  </a-button>
-  <a-drawer
-    title="选择系统/组件"
-    :width="600"
-    v-model:open="showComponentFilter"
-    :body-style="{ padding: '0' }"
-    class="selector-drawer"
-  >
-    <div class="component-filter">
-      <a-tabs v-model:activeKey="activeFilterTab">
-        <a-tab-pane key="system" tab="子系统列表" />
-        <a-tab-pane key="component" tab="组件列表" />
-      </a-tabs>
-      <div v-if="activeFilterTab === 'system'" class="system-list grid">
-        <div
-          v-for="system in filteredSystems"
-          :key="system.id"
-          class="system-card"
-          :class="{ active: system.id === selectedSystem }"
-          @click="handleSystemSelect(system)"
-        >
-          <div class="system-title">{{ system.name }}</div>
-          <div class="system-code">编码: {{ system.code }}</div>
-          <div class="system-desc">{{ system.description }}</div>
+  <div>
+    <a-button
+      type="link"
+      class="env-button"
+      @click="showComponentFilter = true"
+    >
+      <apartment-outlined />
+      <span v-if="selectedComponents.length && selectedComponentName">
+        {{ selectedSystemName }} / {{ selectedComponentName }}
+      </span>
+      <span v-else>
+        {{ selectedSystemName || '请选择子系统/组件' }}
+      </span>
+      <down-outlined />
+    </a-button>
+
+    <a-modal
+      v-model:open="showComponentFilter"
+      :footer="null"
+      :closable="false"
+      :mask-closable="true"
+      :width="720"
+      class="system-component-selector-modal"
+    >
+      <template #title>
+        <div class="modal-header">
+          <span class="modal-title">选择系统/组件</span>
+          <close-outlined class="close-icon" @click="showComponentFilter = false" />
+        </div>
+      </template>
+      
+      <div class="component-filter">
+        <a-tabs v-model:activeKey="activeFilterTab" class="selector-tabs">
+          <a-tab-pane key="system" tab="子系统列表" />
+          <a-tab-pane key="component" tab="组件列表" />
+        </a-tabs>
+        <div v-if="activeFilterTab === 'system'" class="system-list grid">
+          <div
+            v-for="system in filteredSystems"
+            :key="system.id"
+            class="system-card"
+            :class="{ active: system.id === selectedSystem }"
+            @click="handleSystemSelect(system)"
+          >
+            <div class="system-title">{{ system.name }}</div>
+            <div class="system-code">编码: {{ system.code }}</div>
+            <div class="system-desc">{{ system.description }}</div>
+          </div>
+        </div>
+        <div v-else class="component-list grid">
+          <div
+            v-for="component in filteredComponents"
+            :key="component.id"
+            class="component-card"
+            :class="{ active: selectedComponents.includes(component.id) }"
+            @click="handleComponentSelect(component)"
+          >
+            <div class="component-title">{{ component.name }}</div>
+            <div class="component-code">编码: {{ component.code }}</div>
+            <div class="component-desc">{{ component.description }}</div>
+          </div>
         </div>
       </div>
-      <div v-else class="component-list grid">
-        <div
-          v-for="component in filteredComponents"
-          :key="component.id"
-          class="component-card"
-          :class="{ active: selectedComponents.includes(component.id) }"
-          @click="handleComponentSelect(component)"
-        >
-          <div class="component-title">{{ component.name }}</div>
-          <div class="component-code">编码: {{ component.code }}</div>
-          <div class="component-desc">{{ component.description }}</div>
-        </div>
-      </div>
-    </div>
-  </a-drawer>
+    </a-modal>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { ApartmentOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { ApartmentOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons-vue'
 import { useConfigStore } from '@/stores/config'
 import { getAllConfigSubsystem, type ConfigSubsystem } from '@/api/config/configSubsystem'
 import { getConfigComponents, type ConfigComponent } from '@/api/config/configComponent'
@@ -155,54 +166,143 @@ const handleComponentSelect = (component: ConfigComponent) => {
   padding: 4px 8px;
 }
 
+:deep(.system-component-selector-modal .ant-modal-content) {
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:deep(.system-component-selector-modal .ant-modal-header) {
+  background: #f0f5ff;
+  padding: 16px 48px 16px 20px;
+  margin: 0;
+  border-bottom: 1px solid #e6ebf1;
+  position: relative;
+}
+
+:deep(.system-component-selector-modal .ant-modal-title) {
+  margin: 0;
+  width: 100%;
+}
+
+:deep(.system-component-selector-modal .ant-modal-body) {
+  padding: 0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: relative;
+}
+
+.modal-title {
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.close-icon {
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+}
+
+.close-icon:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.component-filter {
+  background: #fff;
+}
+
+:deep(.selector-tabs) {
+  padding: 0 20px;
+  margin-top: 0;
+}
+
+:deep(.selector-tabs .ant-tabs-nav) {
+  margin: 0;
+  padding: 0;
+}
+
+:deep(.selector-tabs .ant-tabs-tab) {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+:deep(.selector-tabs .ant-tabs-ink-bar) {
+  background: #1677ff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  padding: 16px 24px;
+  padding: 24px 20px;
+}
+
+.system-list.grid {
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 .system-card, .component-card {
   background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 16px 20px 12px 20px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 16px;
   cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.3s;
   display: flex;
   flex-direction: column;
-  min-height: 90px;
+  min-height: 100px;
 }
 
 .system-card:hover, .component-card:hover {
-  border-color: #1677ff;
-  box-shadow: 0 2px 8px rgba(22,119,255,0.08);
+  border-color: #722ed1;
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.15);
 }
 
 .system-card.active, .component-card.active {
-  border-color: #1677ff;
-  background: #e6f7ff;
+  border-color: #722ed1;
+  background: #f9f0ff;
 }
 
 .system-title, .component-title {
-  font-weight: 600;
-  font-size: 16px;
-  color: #222;
-  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.5;
 }
 
 .system-code, .component-code {
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+  line-height: 1.4;
 }
 
 .system-desc, .component-desc {
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
-  opacity: 0.85;
-  margin-top: 2px;
+  line-height: 1.4;
   word-break: break-all;
+  flex: 1;
 }
 </style>

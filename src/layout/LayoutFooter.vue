@@ -10,12 +10,13 @@
 .layout-footer {
   width: 100%;
   text-align: center;
-  color: #222;
+  color: #4a4a4a;
   font-size: 14px;
-  opacity: 0.7;
-  padding: 16px 0 8px 0;
-  background: transparent;
+  padding: 16px 0;
+  background: #fff;
   letter-spacing: 0.5px;
   user-select: none;
+  border-top: 1px solid #f0f0f0;
+  margin-top: auto;
 }
 </style>

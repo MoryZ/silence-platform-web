@@ -39,7 +39,7 @@ const onClose = () => {
 </script>
 
 <template>
-  <DetailDrawer v-model="visible" title="工作流详情" :width="['500px', '90%']" @after-leave="onClose">
+  <a-drawer v-model:open="visible" width="500px" title="工作流详情" @after-open-change="(open) => !open && onClose()">
     <NDescriptions :column="1" label-placement="left" bordered :label-style="{ width: '120px' }">
       <NDescriptionsItem label="工作流名称">{{ modelValue.workflowName }}</NDescriptionsItem>
       <NDescriptionsItem label="组名称">{{ modelValue.groupName }}</NDescriptionsItem>
@@ -56,5 +56,5 @@ const onClose = () => {
         {{ $t(workFlowNodeStatusRecord[modelValue.workflowStatus!]) }}
       </NDescriptionsItem>
     </NDescriptions>
-  </DetailDrawer>
+  </a-drawer>
 </template>

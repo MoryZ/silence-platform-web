@@ -253,14 +253,12 @@ function onSelectModule(module: any) {
 <style scoped>
 .layout-container {
   min-height: 100vh;
-  height: 100vh;
   display: flex;
 }
 .main-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  height: 100vh;
 }
 .layout-content {
   flex: 1;

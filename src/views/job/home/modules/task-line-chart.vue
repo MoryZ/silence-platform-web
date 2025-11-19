@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import type { EChartsOption } from 'echarts';
 import { $t } from '@/locales';
 import { useAppStore } from '@/stores/app';
-// import { useEcharts } from '@/hooks/common/echarts';
+import { useEcharts } from '@/hooks/common/echarts';
 
 defineOptions({
   name: 'TaskLineChart'
@@ -19,26 +20,45 @@ const props = withDefaults(defineProps<Props>(), {
 
 const appStore = useAppStore();
 
-// 临时解决：如果 useEcharts 不存在，创建一个简单的实现
 const domRef = ref<HTMLElement | null>(null);
-const updateOptions = (callback: (opts: any, factory?: () => any) => any) => {
-  // 占位实现，实际应该初始化 echarts 实例
-  if (typeof callback === 'function') {
-    const opts: any = {
-      legend: { data: [] },
-      xAxis: { data: [] },
-      series: [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
-    };
-    const factory = () => ({
-      legend: { data: [] },
-      series: [{ name: '' }, { name: '' }, { name: '' }, { name: '' }]
-    });
-    callback(opts, factory);
+const { setOptions } = useEcharts(domRef);
+
+const getLegend = () => {
+  if (props.type === 'RETRY') {
+    return [
+      $t('common.success'),
+      $t('common.running'),
+      $t('page.home.retryTask.status.maxRetryTimes'),
+      $t('page.home.retryTask.status.pauseRetry')
+    ];
   }
+  return [$t('common.success'), $t('common.fail'), $t('common.stop'), $t('common.cancel')];
 };
 
-const initialOptions = {
-  tabIndex: props.type,
+const getSeriesNames = () => {
+  if (props.type === 'RETRY') {
+    return [
+      { key: 'successNum', name: $t('common.success') },
+      { key: 'runningNum', name: $t('common.running') },
+      { key: 'maxCountNum', name: $t('page.home.retryTask.status.maxRetryTimes') },
+      { key: 'suspendNum', name: $t('page.home.retryTask.status.pauseRetry') }
+    ];
+  }
+  return [
+    { key: 'success', name: $t('common.success') },
+    { key: 'fail', name: $t('common.fail') },
+    { key: 'stop', name: $t('common.stop') },
+    { key: 'cancel', name: $t('common.cancel') }
+  ];
+};
+
+const gradientColors = ['#f5b386', '#40e9c5', '#b686d4', '#ec6f6f'];
+
+const buildOptions = (): EChartsOption => {
+  const lineList = props.modelValue?.dashboardLineResponseDOList ?? [];
+  const seriesNames = getSeriesNames();
+
+  return {
   tooltip: {
     trigger: 'axis',
     axisPointer: {
@@ -49,15 +69,7 @@ const initialOptions = {
     }
   },
   legend: {
-    data:
-      props.type === 'RETRY'
-        ? [
-            $t('common.success'),
-            $t('common.running'),
-            $t('page.home.retryTask.status.maxRetryTimes'),
-            $t('page.home.retryTask.status.pauseRetry')
-          ]
-        : [$t('common.success'), $t('common.fail'), $t('common.stop'), $t('common.cancel')]
+      data: getLegend()
   },
   grid: {
     left: '3%',
@@ -68,15 +80,13 @@ const initialOptions = {
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: [] as string[]
+      data: lineList.map(item => item.createDt)
   },
   yAxis: {
     type: 'value'
   },
-  series: [
-    {
-      color: '#f5b386',
-      name: $t('common.success'),
+    series: seriesNames.map(({ key, name }, index) => ({
+      name,
       type: 'line',
       smooth: true,
       stack: 'Total',
@@ -88,154 +98,43 @@ const initialOptions = {
           x2: 0,
           y2: 1,
           colorStops: [
-            {
-              offset: 0.25,
-              color: '#f5b386'
-            },
-            {
-              offset: 1,
-              color: '#fff'
-            }
+            { offset: 0.2, color: gradientColors[index] },
+            { offset: 1, color: '#ffffff' }
           ]
         }
       },
-      emphasis: {
-        focus: 'series'
-      },
-      data: [] as number[]
-    },
-    {
-      color: '#40e9c5',
-      name: props.type === 'RETRY' ? $t('common.running') : $t('common.fail'),
-      type: 'line',
-      smooth: true,
-      stack: 'Total',
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            {
-              offset: 0.25,
-              color: '#40e9c5'
-            },
-            {
-              offset: 1,
-              color: '#fff'
-            }
-          ]
-        }
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      data: []
-    },
-    {
-      color: '#b686d4',
-      name: props.type === 'RETRY' ? $t('page.home.retryTask.status.maxRetryTimes') : $t('common.stop'),
-      type: 'line',
-      smooth: true,
-      stack: 'Total',
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            {
-              offset: 0.25,
-              color: '#b686d4'
-            },
-            {
-              offset: 1,
-              color: '#fff'
-            }
-          ]
-        }
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      data: [] as number[]
-    },
-    {
-      color: '#ec6f6f',
-      name: props.type === 'RETRY' ? $t('page.home.retryTask.status.pauseRetry') : $t('common.cancel'),
-      type: 'line',
-      smooth: true,
-      stack: 'Total',
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            {
-              offset: 0.25,
-              color: '#ec6f6f'
-            },
-            {
-              offset: 1,
-              color: '#fff'
-            }
-          ]
-        }
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      data: []
-    }
-  ]
+      emphasis: { focus: 'series' },
+      data: lineList.map(item => item[key] ?? 0),
+      color: gradientColors[index]
+    }))
+  };
 };
 
-const getData = () => {
-  updateOptions((opts, factory) => {
-    const originOpts = factory();
-    opts.legend.data = originOpts.legend.data;
-    opts.series[0].name = originOpts.series[0].name;
-    opts.series[1].name = originOpts.series[1].name;
-    opts.series[2].name = originOpts.series[2].name;
-    opts.series[3].name = originOpts.series[3].name;
-
-    opts.xAxis.data = props.modelValue?.dashboardLineResponseDOList.map(x => x.createDt);
-    opts.series[0].data = props.modelValue?.dashboardLineResponseDOList.map(x =>
-      opts.tabIndex === 'RETRY' ? x.successNum : x.success
-    );
-    opts.series[1].data = props.modelValue?.dashboardLineResponseDOList.map(x =>
-      opts.tabIndex === 'RETRY' ? x.runningNum : x.fail
-    );
-    opts.series[2].data = props.modelValue?.dashboardLineResponseDOList.map(x =>
-      opts.tabIndex === 'RETRY' ? x.maxCountNum : x.stop
-    );
-    opts.series[3].data = props.modelValue?.dashboardLineResponseDOList.map(x =>
-      opts.tabIndex === 'RETRY' ? x.suspendNum : x.cancel
-    );
-    return opts;
-  });
+const renderChart = () => {
+  setOptions(buildOptions());
 };
 
 watch(
-  [() => appStore.language, props],
-  () => {
-    getData();
-  },
-  { immediate: true }
+  [() => appStore.language, () => props.type, () => props.modelValue],
+  () => renderChart(),
+  { immediate: true, deep: true }
 );
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper">
-    <div ref="domRef" class="h-360px overflow-hidden"></div>
-  </NCard>
+  <a-card :bordered="false" class="chart-card">
+    <div ref="domRef" class="chart-card__body"></div>
+  </a-card>
 </template>
 
-<style scoped></style>
+<style scoped>
+.chart-card {
+  border-radius: 12px;
+  box-shadow: 0 8px 25px -10px rgba(39, 80, 144, 0.25);
+}
+
+.chart-card__body {
+  height: 360px;
+  overflow: hidden;
+}
+</style>

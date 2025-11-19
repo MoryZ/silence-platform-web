@@ -120,11 +120,32 @@ function attachInterceptors(instance: AxiosInstance) {
     (response: AxiosResponse<any>) => {
       if (response.data && typeof response.data === 'object' && 'code' in response.data) {
         if (response.data.code !== 200) {
-          message.error(response.data.msg || '请求失败');
-          if (response.data.code === 401) {
+          // 处理业务层面的 403 错误（token过期）
+          if (response.data.code === 403) {
             const userStore = useUserStore();
+            message.error(response.data.msg || response.data.message || '登录已过期，请重新登录');
             userStore.handleLogout();
+            return Promise.reject(new Error(response.data.msg || response.data.message || '登录已过期，请重新登录'));
           }
+          
+          // 处理业务层面的 401 错误（无权限）
+          if (response.data.code === 401) {
+            const token = ls.get(TOKEN);
+            
+            if (token) {
+              // token 存在，只提示无权限，不跳转登录页
+              message.error(response.data.msg || response.data.message || '无权限访问该资源');
+            } else {
+              // token 不存在，清除登录状态并跳转
+              const userStore = useUserStore();
+              message.error(response.data.msg || response.data.message || '请先登录');
+              userStore.handleLogout();
+            }
+            return Promise.reject(new Error(response.data.msg || response.data.message || '无权限访问该资源'));
+          }
+          
+          // 其他业务错误
+          message.error(response.data.msg || '请求失败');
           return Promise.reject(new Error(response.data.msg || '请求失败'));
         }
         return response.data.data;
@@ -132,23 +153,32 @@ function attachInterceptors(instance: AxiosInstance) {
       return response.data;
     },
     (error) => {
-      // 处理 HTTP 状态码层面的 401 错误
+      // 处理 HTTP 状态码层面的 403 错误（token过期）
+      if (error.response?.status === 403) {
+        // 403 表示 token 过期，清除登录状态并跳转
+        const userStore = useUserStore();
+        message.error('登录已过期，请重新登录');
+        userStore.handleLogout();
+        return Promise.reject(error);
+      }
+      
+      // 处理 HTTP 状态码层面的 401 错误（无权限）
       if (error.response?.status === 401) {
-        // 判断是否是 token 过期导致的 401
-        const isTokenExpired = isTokenExpiredError(error);
+        // 检查 token 是否存在
+        const token = ls.get(TOKEN);
         
-        if (isTokenExpired) {
-          // token 过期，清除登录状态并跳转
-          const userStore = useUserStore();
-          message.error('登录已过期，请重新登录');
-          userStore.handleLogout();
-        } else {
-          // 其他 401 错误（如权限不足），只显示错误消息，不跳转
+        if (token) {
+          // token 存在，只提示无权限，不跳转登录页
           const errorMessage = 
             error.response?.data?.message || 
             error.response?.data?.msg || 
             '无权限访问该资源';
           message.error(errorMessage);
+        } else {
+          // token 不存在，清除登录状态并跳转（虽然路由守卫应该已经处理了，但这里也做一下兜底）
+          const userStore = useUserStore();
+          message.error('请先登录');
+          userStore.handleLogout();
         }
         return Promise.reject(error);
       }
@@ -156,16 +186,33 @@ function attachInterceptors(instance: AxiosInstance) {
       // 处理业务层面的错误响应
       if (error.response?.data && typeof error.response.data === 'object' && 'code' in error.response.data) {
         const errorData = error.response.data;
-        message.error(errorData.msg || errorData.message || '请求失败');
         
-        // 只有确认是 token 过期时才登出
+        // 处理业务层面的 403 错误（token过期）
+        if (errorData.code === 403) {
+          const userStore = useUserStore();
+          message.error(errorData.msg || errorData.message || '登录已过期，请重新登录');
+          userStore.handleLogout();
+          return Promise.reject(new Error(errorData.msg || errorData.message || '登录已过期，请重新登录'));
+        }
+        
+        // 处理业务层面的 401 错误（无权限）
         if (errorData.code === 401) {
-          const isTokenExpired = isTokenExpiredError(error);
-          if (isTokenExpired) {
+          const token = ls.get(TOKEN);
+          
+          if (token) {
+            // token 存在，只提示无权限，不跳转登录页
+            message.error(errorData.msg || errorData.message || '无权限访问该资源');
+          } else {
+            // token 不存在，清除登录状态并跳转
             const userStore = useUserStore();
+            message.error(errorData.msg || errorData.message || '请先登录');
             userStore.handleLogout();
           }
+          return Promise.reject(new Error(errorData.msg || errorData.message || '无权限访问该资源'));
         }
+        
+        // 其他业务错误
+        message.error(errorData.msg || errorData.message || '请求失败');
         return Promise.reject(new Error(errorData.msg || errorData.message || '请求失败'));
       }
       

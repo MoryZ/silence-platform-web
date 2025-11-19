@@ -7,7 +7,7 @@ export function fetchCardCount() {
 
 /** All Group Name */
 export function fetchAllGroupName() {
-  return request.get<string[]>('/group/all/group-name/list');
+  return request.get<string[]>('/api/v1/groupConfigs');
 }
 
 /** Retry Line */

@@ -6,6 +6,8 @@ import router from './router'
 import { setupI18n } from './locales';
 import { piniaPluginPersist } from './stores/config'
 import { permissionDirective } from './directives/permission'
+import SvgIcon from '@/components/common/svg-icon.vue';
+import { setupNaive } from '@/plugins/naive';
 
 // 在应用启动时初始化 Monaco Editor 配置
 import './utils/monaco'
@@ -26,8 +28,10 @@ app.use(pinia)
 // 初始化路由
 app.use(router)
 
-// 初始化 Ant Design Vue
+// 初始化 UI 库
 app.use(Antd)
+setupNaive(app)
+app.component('SvgIcon', SvgIcon)
 
 setupI18n(app);
 

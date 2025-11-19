@@ -59,6 +59,8 @@ const local = {
     disabled: '禁用',
     createdDate: '创建时间',
     updatedDate: '更新时间',
+    startTime: '开始时间',
+    endTime: '结束时间',
     pleaseSelect: '请选择',
     pleaseInput: '请输入',
     pleaseSelectData: '请选择数据',

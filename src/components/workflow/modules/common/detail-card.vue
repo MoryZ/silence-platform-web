@@ -156,7 +156,12 @@ const onUpdatePage = (page: number) => {
 </script>
 
 <template>
-  <DetailDrawer v-model="visible" title="任务批次详情" :width="['800px', '90%']" @update:show="onUpdateShow">
+  <a-drawer
+    v-model:open="visible"
+    width="800px"
+    title="任务批次详情"
+    @after-open-change="(open) => !open && onUpdateShow(false)"
+  >
     <NTabs v-if="idList && idList.length > 0" v-model:value="currentIndex" type="segment" animated>
       <NTabPane v-for="(item, index) in idList" :key="index" :name="index + 1" :tab="item">
         <NTabs class="detail-tabs" type="segment" animated>
@@ -229,7 +234,7 @@ const onUpdatePage = (page: number) => {
         @update:page="onUpdatePage"
       />
     </template>
-  </DetailDrawer>
+  </a-drawer>
   <FlowLogDrawer v-model:show="logOpen" title="日志详情" :task-data="record" />
 </template>
 

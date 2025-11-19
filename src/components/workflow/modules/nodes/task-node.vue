@@ -211,14 +211,14 @@ const isShow = (taskBatchStatus: number) => {
               <div class="popover">
                 <NButton v-if="isRetry(item.taskBatchStatus!)" text @click="retry(item!)">
                   <span class="popover-item">
-                    <icon-ant-design:redo-outlined class="mb-3px text-24px font-bold" />
+                    <SvgIcon icon="ant-design:redo-outlined" class="mb-3px text-24px font-bold" />
                     {{ $t('common.retry') }}
                   </span>
                 </NButton>
                 <NDivider v-if="isStop(item.taskBatchStatus!) && isRetry(item.taskBatchStatus!)" vertical />
                 <NButton v-if="isStop(item.taskBatchStatus!)" text @click="stop(item!)">
                   <span class="popover-item">
-                    <icon-ant-design:stop-outlined />
+                    <SvgIcon icon="ant-design:stop-outlined" />
                     {{ $t('common.stop') }}
                   </span>
                 </NButton>
@@ -226,7 +226,7 @@ const isShow = (taskBatchStatus: number) => {
               <template #trigger>
                 <div class="auto-judge cursor-pointer" :class="getClass(item)" @click="showDetail(item!, i)">
                   <div v-if="i != 0" class="sort-left" @click.stop="arrTransfer(i, -1)">
-                    <icon-ant-design:left-outlined />
+                    <SvgIcon icon="ant-design:left-outlined" />
                   </div>
                   <div class="title">
                     <span class="text color-#3296fa">
@@ -235,7 +235,7 @@ const isShow = (taskBatchStatus: number) => {
                       <span v-if="item.id">&nbsp;({{ item.id }})</span>
                     </span>
                     <span class="priority-title">{{ $t('workflow.node.priority') }}{{ item.priorityLevel }}</span>
-                    <icon-ant-design:close-outlined v-if="!disabled" class="close" @click.stop="delTerm(i)" />
+                    <SvgIcon icon="ant-design:close-outlined" v-if="!disabled" class="close" @click.stop="delTerm(i)" />
                   </div>
                   <div class="content min-h-72px">
                     <div v-if="!item.jobTask?.jobId" class="placeholder">请选择任务</div>
@@ -281,7 +281,7 @@ const isShow = (taskBatchStatus: number) => {
                     class="sort-right"
                     @click.stop="arrTransfer(i)"
                   >
-                    <icon-ant-design:right-outlined />
+                    <SvgIcon icon="ant-design:right-outlined" />
                   </div>
                 </div>
               </template>

@@ -130,14 +130,14 @@ const getClass = (item: Workflow.ConditionNodeType) => {
               <div class="popover">
                 <NButton text>
                   <span class="popover-item">
-                    <icon-ant-design:redo-outlined class="mb-3px text-24px font-bold" />
+                    <SvgIcon icon="ant-design:redo-outlined" class="mb-3px text-24px font-bold" />
                     {{ $t('common.retry') }}
                   </span>
                 </NButton>
                 <NDivider vertical />
                 <NButton text>
                   <span class="popover-item">
-                    <icon-ant-design:dash-outlined class="mb-3px text-24px font-bold" />
+                    <SvgIcon icon="ant-design:dash-outlined" class="mb-3px text-24px font-bold" />
                     <span>忽略</span>
                   </span>
                 </NButton>
@@ -152,13 +152,13 @@ const getClass = (item: Workflow.ConditionNodeType) => {
                         <span v-if="item.id">&nbsp;({{ item.id }})</span>
                         <NTooltip>
                           <template #trigger>
-                            <icon-ant-design:info-circle-outlined class="ml-3px text-16px" />
+                            <SvgIcon icon="ant-design:info-circle-outlined" class="ml-3px text-16px" />
                           </template>
                           此节点后续将废弃，请使用定时任务中的 HTTP 内置执行器进行替换。
                         </NTooltip>
                       </span>
                     </span>
-                    <icon-ant-design:close-outlined v-if="!disabled" class="close" @click.stop="delTerm" />
+                    <SvgIcon icon="ant-design:close-outlined" v-if="!disabled" class="close" @click.stop="delTerm" />
                   </div>
                   <div class="content min-h-81px">
                     <div v-if="!item.callback?.webhook" class="placeholder">

@@ -1,32 +1,65 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { fetchCardCount } from '@/api/job/dashboard';
 import CardData from './modules/card-data.vue';
 import TaskTab from './modules/task-tab.vue';
 
-const cardCount = ref<any>();
-
-const getCardData = async () => {
-  const { data: cardData, error } = await fetchCardCount();
-  if (!error) {
-    cardCount.value = cardData;
+const cardCount = ref({
+  jobTask: {
+    totalNum: 2039,
+    successNum: 1314,
+    failNum: 500,
+    stopNum: 162,
+    cancelNum: 63,
+    successRate: 64.44
+  },
+  retryTask: {
+    totalNum: 0,
+    runningNum: 0,
+    finishNum: 0,
+    maxCountNum: 0,
+    suspendNum: 0
+  },
+  workFlowTask: {
+    totalNum: 492,
+    successNum: 316,
+    failNum: 158,
+    stopNum: 15,
+    cancelNum: 3,
+    successRate: 64.23
+  },
+  retryTaskBarList: [
+    { name: '成功', value: 9 },
+    { name: '失败', value: 3 },
+    { name: '停止', value: 2 },
+    { name: '取消', value: 1 }
+  ],
+  onLineService: {
+    total: 4,
+    clientTotal: 2,
+    serverTotal: 2
   }
-};
-
-getCardData();
+});
 </script>
 
 <template>
-  <NSpace vertical :size="16" class="home-main">
-    <CardData v-model="cardCount!" />
-    <NCard :bordered="false" class="card-wrapper p-t-136px 2xl:p-t-0 lg:p-t-36px md:p-t-90px">
-      <TaskTab v-model="cardCount!" />
-    </NCard>
-  </NSpace>
+  <div class="home-wrapper">
+    <CardData v-model="cardCount" />
+    <a-card bordered="false" class="home-panel">
+      <TaskTab v-model="cardCount" />
+    </a-card>
+  </div>
 </template>
 
 <style scoped>
-.home-main {
-  max-height: calc(100vh - 155px);
+.home-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.home-panel {
+  padding: 24px;
+  border-radius: 12px;
 }
 </style>

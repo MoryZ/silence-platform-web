@@ -29,6 +29,15 @@ const gridCol = computed(() => {
   return 1;
 });
 
+const colSpan = computed(() => 24 / gridCol.value);
+
+const formatNumber = (value?: number) => {
+  if (value === undefined || value === null) {
+    return '0';
+  }
+  return Number(value).toLocaleString();
+};
+
 const getState = () => {
   state.width = document.documentElement.clientWidth;
 };
@@ -249,71 +258,65 @@ const color = getPaletteColorByNumber('#1890ff', 7); // 比如 7 是较深的蓝
 </script>
 
 <template>
-  <NCard :bordered="false" size="small" class="card-wrapper">
-    <!-- define component start: GradientBg -->
+  <a-card :bordered="false" size="small" class="card-wrapper">
     <DefineGradientBg v-slot="{ $slots, gradientColor }">
       <div class="rd-8px px-16px pb-4px pt-8px text-white" :style="{ backgroundImage: gradientColor }">
         <component :is="$slots.default" />
       </div>
     </DefineGradientBg>
-    <!-- define component end: GradientBg -->
 
-    <NGrid :cols="gridCol" responsive="screen" :x-gap="16" :y-gap="16">
-      <NGi v-for="item in cardData" :key="item.key" class="home-card">
-        <NSpin :show="false">
-          <GradientBg :gradient-color="getGradientColor(item.color)" class="h-165px flex-1">
-            <div :class="item.click ? 'cursor-pointer' : null" @click="item.click">
-              <div class="flex justify-between">
-                <div class="align-center flex">
-                  <SvgIcon :icon="item.icon" class="text-26px" />
-                  <h3 class="ml-2 text-18px">{{ item.title }}</h3>
-                </div>
-                <NPopover trigger="hover">
-                  <template #trigger>
-                    <NButton text>
-                      <SvgIcon icon="ant-design:info-circle-outlined" class="text-20px color-white" />
-                    </NButton>
-                  </template>
+    <a-row :gutter="[16, 16]">
+      <a-col v-for="item in cardData" :key="item.key" :span="colSpan" class="home-card">
+        <GradientBg :gradient-color="getGradientColor(item.color)" class="home-card__gradient">
+          <div class="home-card__inner" :class="{ 'cursor-pointer': item.click }" @click="item.click">
+            <div class="home-card__header">
+              <div class="home-card__title">
+                <SvgIcon :icon="item.icon" class="home-card__icon" />
+                <h3>{{ item.title }}</h3>
+              </div>
+              <a-popover trigger="hover">
+                <template #content>
                   {{ item.tip }}
-                </NPopover>
-              </div>
-              <div class="flex">
-                <CountTo :start-value="0" :end-value="item.value" class="text-30px text-white" />
-              </div>
+                </template>
+                <a-button type="text" class="home-card__info">
+                  <SvgIcon icon="ant-design:info-circle-outlined" class="text-20px color-white" />
+                </a-button>
+              </a-popover>
             </div>
-            <NProgress
-              v-if="item.key === 'job_task'"
-              class="mb-24px h-20px pt-18px"
-              type="line"
-              color="#728bf9"
-              rail-color="#ebebeb"
-              :percentage="props.modelValue?.jobTask.successRate ?? 0"
-              indicator-text-color="#fff"
-            />
-            <NProgress
-              v-else-if="item.key === 'workflow_task'"
-              class="mb-24px h-20px pt-18px"
-              type="line"
-              color="#728bf9"
-              rail-color="#ebebeb"
-              :percentage="props.modelValue?.workFlowTask.successRate ?? 0"
-              indicator-text-color="#fff"
-            />
-            <DardRetryChart v-else-if="item.key === 'retry_task'" :model-value="props.modelValue?.retryTaskBarList" />
-            <div v-else class="mb-12px h-32px"></div>
-            <NDivider />
+            <div class="home-card__value">
+              <span>{{ formatNumber(item.value) }}</span>
+            </div>
+          </div>
+          <a-progress
+            v-if="item.key === 'job_task'"
+            class="progress-custom"
+            :percent="props.modelValue?.jobTask.successRate ?? 0"
+            :show-info="false"
+            stroke-color="#728bf9"
+          />
+          <a-progress
+            v-else-if="item.key === 'workflow_task'"
+            class="progress-custom"
+            :percent="props.modelValue?.workFlowTask.successRate ?? 0"
+            :show-info="false"
+            stroke-color="#728bf9"
+          />
+          <DardRetryChart v-else-if="item.key === 'retry_task'" :model-value="props.modelValue?.retryTaskBarList" />
+          <div v-else class="home-card__placeholder"></div>
+          <a-divider class="home-card__divider" />
+          <div class="home-card__footer">
             <template v-for="(bottomItem, bottomIndex) in item.bottom" :key="bottomIndex">
-              <NDivider v-if="bottomIndex !== 0" vertical />
+              <a-divider v-if="bottomIndex !== 0" type="vertical" />
               <span :class="bottomItem.click ? 'cursor-pointer home-card-footer' : null" @click="bottomItem.click">
                 {{ bottomItem.label }}
-                <CountTo :start-value="0" :end-value="bottomItem.value" />
+                <span class="home-card__footer-value">{{ formatNumber(bottomItem.value as number) }}</span>
               </span>
             </template>
-          </GradientBg>
-        </NSpin>
-      </NGi>
-    </NGrid>
-  </NCard>
+          </div>
+        </GradientBg>
+      </a-col>
+    </a-row>
+  </a-card>
 </template>
 
 <style scoped>
@@ -330,13 +333,90 @@ const color = getPaletteColorByNumber('#1890ff', 7); // 比如 7 是较深的蓝
 }
 
 .home-card {
+  min-height: 195px;
+}
+
+.home-card__gradient {
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px 12px;
+  height: 100%;
   transition: all 0.25s ease-in;
 }
 
-.home-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--n-box-shadow);
-  border-radius: 8px;
+.home-card__gradient:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+}
+
+.home-card__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #fff;
+}
+
+.home-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-card__title h3 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.home-card__icon {
+  font-size: 26px;
+}
+
+.home-card__info {
+  padding: 0;
+  color: #fff;
+}
+
+.home-card__value {
+  color: #fff;
+  font-size: 34px;
+  font-weight: 600;
+}
+
+.home-card__value span {
+  line-height: 1;
+}
+
+.progress-custom {
+  margin-top: 12px;
+}
+
+.home-card__placeholder {
+  height: 32px;
+}
+
+.home-card__divider {
+  margin: 12px 0 8px;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.home-card__footer {
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+  font-size: 14px;
+}
+
+.home-card__footer :deep(.ant-divider-vertical) {
+  height: 16px;
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .home-card-footer:hover {
@@ -348,5 +428,11 @@ const color = getPaletteColorByNumber('#1890ff', 7); // 比如 7 是较深的蓝
 .home-card-footer:hover {
   color: #1366ff !important;
   font-size: 15px;
+}
+
+.home-card__footer-value {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 600;
 }
 </style>

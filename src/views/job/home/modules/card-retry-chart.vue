@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-// import { useEcharts } from '@/hooks/common/echarts';
+import { ref, watch } from 'vue';
+import type { EChartsOption } from 'echarts';
+import { useEcharts } from '@/hooks/common/echarts';
 
 defineOptions({
   name: 'CardRetryChart'
@@ -12,81 +13,72 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// 临时解决：如果 useECharts 不存在，创建一个简单的实现
 const domRef = ref<HTMLElement | null>(null);
-let chartInstance: any = null;
+const { setOptions } = useEcharts(domRef);
 
-const updateOptions = (callback: (opts: any) => any) => {
-  // 占位实现，实际应该初始化 echarts 实例
-  if (typeof callback === 'function') {
-    const opts: any = {
-      xAxis: { data: [] },
-      series: [{ data: [] }]
-    };
-    callback(opts);
-  }
+const renderChart = () => {
+  const dataSource = props.modelValue ?? [];
+  const labels = dataSource.map(item => item.name ?? item.x ?? '');
+  const values = dataSource.map(item => item.value ?? item.taskTotal ?? 0);
+
+  const options: EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      appendToBody: true,
+      confine: true,
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    grid: {
+      top: '21px',
+      height: '40px',
+      containLabel: true,
+      left: 0,
+      right: 0
+    },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        alignWithLabel: true,
+        show: false
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {
+        show: false
+      },
+      splitLine: {
+        show: false
+      }
+    },
+    series: [
+      {
+        name: 'Task Count',
+        type: 'bar',
+        barWidth: '60%',
+        itemStyle: {
+          borderRadius: 4,
+          color: '#40e9c5'
+        },
+        data: values
+      }
+    ]
+  };
+
+  setOptions(options);
 };
 
-const initialOptions = {
-  tooltip: {
-    trigger: 'axis',
-    appendToBody: true,
-    confine: true,
-    axisPointer: {
-      type: 'shadow'
-    }
-  },
-  grid: {
-    top: '21px',
-    height: '40px',
-    containLabel: true
-  },
-  xAxis: {
-    axisLine: false,
-    type: 'category',
-    data: [] as string[],
-    axisTick: {
-      alignWithLabel: true
-    }
-  },
-  yAxis: {
-    type: 'value',
-    axisLine: false,
-    scale: true,
-    show: false
-  },
-  series: [
-    {
-      name: 'Task Count',
-      type: 'bar',
-      barWidth: '60%',
-      data: [] as number[]
-    }
-  ]
-};
-
-const getData = async () => {
-  await new Promise(resolve => {
-    setTimeout(resolve, 100);
-  });
-
-  if (!props.modelValue) {
-    await getData();
-    return;
-  }
-
-  updateOptions((opts: any) => {
-    if (opts.xAxis) {
-      opts.xAxis.data = props.modelValue!.map((item: any) => item.x);
-    }
-    if (opts.series && opts.series[0]) {
-      opts.series[0].data = props.modelValue!.map((item: any) => item.taskTotal);
-    }
-    return opts;
-  });
-};
-
-getData();
+watch(
+  () => props.modelValue,
+  () => renderChart(),
+  { deep: true, immediate: true }
+);
 </script>
 
 <template>

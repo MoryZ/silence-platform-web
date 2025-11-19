@@ -46,7 +46,7 @@ const getTaskName = (id: string) => {
 </script>
 
 <template>
-  <DetailDrawer v-model="visible" title="任务详情" :width="['500px', '90%']" @after-leave="onClose">
+<a-drawer v-model:open="visible" width="500px" title="任务详情" @after-open-change="(open) => !open && onClose()">
     <NDescriptions :column="1" label-placement="left" bordered :label-style="{ width: '120px' }">
       <NDescriptionsItem label="节点名称">{{ modelValue.nodeName }}</NDescriptionsItem>
       <NDescriptionsItem label="任务 ID">{{ modelValue.jobTask?.jobId }}</NDescriptionsItem>
@@ -58,7 +58,7 @@ const getTaskName = (id: string) => {
         {{ $t(workFlowNodeStatusRecord[modelValue.workflowNodeStatus!]) }}
       </NDescriptionsItem>
     </NDescriptions>
-  </DetailDrawer>
+</a-drawer>
 </template>
 
 <style scoped lang="scss"></style>

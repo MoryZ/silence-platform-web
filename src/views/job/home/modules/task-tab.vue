@@ -1,8 +1,7 @@
 <script setup lang="tsx">
-import { ref, computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { $t } from '@/locales';
 import { useAppStore } from '@/stores/app';
-import { fetchAllGroupName, fetchJobLine, fetchRetryLine } from '@/api/job/dashboard';
 import TaskLineChart from './task-line-chart.vue';
 import TaskPieChart from './task-pie-chart.vue';
 
@@ -17,6 +16,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const taskType = ref<string>('JOB');
+const activePanel = ref<'jobTask' | 'retryTask' | 'workflow'>('jobTask');
 const appStore = useAppStore();
 const gap = computed(() => {
   // 检测是否为移动设备
@@ -28,28 +28,94 @@ const groupOptions = ref<any[]>([]);
 const tabParams = ref<any>({
   pageNo: 1,
   pageSize: 10,
-  taskType: 1
+  taskType: 1,
+  type: 'WEEK',
+  datetimeRange: null,
+  groupName: undefined
 });
 
-const getData = async () => {
-  try {
-    const lineData =
-      taskType.value === 'RETRY' ? await fetchRetryLine(tabParams.value) : await fetchJobLine(tabParams.value);
-    data.value = lineData;
-  } catch (error) {
-    console.error('Failed to fetch line data:', error);
+const mockGroupNames = ['默认集群', '夜间任务集群', '核心调度集群', '边缘节点集群'];
+
+const mockLineDataMap: Record<string, any> = {
+  JOB: {
+    dashboardLineResponseDOList: [
+      { createDt: '周一', success: 120, fail: 25, stop: 5, cancel: 2 },
+      { createDt: '周二', success: 98, fail: 40, stop: 6, cancel: 4 },
+      { createDt: '周三', success: 135, fail: 30, stop: 4, cancel: 3 },
+      { createDt: '周四', success: 150, fail: 35, stop: 8, cancel: 6 },
+      { createDt: '周五', success: 168, fail: 28, stop: 6, cancel: 3 },
+      { createDt: '周六', success: 110, fail: 22, stop: 4, cancel: 2 },
+      { createDt: '周日', success: 140, fail: 18, stop: 3, cancel: 1 }
+    ],
+    rankList: [
+      { name: '默认集群', total: 560 },
+      { name: '夜间任务集群', total: 436 },
+      { name: '核心调度集群', total: 318 }
+    ],
+    taskList: {
+      data: [
+        { groupName: '默认集群', run: 320, total: 420 },
+        { groupName: '夜间任务集群', run: 250, total: 340 },
+        { groupName: '核心调度集群', run: 210, total: 280 },
+        { groupName: '边缘节点集群', run: 165, total: 220 }
+      ]
+    }
+  },
+  RETRY: {
+    dashboardLineResponseDOList: [
+      { createDt: '周一', successNum: 42, runningNum: 18, maxCountNum: 6, suspendNum: 2 },
+      { createDt: '周二', successNum: 50, runningNum: 22, maxCountNum: 8, suspendNum: 3 },
+      { createDt: '周三', successNum: 38, runningNum: 16, maxCountNum: 7, suspendNum: 4 },
+      { createDt: '周四', successNum: 60, runningNum: 20, maxCountNum: 6, suspendNum: 2 },
+      { createDt: '周五', successNum: 58, runningNum: 24, maxCountNum: 5, suspendNum: 1 },
+      { createDt: '周六', successNum: 35, runningNum: 12, maxCountNum: 4, suspendNum: 1 },
+      { createDt: '周日', successNum: 44, runningNum: 18, maxCountNum: 5, suspendNum: 2 }
+    ],
+    rankList: [
+      { name: '默认集群', total: 120 },
+      { name: '夜间任务集群', total: 105 },
+      { name: '核心调度集群', total: 96 }
+    ],
+    taskList: {
+      data: [
+        { groupName: '默认集群', run: 48, total: 120 },
+        { groupName: '夜间任务集群', run: 40, total: 105 },
+        { groupName: '核心调度集群', run: 38, total: 96 }
+      ]
+    }
+  },
+  WORKFLOW: {
+    dashboardLineResponseDOList: [
+      { createDt: '周一', success: 36, fail: 8, stop: 1, cancel: 0 },
+      { createDt: '周二', success: 42, fail: 10, stop: 2, cancel: 1 },
+      { createDt: '周三', success: 40, fail: 7, stop: 1, cancel: 1 },
+      { createDt: '周四', success: 48, fail: 9, stop: 2, cancel: 1 },
+      { createDt: '周五', success: 55, fail: 11, stop: 2, cancel: 1 },
+      { createDt: '周六', success: 30, fail: 6, stop: 1, cancel: 0 },
+      { createDt: '周日', success: 34, fail: 5, stop: 1, cancel: 0 }
+    ],
+    rankList: [
+      { name: '核心调度集群', total: 220 },
+      { name: '默认集群', total: 198 },
+      { name: '夜间任务集群', total: 150 }
+    ],
+    taskList: {
+      data: [
+        { groupName: '核心调度集群', run: 120, total: 180 },
+        { groupName: '默认集群', run: 102, total: 150 },
+        { groupName: '夜间任务集群', run: 80, total: 110 }
+      ]
+    }
   }
 };
 
-const getGroupNames = async () => {
-  try {
-    const groupNames = await fetchAllGroupName();
-    groupOptions.value = groupNames.map(groupName => {
-      return { label: groupName, value: groupName };
-    });
-  } catch (error) {
-    console.error('Failed to fetch group names:', error);
-  }
+const getData = () => {
+  const key = taskType.value || 'JOB';
+  data.value = mockLineDataMap[key] || mockLineDataMap.JOB;
+};
+
+const getGroupNames = () => {
+  groupOptions.value = mockGroupNames.map(groupName => ({ label: groupName, value: groupName }));
 };
 
 const onUpdateTab = (value: string) => {
@@ -67,19 +133,40 @@ const onUpdateTab = (value: string) => {
   }
 };
 
+watch(
+  () => activePanel.value,
+  value => {
+    onUpdateTab(value);
+  },
+  { immediate: true }
+);
+
 const onUpdateDate = (value: [string, string] | null) => {
-  if (value) {
+  if (value && value[0] && value[1]) {
     tabParams.value.type = 'OTHERS';
+    tabParams.value.datetimeRange = value;
+  } else {
+    tabParams.value.datetimeRange = null;
   }
 };
 
 const onClearDate = () => {
   tabParams.value.type = 'WEEK';
+  tabParams.value.datetimeRange = null;
 };
 
 const onUpdateType = (value: string) => {
+  tabParams.value.type = value;
   if (value !== 'OTHERS') {
     tabParams.value.datetimeRange = null;
+  }
+};
+
+const onRangeChange = (_dates: any, dateStrings: [string, string]) => {
+  if (dateStrings?.[0] && dateStrings?.[1]) {
+    onUpdateDate(dateStrings);
+  } else {
+    onClearDate();
   }
 };
 
@@ -90,19 +177,19 @@ const pagination = reactive({
   showSizeChanger: true,
   showQuickJumper: true,
   pageSizeOptions: ['10', '15', '20', '25', '30'],
-  onChange: async (page: number, pageSize: number) => {
+  onChange: (page: number, pageSize: number) => {
     pagination.current = page;
     pagination.pageSize = pageSize;
     tabParams.value.pageNo = page;
     tabParams.value.pageSize = pageSize;
-    await getData();
+    getData();
   },
-  onShowSizeChange: async (current: number, pageSize: number) => {
+  onShowSizeChange: (current: number, pageSize: number) => {
     pagination.current = current;
     pagination.pageSize = pageSize;
     tabParams.value.pageNo = current;
     tabParams.value.pageSize = pageSize;
-    await getData();
+    getData();
   }
 });
 
@@ -169,8 +256,33 @@ getGroupNames();
 
 <template>
   <div class="relative">
-    <a-tabs type="line" animated @change="onUpdateTab">
-      <a-tab-pane v-for="panel in panels" :key="panel.name" :tab="panel.tab" :name="panel.name">
+    <a-tabs v-model:activeKey="activePanel" type="line" animated class="task-tab__tabs">
+      <template #rightExtra>
+        <div class="task-tab__filters">
+          <a-radio-group v-model:value="tabParams.type" @change="onUpdateType">
+            <a-radio-button value="DAY">{{ $t('page.home.retryTab.params.day') }}</a-radio-button>
+            <a-radio-button value="WEEK">{{ $t('page.home.retryTab.params.week') }}</a-radio-button>
+            <a-radio-button value="MONTH">{{ $t('page.home.retryTab.params.month') }}</a-radio-button>
+            <a-radio-button value="YEAR">{{ $t('page.home.retryTab.params.year') }}</a-radio-button>
+          </a-radio-group>
+          <a-range-picker
+            v-model:value="tabParams.datetimeRange"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            class="task-tab__range"
+            show-time
+            :placeholder="['开始日期时间', '结束日期时间']"
+            @change="onRangeChange"
+          />
+          <a-select v-model:value="tabParams.groupName" :options="groupOptions" class="task-tab__select" allow-clear />
+        </div>
+      </template>
+      <a-tab-pane
+        v-for="panel in panels"
+        :key="panel.name"
+        :tab="panel.tab"
+        :name="panel.name"
+        :force-render="true"
+      >
         <a-row :gutter="[gap, 16]">
           <a-col :xs="24" :sm="24" :md="16">
             <TaskLineChart :model-value="data" :type="taskType" />
@@ -216,23 +328,6 @@ getGroupNames();
         </a-row>
       </a-tab-pane>
     </a-tabs>
-    <div
-      class="absolute top--136px flex flex-col flex-wrap gap-16px 2xl:right-40px 2xl:top-0 lg:top--36px md:top--90px md:flex-row 2xl:flex-nowrap"
-    >
-      <a-radio-group v-model:value="tabParams.type" @change="onUpdateType">
-        <a-radio-button value="DAY">{{ $t('page.home.retryTab.params.day') }}</a-radio-button>
-        <a-radio-button value="WEEK">{{ $t('page.home.retryTab.params.week') }}</a-radio-button>
-        <a-radio-button value="MONTH">{{ $t('page.home.retryTab.params.month') }}</a-radio-button>
-        <a-radio-button value="YEAR">{{ $t('page.home.retryTab.params.year') }}</a-radio-button>
-      </a-radio-group>
-      <DatetimeRange
-        v-model:value="tabParams.datetimeRange"
-        class="w-300px lg:w-250px md:w-275px sm:w-300px xl:w-400px"
-        @update:value="onUpdateDate"
-        @clear="onClearDate"
-      />
-      <a-select v-model:value="tabParams.groupName" :options="groupOptions" class="w-200px lg:w-150px md:w-170px" />
-    </div>
   </div>
 </template>
 
@@ -334,7 +429,27 @@ getGroupNames();
   }
 }
 
-.n-divider:not(.n-divider--vertical) {
+.task-tab__filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.task-tab__range {
+  min-width: 260px;
+}
+
+.task-tab__select {
+  min-width: 160px;
+}
+
+.task-tab__tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+.ant-divider {
   margin-top: 16px;
   margin-bottom: 12px;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import type { FormInstance } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import {
@@ -44,7 +44,11 @@ onMounted(() => {
 
 async function getNotifyConfigSystemTaskTypeList() {
   const res = await fetchGetNotifyConfigSystemTaskTypeList(4);
-  notifyNameList.value = res.data as Option<number>[];
+  const list = (res?.data ?? res ?? []) as any[];
+  notifyNameList.value = list.map(item => ({
+    label: item.notifyName ?? item.label ?? item.name ?? item.value ?? item.id,
+    value: item.id ?? item.value ?? item.notifyName
+  }));
 }
 const emit = defineEmits<Emits>();
 
@@ -56,7 +60,30 @@ const form = ref<Workflow.NodeDataType>({
   wfContexts: [],
   notifyIds: []
 });
-const groupNameList = ref<string[]>([]);
+const groupNameList = ref<any[]>([]);
+const groupOptions = computed(() =>
+  (groupNameList.value || []).map(item => {
+    if (typeof item === 'string') {
+      return { label: item, value: item };
+    }
+    if (typeof item === 'object' && item !== null) {
+      const label =
+        item.label ??
+        item.groupName ??
+        item.name ??
+        item.value ??
+        (item.id ? String(item.id) : '');
+      const value =
+        item.value ??
+        item.groupName ??
+        item.name ??
+        (item.id ? String(item.id) : label);
+      return { label, value };
+    }
+    const str = String(item);
+    return { label: str, value: str };
+  })
+);
 
 watch(
   () => props.open,
@@ -112,10 +139,15 @@ const save = async () => {
 
 const getGroupNameList = async () => {
   try {
-    const data = await fetchAllGroupName();
-    groupNameList.value = data;
+    const response = await fetchAllGroupName();
+    let list: any = response ?? [];
+    if (!Array.isArray(list) && list?.data) {
+      list = list.data;
+    }
+    groupNameList.value = Array.isArray(list) ? list : [];
   } catch (error) {
     console.error('获取组名列表失败:', error);
+    groupNameList.value = [];
   }
 };
 
@@ -158,14 +190,7 @@ const rules: Record<RuleKey, any> = {
             v-model:value="form.groupName"
             placeholder="请选择组"
             :disabled="store.type === 0 && isNotNull(store.id)"
-            :options="
-              groupNameList.map(groupName => {
-                return {
-                  label: groupName,
-                  value: groupName
-                };
-              })
-            "
+            :options="groupOptions"
           />
         </NFormItem>
         <NGrid :cols="form.triggerType === 5 ? '1' : '2 s:1 m:2'" responsive="screen" x-gap="20">

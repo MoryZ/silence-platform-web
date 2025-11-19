@@ -3,7 +3,12 @@ import { jobRequest as request } from '@/utils/request';
 
 /** get workflow page list */
 export function fetchGetWorkflowPageList(params?: any) {
-  return request.get<any>('/api/v1/workflows/page/list', { params });
+  return request.get<any>('/api/v1/workflows', { params });
+}
+
+/** get namespace list */
+export function fetchGetWorkflowNameList(params?: any) {
+    return request.get<any>('/api/v1/workflows', { params });
 }
 
 /** trigger workflow */
@@ -16,15 +21,6 @@ export function fetchTriggerWorkflowParams(data: any) {
   return request.post<any>('/api/v1/workflows/trigger', data);
 }
 
-/** get namespace list */
-export function fetchGetWorkflowNameList(params?: any) {
-  return request.get<any>('/api/v1/workflows', { params });
-}
-
-/** get workflow batch list */
-export function fetchGetWorkflowBatchList(params?: any) {
-  return request.get<any>('/api/v1/workflow/batch/page/list', { params });
-}
 
 export function enableWorkflow(id: string) {
   return request.put<any>(`/api/v1/workflows/${id}/enable`);
@@ -39,11 +35,11 @@ export function fetchBatchDeleteWorkflow(data: string[]) {
 }
 
 export function fetchStopWorkflowBatch(id: string) {
-  return request.post<any>(`/api/v1/workflows/batch/stop/${id}`);
+  return request.post<any>(`/api/v1/workflowBatches/stop/${id}/stop`);
 }
 
 export function fetchWorkflowNodeRetry(id: string, workflowNodeId: string) {
-  return request.post<any>(`/api/v1/workflows/node/retry/${workflowNodeId}/${id}`);
+  return request.post<any>(`/api/v1/workflowNodes/${id}/${workflowNodeId}`);
 }
 
 export function fetchCheckNodeExpression(expression: any) {
@@ -68,22 +64,32 @@ export function fetchWorkflowInfo(id: string) {
   return request.get<any>(`/api/v1/workflows/${id}`);
 }
 
-export function fetchWorkflowBatchInfo(id: string) {
-  return request.get<any>(`/api/v1/workflows/batch/${id}`);
-}
 
 export function fetchNodeRetry(nodeId: string, taskBatchId: string) {
-  return request.post<any>(`/api/v1/workflows/node/retry/${nodeId}/${taskBatchId}`);
+  return request.post<any>(`/api/v1/workflowNodes/${nodeId}/${taskBatchId}`);
 }
 
 export function fetchNodeStop(nodeId: string, taskBatchId: string) {
-  return request.post<any>(`/api/v1/workflows/node/stop/${nodeId}/${taskBatchId}`);
+  return request.post<any>(`/api/v1/workflowNodes/${nodeId}/${taskBatchId}/stop`);
+}
+
+
+
+
+/** get workflow batch list */
+export function fetchGetWorkflowBatchList(params?: any) {
+    return request.get<any>('/api/v1/workflowBatches', { params });
+}
+
+export function fetchWorkflowBatchInfo(id: string) {    
+    return request.get<any>(`/api/v1/workflowBatches/${id}`);
 }
 
 export function fetchDeleteWorkflowBatch(id: string) {
-  return request.delete<any>('/api/v1/workflows/batch/ids', { data: [id] });
+    return request.delete<any>('/api/v1/workflowBatches', { data: [id] });
 }
 
 export function fetchBatchDeleteWorkflowBatch(data: string[]) {
-  return request.delete<any>('/api/v1/workflows/batch/ids', { data });
+    return request.delete<any>('/api/v1/workflowBatches', { data });
 }
+

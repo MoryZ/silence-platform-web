@@ -28,16 +28,24 @@ onMounted(() => {
   getDetail();
 });
 
+const closePage = () => {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.replace('/workflow/task');
+  }
+};
+
 const update = async () => {
   const { error } = await fetchUpdateWorkflow(node.value);
   if (!error) {
     message.success($t('common.updateSuccess'));
-    router.push({ path: '/workflow/task' });
+    closePage();
   }
 };
 
 const cancel = () => {
-  router.push('/workflow/task');
+  closePage();
 };
 </script>
 

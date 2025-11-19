@@ -97,20 +97,20 @@ const addType = (type: number) => {
       <NPopover v-if="!disabled" placement="right-end" trigger="click" :overlay-style="{ width: '296px' }">
         <template #trigger>
           <NButton type="primary" circle strong>
-            <icon-ant-design:plus-outlined />
+            <SvgIcon icon="ant-design:plus-outlined" />
           </NButton>
         </template>
         <div class="add-node-popover-body">
           <ul class="icon">
             <li>
               <NButton circle size="large" @click="addType(1)">
-                <icon-ant-design:unordered-list-outlined class="text-20px color-#3296fa" />
+                <SvgIcon icon="ant-design:unordered-list-outlined" class="text-20px color-#3296fa" />
               </NButton>
               <p>{{ $t('workflow.node.task.nodeName') }}</p>
             </li>
             <li>
               <NButton circle size="large" @click="addType(2)">
-                <icon-ant-design:share-alt-outlined class="text-20px color-#15bc83" />
+                <SvgIcon icon="ant-design:share-alt-outlined" class="text-20px color-#15bc83" />
               </NButton>
               <p>{{ $t('workflow.node.condition.nodeName') }}</p>
             </li>

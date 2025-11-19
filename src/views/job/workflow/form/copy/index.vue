@@ -34,16 +34,24 @@ onMounted(() => {
   getDetail();
 });
 
+const closePage = () => {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.replace('/workflow/task');
+  }
+};
+
 const save = async () => {
   const { error } = await fetchAddWorkflow(node.value);
   if (!error) {
     message.success($t('common.addSuccess'));
-    router.push('/workflow/task');
+    closePage();
   }
 };
 
 const cancel = () => {
-  router.push('/workflow/task');
+  closePage();
 };
 </script>
 

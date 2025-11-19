@@ -13,46 +13,11 @@
       :forceSubMenuRender="true"
       :key="menuKey"
     >
-      <!-- 动态生成菜单（包含首页等在 MENUS 中的项） -->
-      <template v-for="(menu, index) in filteredMenuList" :key="menu.path || menu.key || index">
-        <a-sub-menu 
-          v-if="menu.children && menu.children.length" 
-          :key="menu.path || menu.key || `submenu-${index}`"
-        >
-          <template #icon>
-            <component :is="getIcon(menu.meta?.icon)" />
-          </template>
-          <template #title>
-            <span @click.stop="toggleOpen(menu.path || menu.key || `submenu-${index}`)">
-              {{ menu.meta?.title || menu.title }}
-            </span>
-          </template>
-          
-          <a-menu-item 
-            v-for="(subMenu, subIndex) in menu.children" 
-            :key="subMenu.path || subMenu.key || `submenu-item-${subIndex}`" 
-            @click="navigateTo(subMenu.path || subMenu.key || '', menu.path || menu.key)"
-            :class="isActive(subMenu.path || subMenu.key, menu.path || menu.key) ? 'active-menu-item' : ''"
-          >
-            <template #icon>
-              <component :is="getIcon(subMenu.meta?.icon)" />
-            </template>
-            <span>{{ subMenu.meta?.title || subMenu.title }}</span>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-menu-item 
-          v-else 
-          :key="`menu-item-${menu.path || menu.key || index}`" 
-          @click="navigateTo(menu.path || menu.key || '')"
-          :class="isActive(menu.path || menu.key) ? 'active-menu-item' : ''"
-        >
-          <template #icon>
-            <component :is="getIcon(menu.meta?.icon)" />
-          </template>
-          <span>{{ menu.meta?.title || menu.title }}</span>
-        </a-menu-item>
-      </template>
+      <MenuRecursiveItem
+        v-for="(menu, index) in filteredMenuList"
+        :key="menu.path || menu.key || index"
+        :menu="menu"
+      />
     </a-menu>
     <div v-else class="menu-error">
       <p>菜单加载失败，请刷新页面重试</p>
@@ -71,7 +36,7 @@ import {
   BarsOutlined
 } from '@ant-design/icons-vue';
 import * as Icons from '@ant-design/icons-vue'
-import { ref, computed, onMounted, watch, nextTick, h } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, h, defineComponent, PropType, isVNode, resolveComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MENUS } from '@/utils/constant';
 import { ls } from '@/utils/stoarge';
@@ -145,22 +110,36 @@ const filteredMenuList = computed(() => {
   }
 });
 
+const resolveMenuPath = (path?: string, parentPath?: string): string => {
+  if (!path) {
+    return parentPath || '';
+  }
+
+  // 绝对路径
+  if (path.startsWith('/')) {
+    // 如果本身就是完整路径或者没父级，直接返回
+    if (!parentPath || path.startsWith(parentPath)) {
+      return path;
+    }
+    const cleanParent = parentPath.endsWith('/') ? parentPath.slice(0, -1) : parentPath;
+    const cleanChild = path.slice(1); // 去掉开头/
+    return `${cleanParent}/${cleanChild}`;
+  }
+
+  // 相对路径
+  const base = parentPath || '';
+  if (!base) {
+    return `/${path}`;
+  }
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  return `${cleanBase}/${path}`;
+};
+
 // 检查菜单项是否为当前激活的路径
 const isActive = (path?: string, parentPath?: string): boolean => {
-  if (!path) return false;
-  
-  // 简化路径处理逻辑，与navigateTo函数保持一致
-  let targetPath = path;
-  
-  if (parentPath && !path.startsWith('/')) {
-    targetPath = `${parentPath}/${path}`;
-  } else if (parentPath && path.startsWith('/') && !path.startsWith(parentPath)) {
-    targetPath = `${parentPath}${path}`;
-  }
-  
-  // 检查当前路径是否与目标路径匹配
-  const isMatch = route.path === targetPath;
-  return isMatch;
+  const targetPath = resolveMenuPath(path, parentPath);
+  if (!targetPath) return false;
+  return route.path === targetPath;
 };
 
 // 根据 MENUS 计算应展开的所有父级 key，按路径链路展开
@@ -412,24 +391,91 @@ onMounted(() => {
 // 导航函数
 const navigateTo = (path: string, parentPath?: string) => {
   try {
-    if (!path) return;
-    
-    let targetPath = path;
-    
-    // 简化路径处理逻辑
-    if (parentPath && !path.startsWith('/')) {
-      // 如果子路径不是以/开头，拼接到父路径
-      targetPath = `${parentPath}/${path}`;
-    } else if (parentPath && path.startsWith('/') && !path.startsWith(parentPath)) {
-      // 如果子路径是绝对路径但不包含父路径，直接拼接
-      targetPath = `${parentPath}${path}`;
-    }
-    
+    const targetPath = resolveMenuPath(path, parentPath);
+    if (!targetPath) return;
     router.push(targetPath);
   } catch (error) {
     console.error('导航出错:', error);
   }
 };
+
+const renderIconNode = (icon?: string) => {
+  const iconResult: any = getIcon(icon);
+  if (isVNode(iconResult)) {
+    return iconResult;
+  }
+  return h(iconResult);
+};
+
+const MenuRecursiveItem = defineComponent({
+  name: 'MenuRecursiveItem',
+  props: {
+    menu: {
+      type: Object as PropType<MenuItem>,
+      required: true
+    },
+    parentPath: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props) {
+    return () => {
+      const menu = props.menu;
+      const currentPath = resolveMenuPath(menu.path || '', props.parentPath);
+      const key =
+        currentPath ||
+        menu.key ||
+        (menu.meta?.title ? `menu-node-${menu.meta?.title}` : `menu-node-${Math.random()}`);
+      const children = menu.children || [];
+      if (children.length > 0) {
+        const SubMenu = resolveComponent('a-sub-menu') as any;
+        return h(
+          SubMenu,
+          { key },
+          {
+            icon: () => renderIconNode(menu.meta?.icon),
+            title: () =>
+              h(
+                'span',
+                {
+                  onClick: (event: Event) => {
+                    event.stopPropagation();
+                    toggleOpen(key);
+                  }
+                },
+                menu.meta?.title || menu.title
+              ),
+            default: () =>
+              children
+                .filter(Boolean)
+                .map((child, idx) =>
+                  h(MenuRecursiveItem, {
+                    menu: child,
+                    parentPath: currentPath || '/',
+                    key: child.path || child.key || `${key}-child-${idx}`
+                  })
+                )
+          }
+        );
+      }
+      const MenuItemComp = resolveComponent('a-menu-item') as any;
+      const targetPath = currentPath || menu.path || menu.key || '';
+      return h(
+        MenuItemComp,
+        {
+          key,
+          class: isActive(targetPath) ? 'active-menu-item' : '',
+          onClick: () => navigateTo(targetPath)
+        },
+        {
+          icon: () => renderIconNode(menu.meta?.icon),
+          default: () => h('span', menu.meta?.title || menu.title)
+        }
+      );
+    };
+  }
+});
 
 </script>
 
@@ -514,9 +560,14 @@ const navigateTo = (path: string, parentPath?: string) => {
     color: #1890ff !important;
   }
   
-  /* 增加子菜单的缩进 */
-  .ant-menu-sub .ant-menu-item {
+  /* 增加子菜单的缩进（父级和子级保持一致） */
+  .ant-menu-sub .ant-menu-item,
+  .ant-menu-sub .ant-menu-submenu-title {
     padding-left: 40px !important;
+  }
+  .ant-menu-sub .ant-menu-sub .ant-menu-item,
+  .ant-menu-sub .ant-menu-sub .ant-menu-submenu-title {
+    padding-left: 56px !important;
   }
   
   /* 子菜单被选中时的样式 */

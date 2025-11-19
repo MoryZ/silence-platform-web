@@ -1,41 +1,47 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
 import { operationReasonRecord, taskBatchStatusRecord } from '@/constants/business';
 import { monthRangeISO8601 } from '@/utils/common';
+import dayjs from 'dayjs';
 import {
   fetchBatchDeleteWorkflowBatch,
   fetchDeleteWorkflowBatch,
   fetchGetWorkflowBatchList,
-  fetchStopWorkflowBatch
+  fetchStopWorkflowBatch,
+  fetchGetWorkflowNameList
 } from '@/api/job/workflow';
-import WorkflowBatchSearch from './modules/workflow-batch-search.vue';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
 
 const router = useRouter();
+const historyState = history.state || {};
 
 // 数据状态
 const data = ref<any[]>([]);
 const loading = ref(false);
 const checkedRowKeys = ref<string[]>([]);
-const searchParams = ref({
-  page: 1,
-  size: 10,
-  workflowId: history.state.workflowId || null,
-  workflowName: history.state.workflowName || null,
-  groupName: null,
-  taskBatchStatus: history.state.taskBatchStatus || null,
-  datetimeRange: monthRangeISO8601()
-});
 
-// 分页配置
-const mobilePagination = ref({
-  current: 1,
+const createDefaultSearchParams = () => {
+  const range = monthRangeISO8601();
+  return {
+    groupName: null,
+    workflowId: historyState.workflowId ? String(historyState.workflowId) : null,
+    taskBatchStatus: historyState.taskBatchStatus ? String(historyState.taskBatchStatus) : null,
+    datetimeRange: range.map(item => dayjs(item)),
+    createdDateStart: range[0],
+    createdDateEnd: range[1]
+  };
+};
+
+const searchParams = ref<Record<string, any>>(createDefaultSearchParams());
+
+const pagination = reactive({
+  pageNo: 1,
   pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showQuickJumper: true
+  total: 0
 });
 
 // 列配置
@@ -92,15 +98,111 @@ const columns = ref([
   }
 ]);
 
+const searchFields = computed(() => [
+  {
+    key: 'groupName',
+    label: $t('page.workflowBatch.groupName'),
+    type: 'input' as const,
+    placeholder: $t('page.workflowBatch.form.groupName')
+  },
+  {
+    key: 'workflowId',
+    label: $t('page.workflowBatch.workflowName'),
+    type: 'select' as const,
+    placeholder: $t('page.workflowBatch.form.workflowName'),
+    options: async () => {
+      try {
+        const response = await fetchGetWorkflowNameList({ keywords: '' });
+        const list = response.data || response || [];
+        return list.map((item: any) => ({
+          label: `${item.workflowName}(${item.id})`,
+          value: String(item.id)
+        }));
+      } catch (error) {
+        console.error('加载工作流选项失败:', error);
+        return [];
+      }
+    }
+  },
+  {
+    key: 'taskBatchStatus',
+    label: $t('page.workflowBatch.taskBatchStatus'),
+    type: 'select' as const,
+    placeholder: $t('page.workflowBatch.form.taskBatchStatus'),
+    options: [
+      { label: $t('common.running'), value: '1' },
+      { label: $t('common.success'), value: '2' },
+      { label: $t('common.fail'), value: '3' },
+      { label: $t('common.stop'), value: '4' }
+    ]
+  },
+  {
+    key: 'datetimeRange',
+    label: $t('page.common.createTime'),
+    type: 'date-picker' as const,
+    dateConfig: {
+      showTime: true,
+      format: 'YYYY-MM-DD HH:mm:ss'
+    },
+    style: 'width: 320px'
+  }
+]);
+
+const tableProps = computed(() => ({
+  rowSelection: {
+    selectedRowKeys: checkedRowKeys.value,
+    onChange: (keys: string[]) => {
+      checkedRowKeys.value = keys;
+    }
+  },
+  scroll: { x: 'max-content' }
+}));
+
+watch(
+  () => searchParams.value.datetimeRange,
+  value => {
+    if (Array.isArray(value) && value.length === 2) {
+      const [start, end] = value;
+      searchParams.value.createdDateStart = start ? dayjs(start).format('YYYY-MM-DD HH:mm:ss') : null;
+      searchParams.value.createdDateEnd = end ? dayjs(end).format('YYYY-MM-DD HH:mm:ss') : null;
+    } else {
+      searchParams.value.createdDateStart = null;
+      searchParams.value.createdDateEnd = null;
+    }
+  },
+  { deep: true, immediate: true }
+);
+
 // 获取数据
 async function getData() {
   loading.value = true;
   try {
-    const response = await fetchGetWorkflowBatchList(searchParams.value);
+    const params: Record<string, any> = {
+      pageNo: pagination.pageNo,
+      pageSize: pagination.pageSize,
+      groupName: searchParams.value.groupName
+    };
+
+    if (searchParams.value.workflowId) {
+      params.workflowId = Number(searchParams.value.workflowId);
+    }
+    if (searchParams.value.taskBatchStatus) {
+      params.taskBatchStatus = Number(searchParams.value.taskBatchStatus);
+    }
+
+    if (searchParams.value.createdDateStart) {
+      params.createdDateStart = searchParams.value.createdDateStart;
+    }
+    if (searchParams.value.createdDateEnd) {
+      params.createdDateEnd = searchParams.value.createdDateEnd;
+    }
+
+    const response = await fetchGetWorkflowBatchList(params);
     if (response && response.data) {
       data.value = response.data.items || response.data || [];
-      mobilePagination.value.total = response.data.total || 0;
+      pagination.total = response.data.total || response.data.totalCount || 0;
     }
+    checkedRowKeys.value = [];
   } catch (error) {
     console.error('获取数据失败:', error);
   } finally {
@@ -110,15 +212,8 @@ async function getData() {
 
 // 重置搜索参数
 function resetSearchParams() {
-  searchParams.value = {
-    page: 1,
-    size: 10,
-    workflowId: history.state.workflowId || null,
-    workflowName: history.state.workflowName || null,
-    groupName: null,
-    taskBatchStatus: history.state.taskBatchStatus || null,
-    datetimeRange: monthRangeISO8601()
-  };
+  searchParams.value = createDefaultSearchParams();
+  pagination.pageNo = 1;
   getData();
 }
 
@@ -133,6 +228,7 @@ async function handleBatchDelete() {
   const { error } = await fetchBatchDeleteWorkflowBatch(checkedRowKeys.value);
   if (error) return;
   message.success('批量删除成功');
+  checkedRowKeys.value = [];
   getData();
 }
 
@@ -159,11 +255,26 @@ function getStatusColor(status: number): string {
   };
   return tagMap[status] || 'default';
 }
+
+function handleSearch() {
+  pagination.pageNo = 1;
+  getData();
+}
+
+function handleReset() {
+  resetSearchParams();
+}
+
+function handlePageChange(pageNo: number, pageSize: number) {
+  pagination.pageNo = pageNo;
+  pagination.pageSize = pageSize;
+  getData();
+}
 </script>
 
 <template>
   <div class="flex-col h-full">
-    <WorkflowBatchSearch v-model:model="searchParams" @reset="resetSearchParams" @search="getData" />
+    <SearchPanel v-model="searchParams" :fields="searchFields" @search="handleSearch" @reset="handleReset" />
     
     <!-- 操作栏 -->
     <div class="action-bar">
@@ -180,15 +291,16 @@ function getStatusColor(status: number): string {
       </div>
     </div>
     
-    <!-- 数据表格 -->
-    <a-table
-      v-model:selected-row-keys="checkedRowKeys"
+    <CommonPagination
       :columns="columns"
       :data-source="data"
       :loading="loading"
-      :pagination="mobilePagination"
       row-key="id"
-      :scroll="{ x: 1000 }"
+      :page-no="pagination.pageNo"
+      :page-size="pagination.pageSize"
+      :total="pagination.total"
+      :table-props="tableProps"
+      @change="handlePageChange"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'id'">
@@ -233,7 +345,7 @@ function getStatusColor(status: number): string {
           </div>
         </template>
       </template>
-    </a-table>
+    </CommonPagination>
   </div>
 </template>
 

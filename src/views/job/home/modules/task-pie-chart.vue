@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { watch, ref } from 'vue';
+import { ref, watch } from 'vue';
+import type { EChartsOption } from 'echarts';
 import { getPaletteColorByNumber } from '@/stores/theme/shared';
 import { $t } from '@/locales';
 import { useAppStore } from '@/stores/app';
-// import { useEcharts } from '@/hooks/common/echarts';
+import { useEcharts } from '@/hooks/common/echarts';
 import { useThemeStore } from '@/stores/theme';
 
 defineOptions({
@@ -22,19 +23,46 @@ const props = withDefaults(defineProps<Props>(), {
 const appStore = useAppStore();
 const themeStore = useThemeStore();
 
-// 临时解决：如果 useEcharts 不存在，创建一个简单的实现
-const domRef = ref(null);
-const updateOptions: any = (callback: any) => {
-  // 占位实现
-  if (typeof callback === 'function') {
-    const opts = {};
-    const factory = () => getChartOptions();
-    callback(opts, factory);
+const domRef = ref<HTMLElement | null>(null);
+const { setOptions } = useEcharts(domRef);
+
+const getColor = (color: string) => ((themeStore as any).darkMode ? getPaletteColorByNumber(color, 700) : color);
+
+const getSeriesData = () => {
+  if (!props.modelValue) {
+    return [];
   }
+
+  if (props.type === 'JOB') {
+    const jobTask = props.modelValue.jobTask ?? {};
+    return [
+      { name: $t('common.success'), value: jobTask.successNum ?? 0 },
+      { name: $t('common.fail'), value: jobTask.failNum ?? 0 },
+      { name: $t('common.stop'), value: jobTask.stopNum ?? 0 },
+      { name: $t('common.cancel'), value: jobTask.cancelNum ?? 0 }
+    ];
+  }
+
+  if (props.type === 'RETRY') {
+    const retryTask = props.modelValue.retryTask ?? {};
+    return [
+      { name: $t('common.success'), value: retryTask.finishNum ?? 0 },
+      { name: $t('common.running'), value: retryTask.runningNum ?? 0 },
+      { name: $t('page.home.retryTask.status.maxRetryTimes'), value: retryTask.maxCountNum ?? 0 },
+      { name: $t('page.home.retryTask.status.pauseRetry'), value: retryTask.suspendNum ?? 0 }
+    ];
+  }
+
+  const workflowTask = props.modelValue.workFlowTask ?? {};
+  return [
+    { name: $t('common.success'), value: workflowTask.successNum ?? 0 },
+    { name: $t('common.fail'), value: workflowTask.failNum ?? 0 },
+    { name: $t('common.stop'), value: workflowTask.stopNum ?? 0 },
+    { name: $t('common.cancel'), value: workflowTask.cancelNum ?? 0 }
+  ];
 };
 
-// 图表配置
-const getChartOptions = () => ({
+const buildOptions = (): EChartsOption => ({
   tooltip: {
     trigger: 'item',
     textStyle: {
@@ -69,110 +97,42 @@ const getChartOptions = () => ({
       emphasis: {
         label: {
           show: true,
-          fontSize: '12'
+          fontSize: 12
         }
       },
       labelLine: {
         show: false
       },
-      data: [] as { name: string; value: number }[]
+      data: getSeriesData()
     }
   ]
 });
 
-function getColor(color: string) {
-  return (themeStore as any).darkMode ? getPaletteColorByNumber(color, 700) : color;
-}
-
-const getData = async () => {
-  await new Promise(resolve => {
-    setTimeout(resolve, 1);
-  });
-
-  if (!props.modelValue) {
-    await getData();
-    return;
-  }
-
-  updateLocale();
+const renderChart = () => {
+  setOptions(buildOptions());
 };
 
-function updateLocale() {
-  updateOptions((opts, factory) => {
-    const originOpts = factory();
-    opts.series[0].name = originOpts.series[0].name;
-    opts.series[0].color = originOpts.series[0].color;
-    opts.series[0].itemStyle.borderColor = originOpts.series[0].itemStyle.borderColor;
-    opts.tooltip.textStyle.color = originOpts.tooltip.textStyle.color;
-    opts.tooltip.backgroundColor = originOpts.tooltip.backgroundColor;
-
-    if (props.type === 'JOB') {
-      const jobTask = props.modelValue.jobTask;
-      opts.series[0].data = [
-        { name: $t('common.success'), value: jobTask.successNum / jobTask.totalNum },
-        { name: $t('common.fail'), value: jobTask.failNum / jobTask.totalNum },
-        { name: $t('common.stop'), value: jobTask.stopNum / jobTask.totalNum },
-        { name: $t('common.cancel'), value: jobTask.cancelNum / jobTask.totalNum }
-      ];
-    }
-
-    if (props.type === 'RETRY') {
-      const retryTask = props.modelValue.retryTask;
-      opts.series[0].data = [
-        { name: $t('common.success'), value: retryTask.finishNum / retryTask.totalNum },
-        { name: $t('common.running'), value: retryTask.runningNum / retryTask.totalNum },
-        { name: $t('page.home.retryTask.status.maxRetryTimes'), value: retryTask.maxCountNum / retryTask.totalNum },
-        { name: $t('page.home.retryTask.status.pauseRetry'), value: retryTask.suspendNum / retryTask.totalNum }
-      ];
-    }
-
-    if (props.type === 'WORKFLOW') {
-      const workFlowTask = props.modelValue.workFlowTask;
-      opts.series[0].data = [
-        { name: $t('common.success'), value: workFlowTask.successNum / workFlowTask.totalNum },
-        { name: $t('common.fail'), value: workFlowTask.failNum / workFlowTask.totalNum },
-        { name: $t('common.stop'), value: workFlowTask.stopNum / workFlowTask.totalNum },
-        { name: $t('common.cancel'), value: workFlowTask.cancelNum / workFlowTask.totalNum }
-      ];
-    }
-    return opts;
-  });
-}
-
 watch(
-  () => appStore.language,
-  () => {
-    updateLocale();
-  }
-);
-
-watch(
-  () => (themeStore as any).darkMode,
-  () => {
-    updateLocale();
-  }
-);
-
-watch(
-  () => props.type,
-  () => {
-    getData();
-  },
-  { immediate: true }
-);
-
-watch(
-  () => props.modelValue,
-  () => {
-    getData();
-  }
+  [() => appStore.language, () => (themeStore as any).darkMode, () => props.type, () => props.modelValue],
+  () => renderChart(),
+  { immediate: true, deep: true }
 );
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper">
-    <div ref="domRef" class="h-360px overflow-hidden"></div>
-  </NCard>
+  <a-card :bordered="false" class="chart-card">
+    <div ref="domRef" class="chart-card__body"></div>
+  </a-card>
 </template>
 
-<style scoped></style>
+<style scoped>
+.chart-card {
+  border-radius: 12px;
+  box-shadow: 0 8px 25px -10px rgba(39, 80, 144, 0.25);
+}
+
+.chart-card__body {
+  height: 360px;
+  overflow: hidden;
+}
+</style>
