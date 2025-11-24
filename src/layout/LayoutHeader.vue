@@ -18,6 +18,9 @@
         <SystemComponentSelector />
         <SearchHistoryPopover />
       </template>
+      <template v-if="isJob">
+        <NamespaceSelector />
+      </template>
       <NotificationPopover />
       <UserDropdown />
     </div>
@@ -30,6 +33,7 @@ import { useRoute } from 'vue-router'
 import EnvSelector from '../components/EnvSelector.vue'
 import SystemComponentSelector from '../components/SystemComponentSelector.vue'
 import SearchHistoryPopover from '../components/SearchHistoryPopover.vue'
+import NamespaceSelector from '../components/NamespaceSelector.vue'
 import NotificationPopover from '../components/NotificationPopover.vue'
 import UserDropdown from '../components/UserDropdown.vue'
 import { AppstoreOutlined } from '@ant-design/icons-vue'
@@ -38,6 +42,7 @@ const props = defineProps<{ collapsed: boolean }>()
 const emit = defineEmits(['toggleCollapse', 'showAllProducts'])
 const route = useRoute()
 const isCcConfig = computed(() => route.path.startsWith('/cc-config'))
+const isJob = computed(() => route.path.startsWith('/job'))
 </script>
 
 <style scoped>

@@ -4,6 +4,7 @@ import { message } from 'ant-design-vue';
 import { ls } from './stoarge';
 import { TOKEN } from './constant';
 import { useUserStore } from '@/stores/user';
+import { useNamespaceStore } from '@/stores/namespace';
 
 /**
  * 判断是否是 token 过期导致的错误
@@ -246,15 +247,54 @@ function createRequest(baseURL?: string): CustomAxiosInstance {
 const request = createRequest();
 
 // 分域请求实例：支持通过环境变量自定义前缀，未设置时走默认
+// 在开发环境中，使用相对路径以便走 Vite 代理；生产环境使用完整 URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const AUTH_PREFIX = import.meta.env.VITE_API_AUTH_PREFIX || '/auth';
 const CONFIG_PREFIX = import.meta.env.VITE_API_CONFIG_PREFIX || '/config';
 const MQ_PREFIX = import.meta.env.VITE_API_MQ_PREFIX || '/mq';
 const JOB_PREFIX = import.meta.env.VITE_API_JOB_PREFIX || '/job';
 
-export const authRequest = createRequest(joinUrl(API_BASE, AUTH_PREFIX));
-export const configRequest = createRequest(joinUrl(API_BASE, CONFIG_PREFIX));
-export const mqRequest = createRequest(joinUrl(API_BASE, MQ_PREFIX));
-export const jobRequest = createRequest(joinUrl(API_BASE, JOB_PREFIX));
+// 如果 API_BASE 为空、未设置或为 '/'，使用相对路径（走代理）
+// 如果 API_BASE 已设置且不是 '/'，使用完整 URL
+const getBaseUrl = (prefix: string) => {
+  if (!API_BASE || API_BASE === '' || API_BASE === '/') {
+    return prefix;
+  }
+  return joinUrl(API_BASE, prefix);
+};
+
+export const authRequest = createRequest(getBaseUrl(AUTH_PREFIX));
+export const configRequest = createRequest(getBaseUrl(CONFIG_PREFIX));
+export const mqRequest = createRequest(getBaseUrl(MQ_PREFIX));
+
+// 创建 jobRequest 实例
+const jobRequestInstance = createRequest(getBaseUrl(JOB_PREFIX));
+
+// 为 jobRequest 添加命名空间请求头拦截器
+jobRequestInstance.interceptors.request.use(
+  (config) => {
+    const namespaceStore = useNamespaceStore();
+    const namespaceId = namespaceStore.namespaceId;
+    
+    if (namespaceId) {
+      if (!config.headers) {
+        config.headers = {} as any;
+      }
+      const h: any = config.headers;
+      if (typeof h.set === 'function') {
+        h.set('X-Tenant-Id', namespaceId);
+      } else {
+        h['X-Tenant-Id'] = namespaceId;
+      }
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export const jobRequest = jobRequestInstance;
 
 export default request; 

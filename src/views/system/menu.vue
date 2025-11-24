@@ -40,7 +40,7 @@
           </template>
 
           <template v-if="column.key === 'icon'">
-            <span v-if="record.meta.icon">
+            <span v-if="record.meta?.icon">
               <component :is="getIconComp(record.meta.icon)" />
             </span>
             <span v-else>-</span>
@@ -52,7 +52,7 @@
           </template>
 
           <template v-if="column.key === 'permission'">
-            <a-tag v-if="record.meta.permission" color="blue">{{ record.meta.permission }}</a-tag>
+            <a-tag v-if="record.meta?.permission" color="blue">{{ record.meta?.permission }}</a-tag>
             <span v-else>-</span>
           </template>
 
@@ -284,6 +284,12 @@ const columns = [
     title: '显示状态',
     key: 'status',
     width: 100
+  },
+  {
+    title: '排序',
+    dataIndex: 'sort',
+    key: 'sort',
+    width: 80
   },
   {
     title: '操作',

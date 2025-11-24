@@ -116,8 +116,14 @@ import { message } from 'ant-design-vue';
 import { SearchOutlined } from '@ant-design/icons-vue';
 import monaco from '../../../utils/monaco';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { getConfigItemReleaseHistories, type ConfigItemReleaseHistory } from '../../../api/config/configItemReleaseHistory';
 import type { ConfigItem } from '../../../api/config/configItem';
+
+// 扩展 dayjs 插件
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 
 interface Props {
@@ -193,10 +199,11 @@ const releaseTypeMap: Record<number, string> = {
   3: '删除'
 };
 
-// 格式化日期
+// 格式化日期（从 UTC 转换为本地时间显示）
 const formatDate = (date: string | undefined) => {
   if (!date) return '';
-  return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
+  // 如果后端返回的是 UTC 时间，转换为本地时间显示
+  return dayjs.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
 };
 
 // 获取发布类型名称
@@ -229,11 +236,11 @@ const getRowProps = (record: ConfigItemReleaseHistory) => {
   };
 };
 
-// 过滤后的历史列表
+// 过滤后的历史列表（仅前端关键词搜索，日期范围通过后端API查询）
 const filteredHistoryList = computed(() => {
   let filtered = releaseHistoryList.value;
   
-  // 按关键词搜索
+  // 按关键词搜索（前端过滤）
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase();
     filtered = filtered.filter(item => 
@@ -242,26 +249,50 @@ const filteredHistoryList = computed(() => {
     );
   }
   
-  // 按日期范围筛选
-  if (dateRange.value && dateRange.value.length === 2) {
-    const [start, end] = dateRange.value;
-    filtered = filtered.filter(item => {
-      const itemDate = dayjs(item.createdDate);
-      return itemDate.isAfter(start) && itemDate.isBefore(end);
-    });
-  }
+  // 日期范围已通过后端API查询，这里不再进行前端过滤
   
   return filtered;
 });
 
 // 监听弹窗打开
 watch(() => props.open, (isOpen) => {
+  // 确保状态同步
   visible.value = isOpen;
-  if (isOpen && props.selectedConfigItem) {
-    selectedConfigItemId.value = props.selectedConfigItem.id;
-    fetchReleaseHistories(props.selectedConfigItem.id);
+  
+  if (isOpen) {
+    // 重置状态
+    loading.value = false;
+    selectedHistory.value = null;
+    releaseHistoryList.value = [];
+    searchKeyword.value = '';
+    dateRange.value = null;
+    pagination.value.current = 1;
+    
+    // 清理编辑器
+    if (oldEditor) {
+      try {
+        oldEditor.dispose();
+      } catch (e) {
+        console.error('清理旧编辑器失败:', e);
+      }
+      oldEditor = null;
+    }
+    if (newEditor) {
+      try {
+        newEditor.dispose();
+      } catch (e) {
+        console.error('清理新编辑器失败:', e);
+      }
+      newEditor = null;
+    }
+    
+    // 如果有选中的配置项，加载数据
+    if (props.selectedConfigItem) {
+      selectedConfigItemId.value = props.selectedConfigItem.id;
+      fetchReleaseHistories(props.selectedConfigItem.id);
+    }
   }
-});
+}, { immediate: true });
 
 // 监听 visible 变化，同步到父组件
 watch(visible, (val) => {
@@ -274,12 +305,22 @@ watch(visible, (val) => {
 const fetchReleaseHistories = async (configItemId: number) => {
   loading.value = true;
   try {
+    // 处理日期范围，转换为 UTC 时间
+    let createdDateStart = '';
+    let createdDateEnd = '';
+    if (dateRange.value && dateRange.value.length === 2) {
+      const [start, end] = dateRange.value;
+      // 转换为 UTC 时间格式
+      createdDateStart = start.utc().format('YYYY-MM-DD HH:mm:ss');
+      createdDateEnd = end.utc().format('YYYY-MM-DD HH:mm:ss');
+    }
+
     const requestParams = {
       configItemId: configItemId,
       pageNo: pagination.value.current,
       pageSize: pagination.value.pageSize,
-      createdDateStart: '',
-      createdDateEnd: ''
+      createdDateStart: createdDateStart,
+      createdDateEnd: createdDateEnd
     };
 
     const response = await getConfigItemReleaseHistories(requestParams);
@@ -311,6 +352,8 @@ const fetchReleaseHistories = async (configItemId: number) => {
     message.error('获取发布历史失败');
     releaseHistoryList.value = [];
     pagination.value.total = 0;
+    selectedHistory.value = null;
+    // 确保即使出现异常，loading 状态也会被重置
   } finally {
     loading.value = false;
   }
@@ -318,9 +361,14 @@ const fetchReleaseHistories = async (configItemId: number) => {
 
 // 选择历史记录
 const handleSelectHistory = async (history: ConfigItemReleaseHistory) => {
-  selectedHistory.value = history;
-  await nextTick();
-  initEditors(history.oldContent || '', history.content || '');
+  try {
+    selectedHistory.value = history;
+    await nextTick();
+    initEditors(history.oldContent || '', history.content || '');
+  } catch (error) {
+    console.error('选择历史记录失败:', error);
+    // 即使出现异常，也确保选中状态已设置
+  }
 };
 
 // 初始化两个编辑器
@@ -398,13 +446,20 @@ const handleConfigItemChange = (value: number) => {
 
 // 处理日期变化
 const handleDateChange = () => {
-  // 日期变化时自动重新筛选
+  // 日期变化时重新获取数据
+  if (selectedConfigItemId.value) {
+    pagination.value.current = 1; // 重置到第一页
+    fetchReleaseHistories(selectedConfigItemId.value);
+  }
 };
 
 // 处理搜索
 const handleSearch = () => {
-  // 搜索时自动重新筛选，filteredHistoryList 会自动更新
-  console.log('搜索关键词:', searchKeyword.value);
+  // 搜索时重新获取数据
+  if (selectedConfigItemId.value) {
+    pagination.value.current = 1; // 重置到第一页
+    fetchReleaseHistories(selectedConfigItemId.value);
+  }
 };
 
 // 重置搜索
@@ -425,16 +480,37 @@ const handleTableChange = (pag: any) => {
 
 // 关闭弹窗
 const handleClose = () => {
-  visible.value = false;
-  selectedHistory.value = null;
-  releaseHistoryList.value = [];
-  if (oldEditor) {
-    oldEditor.dispose();
-    oldEditor = null;
-  }
-  if (newEditor) {
-    newEditor.dispose();
-    newEditor = null;
+  try {
+    visible.value = false;
+    loading.value = false;
+    selectedHistory.value = null;
+    releaseHistoryList.value = [];
+    searchKeyword.value = '';
+    dateRange.value = null;
+    selectedConfigItemId.value = null;
+    pagination.value.current = 1;
+    
+    // 清理编辑器
+    if (oldEditor) {
+      try {
+        oldEditor.dispose();
+      } catch (e) {
+        console.error('清理旧编辑器失败:', e);
+      }
+      oldEditor = null;
+    }
+    if (newEditor) {
+      try {
+        newEditor.dispose();
+      } catch (e) {
+        console.error('清理新编辑器失败:', e);
+      }
+      newEditor = null;
+    }
+  } catch (error) {
+    console.error('关闭弹窗时出现异常:', error);
+    // 确保 visible 状态被重置
+    visible.value = false;
   }
 };
 

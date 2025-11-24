@@ -100,16 +100,28 @@
           </a-select>
         </a-form-item>
         <a-form-item label="访问密钥" name="accessKey">
-          <a-input
-            v-model:value="form.accessKey"
-            placeholder="请输入访问密钥"
-          />
+          <a-input-group compact>
+            <a-input
+              v-model:value="form.accessKey"
+              placeholder="请输入访问密钥"
+              style="width: calc(100% - 80px)"
+            />
+            <a-button type="default" @click="generateAccessKey" style="width: 80px">
+              生成
+            </a-button>
+          </a-input-group>
         </a-form-item>
         <a-form-item label="密钥" name="secretKey">
-          <a-input-password
-            v-model:value="form.secretKey"
-            placeholder="请输入密钥"
-          />
+          <a-input-group compact>
+            <a-input-password
+              v-model:value="form.secretKey"
+              placeholder="请输入密钥"
+              style="width: calc(100% - 80px)"
+            />
+            <a-button type="default" @click="generateSecretKey" style="width: 80px">
+              生成
+            </a-button>
+          </a-input-group>
         </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea
@@ -134,6 +146,8 @@ import type { FormInstance } from 'ant-design-vue';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import dayjs from 'dayjs';
+import { v4 as uuidv4 } from 'uuid';
+import { useEnvStore } from '@/stores/env';
 import {
   getConfigAccessKeys,
   createConfigAccessKeys,
@@ -273,6 +287,27 @@ const rules = {
 // 状态切换加载状态
 const toggleLoading = ref<Record<number, boolean>>({});
 
+// 环境 store
+const envStore = useEnvStore();
+
+// 环境代码映射
+const getEnvCode = (): string => {
+  const envCodeMap: Record<string, string> = {
+    '1': 'CI',   // 开发环境
+    '2': 'STG',  // 测试环境
+    '3': 'PRD'   // 生产环境
+  };
+  return envCodeMap[envStore.currentEnv] || 'CI';
+};
+
+// 生成访问密钥（环境代码_32位UUID）
+const generateAccessKey = () => {
+  const envCode = getEnvCode();
+  const uuid = uuidv4().replace(/-/g, '');
+  form.accessKey = `${envCode}_${uuid}`;
+  message.success('访问密钥已生成');
+};
+
 // 获取所有组件（用于搜索和表单）
 const fetchAllComponents = async (): Promise<ConfigComponent[]> => {
   try {
@@ -329,6 +364,13 @@ const formatDate = (dateString: string) => {
 const maskSensitiveData = (data: string) => {
   if (!data || data.length <= 8) return data;
   return data.substring(0, 4) + '****' + data.substring(data.length - 4);
+};
+
+// 生成64位UUID（32个十六进制字符）
+const generateSecretKey = () => {
+  // 生成UUID并去掉连字符，得到32个十六进制字符（64位）
+  form.secretKey = uuidv4().replace(/-/g, '');
+  message.success('密钥已生成');
 };
 
 // 搜索方法

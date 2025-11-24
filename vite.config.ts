@@ -18,15 +18,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-      '^/(auth|config|job)/api/v1': {
-        target: 'http://115.190.196.117:9000', 
-        changeOrigin: true,
-      },
-      '^/mq/api/v1': {
-        target: 'http://localhost:8099', 
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/mq/, ''),
-      },
+      '^/(auth|config|job|mq)/api/v1': {
+        target: 'http://192.168.50.57:9001', 
+        changeOrigin: true
+      }
     },
   },
   optimizeDeps: {
