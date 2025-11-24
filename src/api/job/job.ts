@@ -50,6 +50,7 @@ export interface Job {
   description: string;
   notifyIds: string[];
   ownerId: string;
+  ownerName?: string;
 }
 
 export interface TriggerJobParams {

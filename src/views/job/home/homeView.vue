@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { message } from 'ant-design-vue';
+import { fetchCardCount } from '@/api/job/dashboard';
 import CardData from './modules/card-data.vue';
 import TaskTab from './modules/task-tab.vue';
 
@@ -39,6 +41,23 @@ const cardCount = ref({
     serverTotal: 2
   }
 });
+
+const loadCardCount = async () => {
+  try {
+    const res = await fetchCardCount();
+    if (res) {
+      cardCount.value = {
+        ...cardCount.value,
+        ...res
+      };
+    }
+  } catch (error) {
+    console.error('fetchCardCount failed', error);
+    message.error('获取概览数据失败');
+  }
+};
+
+onMounted(loadCardCount);
 </script>
 
 <template>

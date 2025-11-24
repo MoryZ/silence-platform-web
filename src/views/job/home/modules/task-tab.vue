@@ -445,8 +445,53 @@ getGroupNames();
   min-width: 160px;
 }
 
-.task-tab__tabs :deep(.ant-tabs-nav) {
-  margin-bottom: 16px;
+.task-tab__tabs {
+  width: 100%;
+
+  :deep(.ant-tabs-nav) {
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  :deep(.ant-tabs-nav-wrap) {
+    flex: 1;
+    min-width: 340px;
+  }
+
+  :deep(.ant-tabs-extra-content) {
+    flex: 1 1 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}
+
+@media (min-width: 992px) {
+  .task-tab__tabs :deep(.ant-tabs-extra-content) {
+    flex: 0 0 auto;
+    margin-top: 0;
+    max-width: calc(100% - 280px);
+  }
+}
+
+@media (max-width: 991px) {
+  .task-tab__filters {
+    justify-content: flex-start;
+  }
+
+  .task-tab__tabs :deep(.ant-tabs-extra-content) {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .task-tab__range {
+    min-width: 100%;
+  }
+
+  .task-tab__select {
+    min-width: 100%;
+  }
 }
 
 .ant-divider {

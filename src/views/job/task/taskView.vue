@@ -11,6 +11,40 @@ import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, rou
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
 
+type SelectOption = { label: string; value: string } & Record<string, any>;
+
+const ensureOptionShape = (list: any[], labelResolver: (item: any) => string, valueResolver: (item: any) => string): SelectOption[] => {
+  return (list || []).map(item => {
+    const label = labelResolver(item);
+    const value = valueResolver(item);
+    return {
+      ...item,
+      label,
+      value
+    };
+  });
+};
+
+async function fetchGroupSelectOptions(): Promise<SelectOption[]> {
+  const res: any = await getAllGroupConfigs();
+  const raw = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+  return ensureOptionShape(
+    raw,
+    item => item?.label ?? item?.groupName ?? item?.name ?? String(item?.value ?? item?.id ?? ''),
+    item => String(item?.value ?? item?.groupName ?? item?.id ?? item?.name ?? '')
+  );
+}
+
+async function fetchOwnerSelectOptions(): Promise<SelectOption[]> {
+  const res: any = await fetchSystemUser();
+  const raw = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+  return ensureOptionShape(
+    raw,
+    item => item?.label ?? item?.name ?? item?.username ?? item?.nickname ?? String(item?.value ?? item?.id ?? ''),
+    item => String(item?.value ?? item?.id ?? item?.userId ?? item?.username ?? item?.name ?? '')
+  );
+}
+
 const drawerVisible = ref(false);
 const editingData = ref<Job | null>(null);
 const isEdit = ref(false);
@@ -19,11 +53,11 @@ const data = ref<Job[]>([]);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 const searchForm = ref({ groupName: '', jobName: '', executorInfo: '', jobStatus: undefined, executorId: '', ownerId: '' });
 const fields = [
-  { key: 'groupName', type: 'select', label: '组名称', placeholder: '请选择组名称', options: async () => await getAllGroupConfigs() },
+  { key: 'groupName', type: 'select', label: '组名称', placeholder: '请选择组名称', options: fetchGroupSelectOptions },
   { key: 'jobName', type: 'input', label: '任务名称', placeholder: '请输入任务名称' },
   { key: 'executorInfo', type: 'input', label: '执行器名称', placeholder: '请输入执行器名称' },
   { key: 'jobStatus', type: 'select', label: '任务状态', placeholder: '请选择任务状态', options: jobStatusOptions },
-  { key: 'executorId', type: 'select', label: '负责人', placeholder: '请选择负责人' },
+  { key: 'executorId', type: 'select', label: '负责人', placeholder: '请选择负责人', options: fetchOwnerSelectOptions },
 ];
 
 function buildColumns(rawCols: Array<Record<string, any>>): Array<Record<string, any>> {
@@ -53,9 +87,6 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
 ]));
 const checkedKeys = ref<string[]>(allColumns.value.filter((c: Record<string, any>) => c.visible).map((c: Record<string, any>) => c.key));
 
-// ensure dropdown overlay renders into body to avoid clipping
-const getBodyContainer = () => document.body as HTMLElement;
-const columnSettingVisible = ref(false);
 
 const tableColumns = computed(() =>
   allColumns.value.filter((col: Record<string, any>) => checkedKeys.value.includes(col.key))
@@ -134,22 +165,25 @@ function handleAdd() {
     parallelNum: 1,
     notifyIds: [],
     description: '',
-    ownerId: ''
+    ownerId: '',
+    ownerName: ''
   };
   isEdit.value = false;
   drawerVisible.value = true;
   executorMode.value = 'custom';
-  builtinExecutorType.value = 'http';
+  builtinExecutorType.value = 'silenceJobHttpExecutor';
   httpMethod.value = 'POST';
   builtinUrl.value = '';
   httpHeaders.value = [{ key: '', value: '' }];
   httpBody.value = '';
   mediaType.value = 'application/json';
+  selectedGroupValue.value = '';
 }
 function handleEdit(record: Job) {
   editingData.value = { ...record };
   isEdit.value = true;
   drawerVisible.value = true;
+  syncGroupSelectValue();
   if (record.argsType === 2) {
     // 内置
     try {
@@ -184,6 +218,8 @@ function handleDrawerClose() {
 }
 async function handleDrawerSave() {
   if (!editingData.value) return;
+  ensureGroupLabel();
+  ensureOwnerLabel();
   try {
     if (isEdit.value && editingData.value.id) {
       await updateJob(editingData.value.id, editingData.value);
@@ -207,8 +243,43 @@ function onCheckColumn(key: string, checked: boolean) {
   }
 }
 
-const groupOptions = ref<any[]>([]);
-const ownerOptions = ref<any[]>([]);
+const groupOptions = ref<SelectOption[]>([]);
+const ownerOptions = ref<SelectOption[]>([]);
+const selectedGroupValue = ref('');
+
+function handleOwnerChange(value: string) {
+  if (!editingData.value) return;
+  const option = ownerOptions.value.find(opt => opt.value === value);
+  editingData.value.ownerName = option?.label || '';
+}
+
+function handleGroupChange(value: string) {
+  selectedGroupValue.value = value;
+  if (!editingData.value) return;
+  const option = groupOptions.value.find(opt => opt.value === value);
+  editingData.value.groupName = option?.label || '';
+}
+
+function ensureOwnerLabel() {
+  if (!editingData.value) return;
+  const option = ownerOptions.value.find(opt => opt.value === editingData.value?.ownerId);
+  if (option) {
+    editingData.value.ownerName = option.label;
+  }
+}
+
+function ensureGroupLabel() {
+  if (!editingData.value) return;
+  const current = editingData.value.groupName || selectedGroupValue.value;
+  if (!current) return;
+  const option =
+    groupOptions.value.find(opt => opt.value === current) ||
+    groupOptions.value.find(opt => opt.label === current);
+  if (option) {
+    editingData.value.groupName = option.label;
+    selectedGroupValue.value = option.value;
+  }
+}
 
 const showArgsEditor = ref(false);
 const argsEditorValue = ref('');
@@ -243,10 +314,10 @@ const EXECUTOR_RADIO = [
   { label: '内置执行器', value: 'builtin' }
 ];
 const EXECUTOR_TYPE_OPTIONS = [
-  { label: 'Http 执行器', value: 'http' },
-  { label: 'CMD 执行器', value: 'cmd' },
-  { label: 'PowerShell 执行器', value: 'powershell' },
-  { label: 'Shell 执行器', value: 'shell' }
+  { label: 'Http 执行器', value: 'silenceJobHttpExecutor' },
+  { label: 'CMD 执行器', value: 'silenceJobCMDJobExecutor' },
+  { label: 'PowerShell 执行器', value: 'silenceJobPowerShellJobExecutor' },
+  { label: 'Shell 执行器', value: 'silenceJobShellJobExecutor' }
 ];
 const HTTP_METHOD_OPTIONS = [
   { label: 'GET', value: 'GET' },
@@ -256,7 +327,7 @@ const HTTP_METHOD_OPTIONS = [
 ];
 
 const executorMode = ref('custom');
-const builtinExecutorType = ref('http');
+const builtinExecutorType = ref('silenceJobHttpExecutor');
 const httpMethod = ref('POST');
 const builtinUrl = ref('');
 const httpHeaders = ref([{ key: '', value: '' }]);
@@ -331,18 +402,45 @@ watch(ownerOptions, (val) => {
   if (ownerField) ownerField.options = val;
 });
 
-onMounted(async () => {
-  const res = await getAllGroupConfigs();
-  groupOptions.value = res || [];
+watch(
+  [ownerOptions, () => editingData.value?.ownerId],
+  () => {
+    if (!editingData.value?.ownerId) return;
+    const option = ownerOptions.value.find(opt => opt.value === editingData.value?.ownerId);
+    if (option) {
+      editingData.value.ownerName = option.label;
+    }
+  }
+);
 
-  const userRes = await fetchSystemUser();
-  ownerOptions.value = userRes || [];
+const syncGroupSelectValue = () => {
+  if (!editingData.value?.groupName) {
+    selectedGroupValue.value = '';
+    return;
+  }
+  const match =
+    groupOptions.value.find(opt => opt.label === editingData.value?.groupName) ||
+    groupOptions.value.find(opt => opt.value === editingData.value?.groupName);
+  selectedGroupValue.value = match?.value || '';
+};
+
+watch(
+  [groupOptions, () => editingData.value?.groupName],
+  () => {
+    syncGroupSelectValue();
+  },
+  { immediate: true }
+);
+
+onMounted(async () => {
+  groupOptions.value = await fetchGroupSelectOptions();
+  ownerOptions.value = await fetchOwnerSelectOptions();
 });
 
 // 执行器名称切换联动
 watch(executorMode, (val) => {
   if (val === 'custom') {
-    builtinExecutorType.value = 'http';
+    builtinExecutorType.value = 'silenceJobHttpExecutor';
     httpMethod.value = 'POST';
     httpHeaders.value = [{ key: '', value: '' }];
     httpBody.value = '';
@@ -397,6 +495,7 @@ function handleCopy(record: Job) {
   };
   isEdit.value = false;
   drawerVisible.value = true;
+  syncGroupSelectValue();
 }
 
 async function handleDelete(record: Job) {
@@ -525,10 +624,20 @@ function handleExport() {
           <a-input v-model:value="editingData.jobName" placeholder="请输入任务名称" :maxlength="64" />
         </a-form-item>
         <a-form-item label="组名称">
-          <a-select v-model:value="editingData.groupName" :options="groupOptions" placeholder="请输入组名称" />
+          <a-select
+            v-model:value="selectedGroupValue"
+            :options="groupOptions"
+            placeholder="请输入组名称"
+            @change="handleGroupChange"
+          />
         </a-form-item>
         <a-form-item label="负责人">
-          <a-select v-model:value="editingData.ownerId" :options="ownerOptions" placeholder="请选择负责人" />
+          <a-select
+            v-model:value="editingData.ownerName"
+            :options="ownerOptions"
+            placeholder="请选择负责人"
+            @change="handleOwnerChange"
+          />
         </a-form-item>
         <a-form-item label="状态">
           <a-radio-group v-model:value="editingData.jobStatus">
