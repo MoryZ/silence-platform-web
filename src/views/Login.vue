@@ -453,10 +453,12 @@ const loginSuccess = ref(false);
 // 注册相关
 const showRegisterModal = ref(false);
 const registerFormRef = ref<FormInstance>();
+const defaultAvatarKey = 'doraemon';
+
 const registerForm = reactive<Partial<User>>({
   username: '',
   nickname: '',
-  avatar: '/src/assets/images/doraemon.png',
+  avatar: defaultAvatarKey,
   email: '',
   phone: '',
   status: true, // 默认启用
@@ -466,29 +468,48 @@ const registerForm = reactive<Partial<User>>({
 
 // 头像选项（与 user.vue 保持一致）
 const avatarOptions = [
-  { label: '气球', value: '/src/assets/images/bubble.png' },
-  { label: '机器猫', value: '/src/assets/images/doraemon.png' },
-  { label: '可爱', value: '/src/assets/images/cute.png' },
-  { label: '女孩', value: '/src/assets/images/girl.png' },
-  { label: '工作', value: '/src/assets/images/work.png' },
+  { label: '气球', value: 'bubble', preview: bubbleImg },
+  { label: '机器猫', value: 'doraemon', preview: doraemonImg },
+  { label: '可爱', value: 'cute', preview: cuteImg },
+  { label: '女孩', value: 'girl', preview: girlImg },
+  { label: '工作', value: 'work', preview: workImg },
 ];
 
-// 头像映射
-const avatarMap: Record<string, string> = {
-  '/src/assets/images/bubble.png': bubbleImg,
-  '/src/assets/images/cute.png': cuteImg,
-  '/src/assets/images/doraemon.png': doraemonImg,
-  '/src/assets/images/girl.png': girlImg,
-  '/src/assets/images/work.png': workImg,
+const avatarMap = avatarOptions.reduce<Record<string, string>>((acc, option) => {
+  acc[option.value] = option.preview;
+  return acc;
+}, {});
+
+const legacyAvatarPathMap = avatarOptions.reduce<Record<string, string>>((acc, option) => {
+  const filename = `${option.value}.png`;
+  acc[`/src/assets/images/${filename}`] = option.value;
+  acc[`/assets/images/${filename}`] = option.value;
+  return acc;
+}, {});
+
+const normalizeAvatarKey = (avatarPath: string) => {
+  if (!avatarPath) return '';
+  if (avatarMap[avatarPath]) return avatarPath;
+  if (legacyAvatarPathMap[avatarPath]) return legacyAvatarPathMap[avatarPath];
+  const fileName = avatarPath.split('/').pop()?.replace(/\.\w+$/, '');
+  if (fileName && avatarMap[fileName]) {
+    return fileName;
+  }
+  return avatarPath;
 };
 
 // 获取头像URL
 const getAvatarUrl = (avatarPath: string) => {
   if (!avatarPath) return '';
   if (avatarPath.startsWith('http')) return avatarPath;
-  if (avatarMap[avatarPath]) return avatarMap[avatarPath];
-  if (avatarPath.startsWith('/')) return avatarPath;
-  return '/' + avatarPath;
+  const normalizedKey = normalizeAvatarKey(avatarPath);
+  if (avatarMap[normalizedKey]) {
+    return avatarMap[normalizedKey];
+  }
+  if (avatarPath.startsWith('/src/')) {
+    return avatarPath.replace('/src', '');
+  }
+  return avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`;
 };
 
 // 注册表单验证规则
@@ -518,10 +539,11 @@ const registerRules = {
 const handleRegister = async () => {
   try {
     await registerFormRef.value?.validate();
+    const avatarKey = normalizeAvatarKey(registerForm.avatar || defaultAvatarKey) || defaultAvatarKey;
     const userData: Partial<User> = {
       username: registerForm.username,
       nickname: registerForm.nickname,
-      avatar: registerForm.avatar,
+      avatar: avatarKey,
       email: registerForm.email,
       phone: registerForm.phone,
       status: true, // 默认启用
@@ -535,7 +557,7 @@ const handleRegister = async () => {
     // 重置表单
     registerForm.username = '';
     registerForm.nickname = '';
-    registerForm.avatar = '/src/assets/images/doraemon.png';
+    registerForm.avatar = defaultAvatarKey;
     registerForm.email = '';
     registerForm.phone = '';
     registerFormRef.value?.resetFields();
@@ -782,6 +804,7 @@ onMounted(() => {
   font-size: 28px;
   font-weight: 600;
   background: linear-gradient(90deg, #36d1dc 0%, #5b86e5 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -798,6 +821,7 @@ onMounted(() => {
   line-height: 1.4;
   background: linear-gradient(90deg, var(--text-color) 0%, var(--text-color) 100%);
   opacity: 0.85;
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

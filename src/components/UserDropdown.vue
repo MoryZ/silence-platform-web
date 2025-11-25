@@ -73,7 +73,11 @@
   import { ref, computed } from 'vue'
   import { Modal } from 'ant-design-vue'
   import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons-vue'
-  import workAvatar from '@/assets/images/work.png'
+  import bubbleImg from '@/assets/images/bubble.png'
+  import cuteImg from '@/assets/images/cute.png'
+  import doraemonImg from '@/assets/images/doraemon.png'
+  import girlImg from '@/assets/images/girl.png'
+  import workImg from '@/assets/images/work.png'
   import { useUserStore } from '@/stores/user'
   import dayjs from 'dayjs'
   import utc from 'dayjs/plugin/utc'
@@ -90,9 +94,39 @@
     const info = userStore.getUserInfo()
     return info?.nickname || info?.username || '未命名'
   })
+  const avatarMap = {
+    bubble: bubbleImg,
+    cute: cuteImg,
+    doraemon: doraemonImg,
+    girl: girlImg,
+    work: workImg
+  } as const
+  const legacyAvatarPathMap = Object.entries(avatarMap).reduce<Record<string, keyof typeof avatarMap>>((acc, [key]) => {
+    const filename = `${key}.png`
+    acc[`/src/assets/images/${filename}`] = key as keyof typeof avatarMap
+    acc[`/assets/images/${filename}`] = key as keyof typeof avatarMap
+    return acc
+  }, {})
+  const defaultAvatar = avatarMap.work
+
+  const normalizeAvatarKey = (avatarPath?: string | null) => {
+    if (!avatarPath) return undefined
+    if (avatarMap[avatarPath as keyof typeof avatarMap]) {
+      return avatarPath as keyof typeof avatarMap
+    }
+    if (legacyAvatarPathMap[avatarPath]) {
+      return legacyAvatarPathMap[avatarPath]
+    }
+    const fileName = avatarPath.split('/').pop()?.replace(/\.\w+$/, '')
+    if (fileName && avatarMap[fileName as keyof typeof avatarMap]) {
+      return fileName as keyof typeof avatarMap
+    }
+    return undefined
+  }
+
   const avatarSrc = computed(() => {
     const info = userStore.getUserInfo()
-    return info?.avatar || workAvatar
+    return info?.avatar || defaultAvatar
   })
   
   // 个人中心弹窗状态
@@ -108,10 +142,16 @@
   
   // 头像URL处理函数
   const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return workAvatar
+    if (!avatarPath) return defaultAvatar
     if (avatarPath.startsWith('http')) return avatarPath
-    if (avatarPath.startsWith('/')) return avatarPath
-    return '/' + avatarPath
+    const normalizedKey = normalizeAvatarKey(avatarPath)
+    if (normalizedKey) {
+      return avatarMap[normalizedKey]
+    }
+    if (avatarPath.startsWith('/src/')) {
+      return avatarPath.replace('/src', '')
+    }
+    return avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`
   }
   
   // 日期格式化函数

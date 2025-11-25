@@ -1,6 +1,6 @@
 <template>
   <a-layout-footer class="layout-footer">
-    Copyright © 2024 Silence Job v1.4.0
+    Copyright © 2025 Silence Platform v1.0.0
   </a-layout-footer>
 </template>
 

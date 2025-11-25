@@ -47,6 +47,7 @@
     "eslint": "^9.25.1",
     "eslint-plugin-vue": "^10.0.0",
     "less": "^4.2.2",
+    "lightningcss": "^1.30.2",
     "sass": "^1.86.0",
     "sass-embedded": "^1.93.2",
     "typescript": "^5.2.2",

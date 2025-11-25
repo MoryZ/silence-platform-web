@@ -134,7 +134,7 @@
         <a-form-item label="头像" name="avatar">
           <a-radio-group v-model:value="form.avatar" button-style="solid">
             <a-radio-button v-for="img in avatarOptions" :key="img.value" :value="img.value">
-              <a-avatar :src="img.value" :size="24" style="margin-right: 4px" />
+              <a-avatar :src="img.preview" :size="24" style="margin-right: 4px" />
               {{ img.label }}
             </a-radio-button>
           </a-radio-group>
@@ -341,12 +341,14 @@ const pagination = reactive({
 
 // 头像选项
 const avatarOptions = [
-  { label: '气球', value: '/src/assets/images/bubble.png' },
-  { label: '机器猫', value: '/src/assets/images/doraemon.png' },
-  { label: '可爱', value: '/src/assets/images/cute.png' },
-  { label: '女孩', value: '/src/assets/images/girl.png' },
-  { label: '工作', value: '/src/assets/images/work.png' },
+  { label: '气球', value: 'bubble', preview: bubbleImg },
+  { label: '机器猫', value: 'doraemon', preview: doraemonImg },
+  { label: '可爱', value: 'cute', preview: cuteImg },
+  { label: '女孩', value: 'girl', preview: girlImg },
+  { label: '工作', value: 'work', preview: workImg },
 ];
+
+const defaultAvatarKey = 'doraemon';
 
 // 表单相关
 const showModal = ref(false);
@@ -357,7 +359,7 @@ const form = reactive<Partial<User>>({
   username: '',
   password: '',
   nickname: '',
-  avatar: '/src/assets/images/doraemon.png',
+  avatar: defaultAvatarKey,
   email: '',
   phone: '',
   status: true,
@@ -466,12 +468,27 @@ const searchFields = [
 ];
 
 // 头像映射
-const avatarMap: Record<string, string> = {
-  '/src/assets/images/bubble.png': bubbleImg,
-  '/src/assets/images/cute.png': cuteImg,
-  '/src/assets/images/doraemon.png': doraemonImg,
-  '/src/assets/images/girl.png': girlImg,
-  '/src/assets/images/work.png': workImg,
+const avatarMap = avatarOptions.reduce<Record<string, string>>((acc, option) => {
+  acc[option.value] = option.preview;
+  return acc;
+}, {});
+
+const legacyAvatarPathMap = avatarOptions.reduce<Record<string, string>>((acc, option) => {
+  const filename = `${option.value}.png`;
+  acc[`/src/assets/images/${filename}`] = option.value;
+  acc[`/assets/images/${filename}`] = option.value;
+  return acc;
+}, {});
+
+const normalizeAvatarKey = (avatarPath: string) => {
+  if (!avatarPath) return '';
+  if (avatarMap[avatarPath]) return avatarPath;
+  if (legacyAvatarPathMap[avatarPath]) return legacyAvatarPathMap[avatarPath];
+  const fileName = avatarPath.split('/').pop()?.replace(/\.\w+$/, '');
+  if (fileName && avatarMap[fileName]) {
+    return fileName;
+  }
+  return avatarPath;
 };
 
 // 头像处理函数
@@ -480,19 +497,17 @@ const getAvatarUrl = (avatarPath: string) => {
   
   // 如果路径已经是完整的 URL，直接返回
   if (avatarPath.startsWith('http')) return avatarPath;
-  
-  // 使用静态导入的图片映射
-  if (avatarMap[avatarPath]) {
-    return avatarMap[avatarPath];
+
+  const normalizedKey = normalizeAvatarKey(avatarPath);
+  if (avatarMap[normalizedKey]) {
+    return avatarMap[normalizedKey];
   }
   
-  // 如果路径以 / 开头，直接返回
-  if (avatarPath.startsWith('/')) {
-    return avatarPath;
+  if (avatarPath.startsWith('/src/')) {
+    return avatarPath.replace('/src', '');
   }
   
-  // 其他情况，添加 / 前缀
-  return '/' + avatarPath;
+  return avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`;
 };
 
 // 日期格式化函数
@@ -549,7 +564,7 @@ const handleAdd = () => {
   form.username = '';
   form.password = '';
   form.nickname = '';
-  form.avatar = '/src/assets/images/doraemon.png';
+  form.avatar = defaultAvatarKey;
   form.email = '';
   form.phone = '';
   form.roleIds = [];
@@ -561,6 +576,7 @@ const handleAdd = () => {
 const handleEdit = (record: any) => {
   modalTitle.value = '编辑用户';
   Object.assign(form, record);
+  form.avatar = normalizeAvatarKey(record.avatar) || defaultAvatarKey;
   showModal.value = true;
 };
 

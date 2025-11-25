@@ -40,7 +40,7 @@ export default defineConfig({
     },
   },
   build: {
-    cssMinify: 'esbuild', // 使用 esbuild CSS 压缩器
+    cssMinify: 'lightningcss', // 使用 lightningcss 以完整支持 CSS 嵌套
     chunkSizeWarningLimit: 1000, // 增加 chunk 大小警告限制
     rollupOptions: {
       output: {

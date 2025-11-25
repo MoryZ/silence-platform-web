@@ -5,7 +5,7 @@
       <a-col :span="6">
         <a-card class="account-menu-card">
           <div class="user-profile">
-            <a-avatar :size="64" :src="userInfo?.avatar || defaultAvatar">
+            <a-avatar :size="64" :src="displayAvatar">
               <template #icon><user-outlined /></template>
             </a-avatar>
             <div class="user-info">
@@ -196,15 +196,64 @@ import {
   BellOutlined
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
-import workAvatar from '@/assets/images/work.png'
+import bubbleImg from '@/assets/images/bubble.png'
+import cuteImg from '@/assets/images/cute.png'
+import doraemonImg from '@/assets/images/doraemon.png'
+import girlImg from '@/assets/images/girl.png'
+import workImg from '@/assets/images/work.png'
 
 const userStore = useUserStore()
 
-// 默认头像
-const defaultAvatar = workAvatar
+const avatarMap = {
+  bubble: bubbleImg,
+  cute: cuteImg,
+  doraemon: doraemonImg,
+  girl: girlImg,
+  work: workImg
+} as const
+
+const legacyAvatarPathMap = Object.entries(avatarMap).reduce<Record<string, keyof typeof avatarMap>>((acc, [key, _]) => {
+  const filename = `${key}.png`
+  acc[`/src/assets/images/${filename}`] = key as keyof typeof avatarMap
+  acc[`/assets/images/${filename}`] = key as keyof typeof avatarMap
+  return acc
+}, {})
+
+const defaultAvatar = avatarMap.work
 
 // 获取用户信息
 const userInfo = computed(() => userStore.getUserInfo())
+
+const normalizeAvatarKey = (avatarPath?: string | null) => {
+  if (!avatarPath) return undefined
+  if (avatarMap[avatarPath as keyof typeof avatarMap]) {
+    return avatarPath as keyof typeof avatarMap
+  }
+  if (legacyAvatarPathMap[avatarPath]) {
+    return legacyAvatarPathMap[avatarPath]
+  }
+  const fileName = avatarPath.split('/').pop()?.replace(/\.\w+$/, '')
+  if (fileName && avatarMap[fileName as keyof typeof avatarMap]) {
+    return fileName as keyof typeof avatarMap
+  }
+  return undefined
+}
+
+const displayAvatar = computed(() => {
+  const avatarPath = userInfo.value?.avatar
+  if (!avatarPath) return defaultAvatar
+  if (typeof avatarPath === 'string' && avatarPath.startsWith('http')) {
+    return avatarPath
+  }
+  const normalizedKey = normalizeAvatarKey(avatarPath)
+  if (normalizedKey) {
+    return avatarMap[normalizedKey]
+  }
+  if (avatarPath.startsWith('/src/')) {
+    return avatarPath.replace('/src', '')
+  }
+  return avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`
+})
 
 // 选中的菜单项
 const selectedKeys = ref(['profile'])
