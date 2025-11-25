@@ -75,7 +75,8 @@ const fetchNamespaces = async () => {
     if (Array.isArray(response)) {
       namespaces = response
     } else if (response && typeof response === 'object' && 'data' in response) {
-      namespaces = Array.isArray(response.data) ? response.data : []
+      const responseData = (response as { data?: NameSpace[] }).data
+      namespaces = Array.isArray(responseData) ? responseData : []
     }
     
     namespaceList.value = namespaces

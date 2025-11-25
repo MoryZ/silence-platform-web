@@ -16,7 +16,7 @@ export function useEcharts(domRef: Ref<HTMLElement | null>, theme?: 'light' | 'd
       return;
     }
     chartRef.value?.dispose();
-    chartRef.value = echarts.init(domRef.value, theme);
+    chartRef.value = echarts.init(domRef.value, theme) as unknown as ECharts;
 
     resizeObserver?.disconnect();
     resizeObserver = new ResizeObserver(() => chartRef.value?.resize());

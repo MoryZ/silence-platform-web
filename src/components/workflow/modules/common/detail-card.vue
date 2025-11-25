@@ -73,8 +73,8 @@ watch(
   { immediate: true }
 );
 
-const onUpdateShow = () => {
-  emit('update:show', false);
+const onUpdateShow = (show: boolean = false) => {
+  emit('update:show', show);
 };
 
 async function getDetail(id: string) {

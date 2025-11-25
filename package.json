@@ -1,13 +1,13 @@
 {
-  "name": "silence-config-web",
+  "name": "silence-platform-web",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite",
-    "build": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vue-tsc --skipLibCheck --noEmit && cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
-    "build:no-check": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
-    "build:fast": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vue-tsc --skipLibCheck --noEmit && cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
+    "build:no-check": "cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
+    "build:fast": "cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
     "preview": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },

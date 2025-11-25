@@ -19,7 +19,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '^/(auth|config|job|mq)/api/v1': {
-        target: 'http://localhost:9003', 
+        target: 'http://115.190.196.117:9000', 
         changeOrigin: true
       }
     },
@@ -41,14 +41,44 @@ export default defineConfig({
   },
   build: {
     cssMinify: 'esbuild', // 使用 esbuild CSS 压缩器
+    chunkSizeWarningLimit: 1000, // 增加 chunk 大小警告限制
     rollupOptions: {
       output: {
-        manualChunks: {
-          jsonWorker: ['monaco-editor/esm/vs/language/json/json.worker'],
-          cssWorker: ['monaco-editor/esm/vs/language/css/css.worker'],
-          htmlWorker: ['monaco-editor/esm/vs/language/html/html.worker'],
-          tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
-          editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+        manualChunks(id) {
+          // 将 monaco-editor 的 worker 文件单独打包
+          if (id.includes('monaco-editor/esm/vs/language/json/json.worker')) {
+            return 'json-worker'
+          }
+          if (id.includes('monaco-editor/esm/vs/language/css/css.worker')) {
+            return 'css-worker'
+          }
+          if (id.includes('monaco-editor/esm/vs/language/html/html.worker')) {
+            return 'html-worker'
+          }
+          if (id.includes('monaco-editor/esm/vs/language/typescript/ts.worker')) {
+            return 'ts-worker'
+          }
+          if (id.includes('monaco-editor/esm/vs/editor/editor.worker')) {
+            return 'editor-worker'
+          }
+          // 将 monaco-editor 主包单独打包
+          if (id.includes('monaco-editor')) {
+            return 'monaco-editor'
+          }
+          // 将 node_modules 中的大型依赖单独打包
+          if (id.includes('node_modules')) {
+            if (id.includes('echarts')) {
+              return 'echarts'
+            }
+            if (id.includes('ant-design-vue')) {
+              return 'ant-design-vue'
+            }
+            if (id.includes('naive-ui')) {
+              return 'naive-ui'
+            }
+            // 其他 node_modules 依赖
+            return 'vendor'
+          }
         },
       },
       onwarn(warning, warn) {

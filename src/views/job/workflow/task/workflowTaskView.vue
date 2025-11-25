@@ -130,8 +130,8 @@ async function getData() {
 // 重置搜索参数
 function resetSearchParams() {
   searchParams.value = {
-    page: 1,
-    size: 10,
+    pageNo: 1,
+    pageSize: 10,
     workflowName: null,
     groupName: null,
     workflowStatus: null
