@@ -39,6 +39,15 @@ export function getConfigItems(params: ConfigItemParams) {
   return request.get<ConfigItemResponse>('/api/v1/configItems', { params });
 }
 
+export function getConfigItemList(configComponentId: number, environmentName: string) {
+  return request.get<ConfigItem[]>('/api/v1/configItems', { 
+    params: { 
+      configComponentId, 
+      environmentName 
+    } 
+  });
+}
+
 /**
  * 创建配置项
  */
@@ -65,4 +74,24 @@ export function deleteConfigItem(id: number) {
  */
 export function updateConfigContent(id: number, content: string, operationType: number) {
   return request.put<ConfigItem>(`/api/v1/configItems/${id}/content`, { content: content, operationType: operationType });
+}
+
+/**
+ * 获取指定配置项详情（用于比较）
+ */
+export function getConfigItemById(id: number) {
+  return request.get<ConfigItem>(`/api/v1/configItems/${id}`);
+}
+
+/**
+ * 比较配置项
+ */
+export interface CompareConfigParams {
+  sourceConfigItemId: number;
+  targetEnvironmentId: number;
+  targetNamespaceId: string;
+}
+
+export function compareConfig(params: CompareConfigParams) {
+  return request.post<{ source: ConfigItem; target: ConfigItem | null }>('/api/v1/configItems/compare', params);
 } 

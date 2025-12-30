@@ -1,0 +1,29 @@
+.cc-config-center {
+  padding: 24px;
+  
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0 16px 0;
+    
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .empty-state {
+    padding: 60px 0;
+    text-align: center;
+    background: #fff;
+    border-radius: 4px;
+  }
+}
