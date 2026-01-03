@@ -82,6 +82,16 @@
       @confirm="handleCompareConfirm"
     />
 
+    <!-- 同步配置弹窗 -->
+    <SyncConfigModal
+      v-model:open="showSyncModal"
+      :loading="syncLoading"
+      :source-item="selectedItems[0]"
+      :source-environment-name="currentEnvironment?.name || ''"
+      :target-environments="targetEnvironments"
+      @confirm="handleSyncConfirm"
+    />
+
     <!-- 配置比较结果弹窗 -->
     <ConfigDiffModal
       v-model:open="showCompareDiffModal"
@@ -114,6 +124,7 @@ import CodeEditor from '@/components/CodeEditor.vue';
 import AddConfigModal from './modals/AddConfigModal.vue';
 import CloneNamespaceModal from './modals/CloneNamespaceModal.vue';
 import CompareConfigModal from './modals/CompareConfigModal.vue';
+import SyncConfigModal from './modals/SyncConfigModal.vue';
 import ConfigDiffModal from './modals/ConfigDiffModal.vue';
 import { useConfigOperations } from './composables/useConfigOperations';
 import { STATUS_MAP, FORMAT_MAP, TYPE_MAP, TABLE_COLUMNS } from './constants/configConstants';
@@ -183,6 +194,10 @@ const leftContent = ref('');
 const rightContent = ref('');
 const targetEnvName = ref('');
 
+// 同步配置相关
+const showSyncModal = ref(false);
+const syncLoading = ref(false);
+
 // 计算属性
 const currentEnvironment = computed(() => 
   props.environments.find(env => env.id === Number(props.activeTabKey))
@@ -240,34 +255,20 @@ const handleCompare = () => {
 };
 
 // 处理比较配置确认
-const handleCompareConfirm = async (data: { targetEnvironmentId: number; targetNamespaceId: string }) => {
+const handleCompareConfirm = async (data: { targetItem: ConfigItem; targetEnvironmentName: string }) => {
   try {
     compareLoading.value = true;
     const selectedItem = selectedItems.value[0];
     
-    // 获取源配置项
-    const sourceConfig = await getConfigItemById(selectedItem.id);
-    
-    // 获取目标配置项（根据目标环境和命名空间查询）
-    // 注意：这里需要根据后端API确定正确的参数
-    let targetConfig: ConfigItem | null = null;
-    try {
-      // 调用比较API或直接查询API
-      const configItems = await getConfigItemList(0, data.targetNamespaceId);
-      const found = configItems.data?.find(item => 
-        item.namespaceId === data.targetNamespaceId && 
-        item.configEnvironmentId === data.targetEnvironmentId
-      );
-      targetConfig = found || null;
-    } catch (error) {
-      console.log('目标环境中未找到对应的配置项');
-    }
+    // 直接使用已选中的源配置项和传入的目标配置项，无需再查询
+    const sourceConfig = selectedItem;
+    const targetConfig = data.targetItem;
     
     // 设置比较数据
-    compareNamespaceId.value = data.targetNamespaceId;
+    compareNamespaceId.value = data.targetItem.namespaceId;
     leftContent.value = sourceConfig.content || '';
     rightContent.value = targetConfig?.content || '';
-    targetEnvName.value = props.environments.find(env => env.id === data.targetEnvironmentId)?.name || '';
+    targetEnvName.value = data.targetEnvironmentName;
     
     // 显示差异对比弹窗
     showCompareModal.value = false;
@@ -282,8 +283,39 @@ const handleCompareConfirm = async (data: { targetEnvironmentId: number; targetN
 
 // 处理同步配置
 const handleSync = () => {
-  console.log('同步配置');
-  message.info('同步配置功能开发中...');
+  if (!selectedRowKeys.value.length) {
+    message.warning('请先选择要同步的配置项');
+    return;
+  }
+  showSyncModal.value = true;
+};
+
+// 处理同步配置确认
+const handleSyncConfirm = async (data: { targetEnvironmentId: number; targetNamespaceIds: string[]; conflictStrategy: number }) => {
+  try {
+    syncLoading.value = true;
+    const selectedItem = selectedItems.value[0];
+    
+    // 导入 syncNamespace API
+    const { syncNamespace } = await import('@/api/config/configNamespace');
+    
+    // 调用同步配置接口
+    await syncNamespace({
+      sourceConfigItemId: selectedItem.id,
+      targetEnvironmentId: data.targetEnvironmentId,
+      targetNamespaceIds: data.targetNamespaceIds,
+      conflictStrategy: data.conflictStrategy
+    });
+    
+    message.success('同步配置成功');
+    showSyncModal.value = false;
+    emit('refresh-data');
+  } catch (error) {
+    console.error('同步配置失败:', error);
+    message.error('同步配置失败');
+  } finally {
+    syncLoading.value = false;
+  }
 };
 
 // 处理批量发布

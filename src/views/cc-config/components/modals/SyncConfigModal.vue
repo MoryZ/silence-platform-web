@@ -1,7 +1,7 @@
 <template>
   <a-modal
     :open="open"
-    title="比较配置"
+    title="同步配置"
     ok-text="确定"
     cancel-text="取消"
     :width="600"
@@ -43,14 +43,14 @@
           </a-select>
         </a-form-item>
         
-        <!-- 第三行: 环境信息 (查询 getConfigEnvironments) -->
+        <!-- 第三行: 环境信息 -->
         <a-form-item 
           label="环境信息" 
-          name="targetEnvironmentName" 
+          name="targetEnvironmentId" 
           :rules="[{ required: true, message: '请选择环境信息' }]"
         >
           <a-select
-            v-model:value="form.targetEnvironmentName"
+            v-model:value="form.targetEnvironmentId"
             placeholder="请选择环境信息"
             :loading="environmentsLoading"
             @change="handleEnvironmentChange"
@@ -58,24 +58,25 @@
             <a-select-option
               v-for="env in targetEnvironments"
               :key="env.id"
-              :value="env.name"
+              :value="env.id"
             >
               {{ env.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
         
-        <!-- 第四行: 命名空间 (查询 getConfigItemList) -->
+        <!-- 第四行: 目标命名空间 (多选) -->
         <a-form-item 
-          label="命名空间" 
-          name="targetNamespaceId" 
-          :rules="[{ required: true, message: '请选择命名空间' }]"
+          label="目标命名空间" 
+          name="targetNamespaceIds" 
+          :rules="[{ required: true, message: '请选择目标命名空间' }]"
         >
           <a-select
-            v-model:value="form.targetNamespaceId"
-            placeholder="请选择命名空间"
+            v-model:value="form.targetNamespaceIds"
+            mode="multiple"
+            placeholder="请选择目标命名空间"
             :loading="namespacesLoading"
-            :disabled="!form.targetEnvironmentName"
+            :disabled="!form.targetEnvironmentId"
           >
             <a-select-option
               v-for="namespace in availableNamespaces"
@@ -84,6 +85,22 @@
             >
               {{ namespace.namespaceId }}
             </a-select-option>
+          </a-select>
+        </a-form-item>
+        
+        <!-- 第五行: 相同配置的处理策略 -->
+        <a-form-item 
+          label="相同配置处理策略" 
+          name="conflictStrategy" 
+          :rules="[{ required: true, message: '请选择处理策略' }]"
+        >
+          <a-select
+            v-model:value="form.conflictStrategy"
+            placeholder="请选择处理策略"
+          >
+            <a-select-option :value="1">终止导入</a-select-option>
+            <a-select-option :value="2">跳过</a-select-option>
+            <a-select-option :value="3">覆盖</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -110,7 +127,11 @@ interface Props {
 
 interface Emits {
   (e: 'update:open', value: boolean): void;
-  (e: 'confirm', data: { targetItem: ConfigItem; targetEnvironmentName: string }): void;
+  (e: 'confirm', data: { 
+    targetEnvironmentId: number; 
+    targetNamespaceIds: string[];
+    conflictStrategy: number;
+  }): void;
 }
 
 const props = defineProps<Props>();
@@ -120,8 +141,9 @@ const formRef = ref<FormInstance>();
 
 const form = ref({
   targetComponentId: undefined as number | undefined,
-  targetEnvironmentName: '',
-  targetNamespaceId: ''
+  targetEnvironmentId: undefined as number | undefined,
+  targetNamespaceIds: [] as string[],
+  conflictStrategy: 2 as number // 1: 终止导入, 2: 跳过, 3: 覆盖
 });
 
 // 加载状态
@@ -139,17 +161,19 @@ const sourceNamespaceName = computed(() => {
 });
 
 // 监听环境变化，加载对应的命名空间列表
-watch(() => form.value.targetEnvironmentName, async (newEnvName) => {
-  if (!newEnvName) {
+watch(() => form.value.targetEnvironmentId, async (newEnvId) => {
+  if (!newEnvId) {
     availableNamespaces.value = [];
-    form.value.targetNamespaceId = '';
+    form.value.targetNamespaceIds = [];
     return;
   }
 
   try {
     namespacesLoading.value = true;
+    // 获取目标环境对象找到其name
+    const targetEnv = props.targetEnvironments.find(env => env.id === newEnvId);
     // 调用 getConfigItemList 获取该环境下的所有配置项（命名空间）
-    const response = await getConfigItemList(form.value.targetComponentId || 0, form.value.targetEnvironmentName || '');
+    const response = await getConfigItemList(form.value.targetComponentId || 0, targetEnv?.name || '');
     availableNamespaces.value = response?.data || response || [];
   } catch (error) {
     console.error('加载命名空间列表失败:', error);
@@ -176,22 +200,22 @@ const loadComponents = async () => {
 // 对象信息变化时的处理
 const handleComponentChange = async () => {
   // 重置环境和命名空间
-  form.value.targetEnvironmentName = '';
-  form.value.targetNamespaceId = '';
+  form.value.targetEnvironmentId = undefined;
+  form.value.targetNamespaceIds = [];
   availableNamespaces.value = [];
 };
 
 // 环境信息变化时的处理
 const handleEnvironmentChange = async () => {
   // 重置命名空间
-  form.value.targetNamespaceId = '';
+  form.value.targetNamespaceIds = [];
   
-  if (!form.value.targetEnvironmentName || !form.value.targetComponentId) {
+  if (!form.value.targetEnvironmentId || !form.value.targetComponentId) {
     availableNamespaces.value = [];
     return;
   }
   
-  // 监听器会自动加载命名空间列表，这里只需要重置
+  // 监听器会自动加载命名空间列表
 };
 
 // 处理提交
@@ -199,16 +223,10 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     
-    // 找到选中的目标配置项
-    const targetItem = availableNamespaces.value.find(item => item.namespaceId === form.value.targetNamespaceId);
-    if (!targetItem) {
-      console.error('未找到选中的目标配置项');
-      return;
-    }
-    
     emit('confirm', {
-      targetItem: targetItem,
-      targetEnvironmentName: form.value.targetEnvironmentName
+      targetEnvironmentId: form.value.targetEnvironmentId!,
+      targetNamespaceIds: form.value.targetNamespaceIds,
+      conflictStrategy: form.value.conflictStrategy
     });
   } catch (error) {
     console.error('表单验证失败:', error);
@@ -225,8 +243,9 @@ const handleCancel = () => {
 const resetForm = () => {
   form.value = {
     targetComponentId: undefined,
-    targetEnvironmentName: '',
-    targetNamespaceId: ''
+    targetEnvironmentId: undefined,
+    targetNamespaceIds: [],
+    conflictStrategy: 2
   };
   availableNamespaces.value = [];
   formRef.value?.resetFields();
@@ -247,7 +266,7 @@ watch(() => props.open, (newOpen) => {
 
 // 设置表单初始值
 const setInitialValues = (namespaceId: string) => {
-  form.value.targetNamespaceId = namespaceId;
+  // 同步配置时不需要设置初始命名空间
 };
 
 defineExpose({

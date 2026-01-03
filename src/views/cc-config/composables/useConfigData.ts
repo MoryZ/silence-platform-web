@@ -50,10 +50,8 @@ export function useConfigData() {
 
       environments.value = Array.isArray(envData) ? envData : [];
       
-      // 设置目标环境（除了当前环境外的其他环境）
-      targetEnvironments.value = environments.value.filter(env => 
-        env.id !== environments.value[0]?.id
-      );
+      // 设置目标环境（显示所有环境，不过滤）
+      targetEnvironments.value = environments.value;
 
       return environments.value.length > 0;
     } catch (error) {

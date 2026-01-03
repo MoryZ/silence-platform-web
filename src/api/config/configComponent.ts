@@ -15,32 +15,32 @@ export interface ConfigComponent {
 }
 
 export interface ConfigComponentParams {
-  subsystemId: number;
+  subsystemId?: number;
 }
 
 /**
- * 获取配置项列表
+ * 获取组件列表
  */
-export function getConfigComponents(params: ConfigComponentParams): Promise<ConfigComponent[]> {
-  return request.get('/api/v1/configComponents', { params });
+export function getConfigComponents(params: ConfigComponentParams) {
+  return request.get<ConfigComponent[]>('/api/v1/configComponents', { params });
 }
 
 /**
- * 创建配置项
+ * 创建组件
  */
 export function createConfigComponent(data: Partial<ConfigComponent>) {
   return request.post<ConfigComponent>('/api/v1/configComponents', data);
 }
 
 /**
- * 更新配置项
+ * 更新组件
  */
 export function updateConfigComponent(id: number, data: Partial<ConfigComponent>) {
   return request.put<ConfigComponent>(`/api/v1/configComponents/${id}`, data);
 }
 
 /**
- * 删除配置项
+ * 删除组件
  */
 export function deleteConfigComponent(id: number) {
   return request.delete(`/api/v1/configComponents/${id}`);
