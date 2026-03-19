@@ -86,3 +86,8 @@ export interface MessagePageResultPage<T> {
   totalElements: number
   totalPages: number
 }
+
+export interface MessageViewResult {
+  messageTrackList: any[]
+  messageView: MessageView
+}

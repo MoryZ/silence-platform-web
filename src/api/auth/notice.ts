@@ -1,31 +1,5 @@
 import { authRequest as request } from '@/utils/request';
-import type { AxiosResponse } from 'axios';
-
-export interface Notice {
-  id: number;
-  title: string;
-  content: string;
-  senderId: number;
-  senderName: string;
-  status: number;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface NoticeResponse {
-  data: Notice[];
-  total: number;
-  pageNo: number;
-  pageSize: number;
-}
-
-export interface NoticeParams {
-  pageNo: number;
-  pageSize: number;
-  status: number;
-}
+import type { Notice, NoticeResponse, NoticeParams } from '@/types/auth';
 
 /**
  * 查看所有通知列表

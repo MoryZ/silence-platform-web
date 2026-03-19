@@ -12,10 +12,6 @@ export const themeSchemaRecord: Record<string, string> = {
 
 export const themeSchemaOptions = transformRecordToOption(themeSchemaRecord);
 
-export const loginModuleRecord: Record<string, string> = {
-  'pwd-login': 'page.login.pwdLogin.title'
-};
-
 export const themeLayoutModeRecord: Record<string, string> = {
   vertical: 'theme.layoutMode.vertical',
   'vertical-mix': 'theme.layoutMode.vertical-mix',
@@ -24,13 +20,6 @@ export const themeLayoutModeRecord: Record<string, string> = {
 };
 
 export const themeLayoutModeOptions = transformRecordToOption(themeLayoutModeRecord);
-
-export const themeScrollModeRecord: Record<string, string> = {
-  wrapper: 'theme.scrollMode.wrapper',
-  content: 'theme.scrollMode.content'
-};
-
-export const themeScrollModeOptions = transformRecordToOption(themeScrollModeRecord);
 
 export const themeTabModeRecord: Record<string, string> = {
   chrome: 'theme.tab.mode.chrome',

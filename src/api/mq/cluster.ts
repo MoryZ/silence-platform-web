@@ -1,32 +1,5 @@
 import { mqRequest as request } from '@/utils/request';
-
-export interface ClusterInfo {
-  clusterAddrTable: Record<string, string[]> // cluster -> brokerNameList
-  brokerAddrTable: Record<string, Record<number, string>> // brokerName -> {id: addr}
-}
-
-export interface BrokerDetail {
-  brokerName: string
-  index: number
-  brokerAddr: string
-  version: string
-  inTotalYest: number
-  outTotalYest: number
-  inTotalToday: number
-  outTotalToday: number
-}
-
-export interface ClusterData {
-  clusterInfo: ClusterInfo
-  brokerServer: Record<string, Record<number, BrokerDetail>>
-  messageTypes: Record<string, string>
-}
-
-export interface BrokerConfig {
-  brokerName: string
-  brokerAddr: string
-  config: Record<string, string>
-}
+import type { ClusterInfo, BrokerDetail, ClusterData, BrokerConfig } from '@/types/mq/clusterApi';
 
 // 获取集群列表及详细信息
 export const queryClusterList = async (): Promise<ClusterData> => {

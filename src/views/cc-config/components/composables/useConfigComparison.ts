@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { getConfigItemById } from '@/api/config/configItem';
-import type { ConfigItem } from '@/api/config/configItem';
+import type { ConfigItem } from '@/types/config';
 
 /**
  * 配置比较 Composable
@@ -79,6 +79,7 @@ export function useConfigComparison() {
     showCompareModal.value = false;
     compareForm.value = {
       sourceConfigItemId: 0,
+      targetSubsystemId: undefined,
       targetEnvironmentId: undefined,
       targetNamespaceId: ''
     };

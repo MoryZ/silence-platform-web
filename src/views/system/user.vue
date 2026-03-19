@@ -260,10 +260,10 @@ import {
   getUserList, 
   addUser,
   updateUser,
-  User, 
   resetPassword
 } from '@/api/auth/user'
-import { getRoleList, getRoles, Role, RoleResponse } from '@/api/auth/role'
+import { getRoleList, getRoles } from '@/api/auth/role'
+import type { User, Role, RoleResponse } from '@/types/auth'
 
 // 静态导入头像图片
 import bubbleImg from '@/assets/images/bubble.png'

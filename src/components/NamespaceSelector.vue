@@ -57,7 +57,8 @@
 import { ref, onMounted, watch } from 'vue'
 import { DownOutlined, CloseOutlined, CheckOutlined } from '@ant-design/icons-vue'
 import { useNamespaceStore } from '@/stores/namespace'
-import { getAllNamespaces, type NameSpace } from '@/api/job/namespace'
+import { getAllNamespaces } from '@/api/job/namespace'
+import type { NameSpace } from '@/types/job'
 import { message } from 'ant-design-vue'
 
 const namespaceStore = useNamespaceStore()

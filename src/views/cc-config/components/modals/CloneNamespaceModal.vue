@@ -52,7 +52,7 @@ import { ref } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import { cloneNamespace } from '@/api/config/configNamespace';
-import type { ConfigEnvironment } from '@/api/config/configEnvironment';
+import type { ConfigEnvironment } from '@/types/config';
 
 interface Props {
   open: boolean;

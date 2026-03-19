@@ -5,7 +5,8 @@ import Draggable from 'vuedraggable';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import ColumnSettings from '@/components/ColumnSettings.vue';
-import { getJobExecutors, createJobExecutor, updateJobExecutor, deleteJobExecutor, type JobExecutor, type JobExecutorParams } from '@/api/job/executor';
+import { getJobExecutors, createJobExecutor, updateJobExecutor, deleteJobExecutor } from '@/api/job/executor';
+import type { JobExecutor, JobExecutorParams } from '@/types/job';
 import { formatDate } from '@/utils/common';
 
 // 搜索与分页

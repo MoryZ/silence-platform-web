@@ -1,36 +1,10 @@
 import { configRequest as request } from '@/utils/request';
-
-export interface ConfigItem {
-  id: number;
-  configEnvironmentId: number;
-  namespaceId: string;
-  namespaceStatus: number;
-  ips: string;
-  formatType: number;
-  type: number;
-  oldContent: string;
-  content: string;
-  md5: string;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface ConfigItemResponse {
-  data: ConfigItem[];
-  total: number;
-  pageNo: number;
-  pageSize: number;
-}
-
-export interface ConfigItemParams {
-  pageNo: number;
-  pageSize: number;
-  configEnvironmentId: number;
-  namespaceId?: string;
-  content?: string;
-}
+import type {
+  ConfigItem,
+  ConfigItemResponse,
+  ConfigItemParams,
+  CompareConfigParams,
+} from '@/types/config';
 
 /**
  * 获取配置项列表
@@ -81,15 +55,6 @@ export function updateConfigContent(id: number, content: string, operationType: 
  */
 export function getConfigItemById(id: number) {
   return request.get<ConfigItem>(`/api/v1/configItems/${id}`);
-}
-
-/**
- * 比较配置项
- */
-export interface CompareConfigParams {
-  sourceConfigItemId: number;
-  targetEnvironmentId: number;
-  targetNamespaceId: string;
 }
 
 export function compareConfig(params: CompareConfigParams) {

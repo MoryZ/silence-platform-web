@@ -1,56 +1,12 @@
-import { MenuItem } from '@/types/menu';
 import { authRequest as request } from '@/utils/request';
-
-export interface User {
-  id: number;
-  username: string;
-  password: string;
-  nickname: string;
-  avatar: string;
-  email: string;
-  phone: string;
-  status: boolean;
-  roleIds: number[];
-}
-
-export interface UserQuery {
-  pageNo: number;
-  pageSize: number;
-  username?: string;
-  nickname?: string;
-  status?: boolean;
-}
-
-export interface UserListResponse {
-  data: User[];
-  total: number;
-}
-
-export interface UserInfo {
-  id: number;
-  username: string;
-  nickname: string;
-  avatar: string;
-  email?: string;
-  phone?: string;
-  status?: boolean;
-  createdDate?: string;
-  roles: string[];
-  permissions: string[];
-  firstLogin?: boolean;
-  forceChangePassword?: boolean;
-}
-
-export interface LoginParams {
-  username: string;
-  password: string;
-}
-
-export interface LoginResult {
-  token: string;
-  userInfo: UserInfo;
-  menus: MenuItem[];
-}
+import type {
+  User,
+  UserQuery,
+  UserListResponse,
+  UserInfo,
+  LoginParams,
+  LoginResult,
+} from '@/types/auth';
 
 export function getUserList(query: UserQuery): Promise<UserListResponse> {
   return request.get('/api/v1/users', { params: query });

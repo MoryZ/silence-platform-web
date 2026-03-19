@@ -23,7 +23,7 @@ export const ls = {
    */
   get<T>(key: string): T | null {
     try {
-      if (!localStorage.hasOwnProperty(key)) {
+      if (localStorage.getItem(key) === null) {
         return null;
       }
       
@@ -68,7 +68,7 @@ export const ls = {
    * @returns 是否存在该键
    */
   has(key: string): boolean {
-    return localStorage.hasOwnProperty(key);
+    return localStorage.getItem(key) !== null;
   }
 }
 

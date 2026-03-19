@@ -1,33 +1,9 @@
 import { configRequest as request } from '@/utils/request';
-
-export interface ConfigCyberarkInfo {
-  id: number;
-  cyberarkObject: string;
-  componentCode: string;
-  encryptedValue: string;
-  safe: string;
-  folder: string;
-  description: string;
-  enabled: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface ConfigCyberarkInfoResponse {
-  data: ConfigCyberarkInfo[];
-  total: number;
-}
-
-export interface ConfigCyberarkInfoParams {
-  cyberarkObject?: string;
-  componentCode?: string;
-  enabled?: boolean;
-  pageNo: number;
-  pageSize: number;
-  sort: string;
-}
+import type {
+  ConfigCyberarkInfo,
+  ConfigCyberarkInfoResponse,
+  ConfigCyberarkInfoParams,
+} from '@/types/config';
 
 /**
  * 获取配置CyberarkInfo列表

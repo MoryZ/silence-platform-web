@@ -1,7 +1,6 @@
 import { ConsumerConfigInfo, ConsumerConnection, ConsumerRunningInfo, DeleteSubGroupRequest, GroupConsumeInfo } from '@/types/mq/consumer';
 import { mqRequest as request } from '@/utils/request';
-import { ResetOffsetConfig } from '@/types/mq/topic';
-import { TopicConsumerInfo } from './topic';
+import type { ResetOffsetConfig, TopicConsumerInfo } from '@/types/mq/topicApi';
 
 
 
@@ -86,12 +85,12 @@ export const updateConsumerMonitorConfig = async (
 
 
 // 重置消费点位
-export const resetOffset = async (config: ResetOffsetConfig): Promise<any> => {
+export const resetOffset = async (config: ResetOffsetConfig): Promise<boolean> => {
   return await request.post('/api/v1/consumer/resetOffset', config)
 }
 
 
 // 跳过累积点位
-export const skipAccumulate = async (config: ResetOffsetConfig): Promise<any> => {
+export const skipAccumulate = async (config: ResetOffsetConfig): Promise<boolean> => {
   return await request.post('/api/v1/consumer/skipAccumulate', config)
 }

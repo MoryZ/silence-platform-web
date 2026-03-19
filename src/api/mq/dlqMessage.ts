@@ -1,19 +1,7 @@
-import type {PaginationQuery, PaginationResult } from '@/types/mq/api'
+import type { PaginationQuery, PaginationResult } from '@/types/mq/api';
 import { mqRequest as request } from '@/utils/request';
-import { MessagePageResultPage } from '@/types/mq/message';
-import { MessageView } from '@/types/mq/message';
-import { ResendDLQMessageRequest } from '@/types/mq/dlqMessage';
-export interface DLQMessageQuery extends PaginationQuery {
-  topic: string
-  taskId?: string
-  begin: number
-  end: number
-}
-
-export interface DLQMessagePage {
-  page: MessagePageResultPage<MessageView>
-  taskId: string
-}
+import type { MessagePageResultPage, MessageView } from '@/types/mq/message';
+import type { ResendDLQMessageRequest, DLQMessageQuery, DLQMessagePage } from '@/types/mq/dlqMessage';
 
 
 // 获取消费者组列表

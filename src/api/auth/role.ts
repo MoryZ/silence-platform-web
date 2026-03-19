@@ -1,29 +1,5 @@
 import { authRequest as request } from '@/utils/request';
-
-export interface Role {
-  id: number;
-  name: string;
-  code: string;
-  appCode: string;
-  description: string;
-  status: boolean;
-  createdDate: string;
-  permissions?: string[];
-}
-
-export interface RoleResponse {
-  data: Role[];
-  total: number;
-}
-
-export interface RoleParams {
-  name?: string;
-  code?: string;
-  appCode?: string;
-  status?: number;
-  pageNo?: number;
-  pageSize?: number;
-}
+import type { Role, RoleResponse, RoleParams } from '@/types/auth';
 
 export function getRoles(params: RoleParams): Promise<RoleResponse> {
   return request.get('/api/v1/roles', { params });

@@ -1,9 +1,9 @@
 import { ref, shallowRef } from 'vue';
 import { message } from 'ant-design-vue';
 import { deleteConfigItem, updateConfigContent } from '@/api/config/configItem';
-import { getConfigItemHistories, type ConfigItemHistory } from '@/api/config/configItemHistories';
+import { getConfigItemHistories } from '@/api/config/configItemHistories';
 import { analyzeChanges, getChangeTypeText, getOperationType } from '@/utils/changeAnalyzer';
-import type { ConfigItem } from '@/api/config/configItem';
+import type { ConfigItem, ConfigItemHistory } from '@/types/config';
 
 /**
  * 配置项操作 Composable

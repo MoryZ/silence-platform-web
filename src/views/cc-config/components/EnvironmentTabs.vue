@@ -36,7 +36,7 @@
 
 <script lang="ts" setup>
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons-vue';
-import type { ConfigEnvironment } from '@/api/config/configEnvironment';
+import type { ConfigEnvironment } from '@/types/config';
 
 interface Props {
   environments: ConfigEnvironment[];

@@ -41,7 +41,7 @@ export default defineConfig({
   },
   build: {
     cssMinify: 'lightningcss', // 使用 lightningcss 以完整支持 CSS 嵌套
-    chunkSizeWarningLimit: 1000, // 增加 chunk 大小警告限制
+    chunkSizeWarningLimit: 4000, // 避免已拆分后仍因 Monaco/Ant Design 大包触发告警
     rollupOptions: {
       output: {
         manualChunks(id) {

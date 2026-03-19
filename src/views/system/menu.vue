@@ -237,7 +237,7 @@ import CommonPagination from '@/components/CommonPagination.vue'
 import { MENU_PERMISSIONS } from '@/utils/permissionConstants'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/auth/menu'
-import type { Menu } from '@/api/auth/menu'
+import type { Menu } from '@/types/auth'
 import { ls } from '@/utils/stoarge'
 import { MENUS } from '@/utils/constant'
 

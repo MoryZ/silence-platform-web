@@ -1,17 +1,5 @@
 import { configRequest as request } from '@/utils/request';
-
-interface CloneNamespaceParams {
-  sourceEnvironmentId: number;
-  targetEnvironmentId: number;
-  cloneMode: number;
-}
-
-interface SyncNamespaceParams {
-  sourceConfigItemId: number;
-  targetEnvironmentId: number;
-  targetNamespaceIds: string[];
-  conflictStrategy: number; // 1: 终止导入, 2: 跳过, 3: 覆盖
-}
+import type { CloneNamespaceParams, SyncNamespaceParams } from '@/types/config';
 
 /**
  * 克隆命名空间

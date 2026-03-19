@@ -5,9 +5,9 @@ import { ReloadOutlined } from '@ant-design/icons-vue';
 import {
   getNamespaces,
   createNamespace,
-  updateNamespace,
-  NameSpace
+  updateNamespace
 } from '@/api/job/namespace';
+import type { NameSpace } from '@/types/job';
 import { v4 as uuidv4 } from 'uuid';
 import { formatDate } from '@/utils/common';
 import SearchPanel from '@/components/SearchPanel.vue';

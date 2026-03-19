@@ -1,25 +1,7 @@
 import { authRequest as request } from '@/utils/request';
+import type { AuthLoginParams, AuthLoginResponse } from '@/types/auth';
 
-export interface User {
-  id: number
-  username : string;
-  nickname : string;
-  avatar : string;
-  roles : string[];
-  permissions: string[];
-} 
-
-export interface LoginParams {
-  username : string;
-  password : string;
-  remember?: boolean;
-} 
-
-export interface LoginResponse {
-  token : string;
-}
-
-export function login(params: LoginParams): Promise<LoginResponse> {
+export function login(params: AuthLoginParams): Promise<AuthLoginResponse> {
   return request.post('/api/v1/auth/login', params);
 }
 

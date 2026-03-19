@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
-import { getJobBatchPage, findById, retryJobBatch, batchDeleteJobBatch, JobBatch, JobBatchSearchParams } from '@/api/job/job-batch';
+import { getJobBatchPage, findById, retryJobBatch, batchDeleteJobBatch } from '@/api/job/job-batch';
+import type { JobBatch, JobBatchSearchParams } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';

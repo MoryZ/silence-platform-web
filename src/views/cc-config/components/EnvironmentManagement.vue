@@ -50,7 +50,7 @@ import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import { getConfigEnvironments, createConfigEnvironment, deleteConfigEnvironment } from '../../../api/config/configEnvironment';
-import type { ConfigEnvironment } from '../../../api/config/configEnvironment';
+import type { ConfigEnvironment } from '@/types/config';
 import { useEnvStore } from '../../../stores/env';
 
 interface Props {

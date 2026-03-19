@@ -1,28 +1,5 @@
 import { jobRequest as request } from '@/utils/request';
-
-export interface NotifyParams {
-  pageNo: 1,
-  pageSize: 10,
-  sort: '-createdDate',
-  notifyName: null,
-  groupName: null,
-  systemTaskType: null,
-  notifyStatus: null
-
-}
-
-export interface NotifyConfig {
-  id: string;
-  notifyName: string;
-  groupName: string;
-  systemTaskType: number;
-  notifyStatus: number;
-}
-
-export interface NotifyConfigPage {
-  total: number;
-  data: NotifyConfig[];
-}
+import type { NotifyConfigPage, NotifyParams } from '@/types/job';
 
 /** get notify list */
 export function fetchGetNotifyConfigList(params: NotifyParams) {

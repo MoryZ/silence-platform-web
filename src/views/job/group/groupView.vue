@@ -6,11 +6,9 @@ import {
   createGroup,
   updateGroup,
   enableGroup,
-  disableGroup,
-  GroupConfig,
-  GroupConfigRequestVO,
-
+  disableGroup
 } from '@/api/job/group';
+import type { GroupConfig, GroupConfigRequestVO } from '@/types/job';
 import { formatDate } from '@/utils/common';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';

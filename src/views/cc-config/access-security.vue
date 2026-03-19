@@ -153,13 +153,12 @@ import {
   createConfigAccessKeys,
   updateConfigAccessKeys,
   deleteConfigAccessKeys,
-  type ConfigAccessKeys,
-  type ConfigAccessKeysParams,
   enableConfigAccessKeys,
   disableConfigAccessKeys,
 } from '@/api/config/configAccessKeys';
-import { getConfigComponents, type ConfigComponent } from '@/api/config/configComponent';
+import { getConfigComponents } from '@/api/config/configComponent';
 import { getAllConfigSubsystem } from '@/api/config/configSubsystem';
+import type { ConfigAccessKeys, ConfigAccessKeysParams, ConfigComponent } from '@/types/config';
 
 // 表格列定义
 const columns = [

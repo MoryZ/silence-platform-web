@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { fetchDeleteNotifyRecipient, fetchGetNotifyRecipientPageList, NotifyRecipient, NotifyRecipientParams } from '@/api/job/notify-recipients';
+import { fetchDeleteNotifyRecipient, fetchGetNotifyRecipientPageList } from '@/api/job/notify-recipients';
+import type { NotifyRecipient, NotifyRecipientParams } from '@/types/job';
 import { $t } from '@/locales';
 import { alarmTypeRecord } from '@/constants/business';
 // 下载功能（简化版本）

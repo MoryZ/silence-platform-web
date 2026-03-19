@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { queryClusterList, queryBrokerConfig } from '@/api/mq/cluster'
-import type { ClusterData, BrokerDetail, BrokerConfig } from '@/api/mq/cluster'
+import { queryClusterList, queryBrokerConfig } from '@/api/mq/cluster';
+import type { ClusterData, BrokerDetail, BrokerConfig } from '@/types/mq/clusterApi';
 
 const selectedCluster = ref('DefaultCluster')
 const clusterData = ref<any>(null)

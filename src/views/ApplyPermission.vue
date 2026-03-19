@@ -125,7 +125,8 @@ import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LockOutlined, MailOutlined, LogoutOutlined } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
-import { getMinimumRoles, type Role } from '@/api/auth/role';
+import { getMinimumRoles } from '@/api/auth/role';
+import type { Role } from '@/types/auth';
 
 const router = useRouter();
 const userStore = useUserStore();

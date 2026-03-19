@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, RouteRecordRaw, RouteRecordName } from 'vue-router';
 import { MenuItem } from '@/types/menu';
 import { ls } from '@/utils/stoarge';
 import { MENUS, TOKEN } from '@/utils/constant';
@@ -11,6 +11,14 @@ const viewModules = {
   ...import.meta.glob('../views/**/*.vue'),
   ...import.meta.glob('../layout/**/*.vue')
 } as Record<string, () => Promise<any>>;
+
+const isDev = import.meta.env.DEV;
+
+function debugRouteLog(...args: any[]) {
+  if (isDev) {
+    console.log(...args);
+  }
+}
 
 // 基础路由
 const constantRoutes: RouteRecordRaw[] = [
@@ -101,10 +109,40 @@ const router = createRouter({
 
 // 标记是否正在加载权限数据
 let hasAddedDynamicRoutes = false;
+const dynamicRouteNames = new Set<string>();
+
+function trackDynamicRouteName(routeName?: RouteRecordName | null) {
+  if (typeof routeName === 'string' && routeName !== 'MainLayout') {
+    dynamicRouteNames.add(routeName);
+  }
+}
+
+function clearDynamicRoutes() {
+  dynamicRouteNames.forEach((routeName) => {
+    if (router.hasRoute(routeName)) {
+      router.removeRoute(routeName);
+    }
+  });
+  dynamicRouteNames.clear();
+
+  // 兜底清理 404 与通配符
+  const allRoutes = router.getRoutes();
+  allRoutes.forEach(route => {
+    if (
+      route.path.includes('/:pathMatch') ||
+      route.path === '*' ||
+      route.path === '/404'
+    ) {
+      if (route.name && router.hasRoute(route.name)) {
+        router.removeRoute(route.name);
+      }
+    }
+  });
+}
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
-  console.log('路由守卫执行:', { 
+  debugRouteLog('路由守卫执行:', {
     从: from.path, 
     到: to.path, 
     匹配路由: to.matched.length ? 'yes' : 'no',
@@ -122,7 +160,7 @@ router.beforeEach(async (to, from, next) => {
   const token = ls.get(TOKEN);
   
   if (!token) {
-    console.log('无token，重定向到登录页');
+    debugRouteLog('无token，重定向到登录页');
     // 无token，重定向到登录页
     next('/login');
     return;
@@ -131,12 +169,18 @@ router.beforeEach(async (to, from, next) => {
   // 如果路由还没有加载完成，加载动态路由
   if (!hasAddedDynamicRoutes) {
     const localMenus = ls.get(MENUS);
-    console.log('本地菜单数据:', localMenus);
+    debugRouteLog('本地菜单数据:', localMenus);
     if (localMenus && Array.isArray(localMenus) && localMenus.length > 0) {
-      await addDynamicRoutes(localMenus);
-      // 重新导航以匹配新添加的路由
-      next(to.path);
-      return;
+      try {
+        await addDynamicRoutes(localMenus);
+        // 保留 query/hash 并替换当前 history，避免重复记录
+        next({ ...to, replace: true });
+        return;
+      } catch (error) {
+        console.error('加载动态路由失败，重定向登录:', error);
+        next('/login');
+        return;
+      }
     } else {
       next('/login');
       return;
@@ -148,7 +192,7 @@ router.beforeEach(async (to, from, next) => {
 });
 
 export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false) {
-  console.log('addDynamicRoutes 被调用:', { hasAddedDynamicRoutes, force, menusLength: menus?.length });
+  debugRouteLog('addDynamicRoutes 被调用:', { hasAddedDynamicRoutes, force, menusLength: menus?.length });
   
   if (hasAddedDynamicRoutes && !force) {
     return;
@@ -156,6 +200,11 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
   
   let menuData: MenuItem[] = [];
   try {
+    if (force || hasAddedDynamicRoutes) {
+      clearDynamicRoutes();
+      hasAddedDynamicRoutes = false;
+    }
+
     // 获取菜单数据
     const storedMenus = ls.get<MenuItem[]>(MENUS);
     if (storedMenus && Array.isArray(storedMenus)) {
@@ -164,20 +213,6 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
       menuData = menus;
       ls.set(MENUS, menuData);
     }
-    
-    // 1. 先移除可能已存在的404和通配符路由
-    const allRoutes = router.getRoutes();
-    allRoutes.forEach(route => {
-      if (
-        route.path.includes('/:pathMatch') || 
-        route.path === '*' || 
-        route.path === '/404'
-      ) {
-        if (route.name) {
-          router.removeRoute(route.name);
-        }
-      }
-    });
     
     // 2. 转换并添加业务路由
     const dynamicRoutes = transformRoutes(menuData);
@@ -192,6 +227,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
           // 顶级路由直接添加
           if (route.path === '/login') {
             router.addRoute(route);
+            trackDynamicRouteName(route.name);
           } else {
             // 获取适当的路径，移除开头的/以适应子路由格式
             let routePath = route.path;
@@ -207,6 +243,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
                 path: routePath,
                 children: []
               });
+              trackDynamicRouteName(route.name);
               
               // 处理子路由 - 根据原始路径格式决定如何添加
               route.children.forEach(childRoute => {
@@ -235,6 +272,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
                   path: childPath,
                   name: childName
                 });
+                trackDynamicRouteName(childName);
               });
             } else {
               // 没有子路由的普通路由直接添加
@@ -242,6 +280,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
                 ...route,
                 path: routePath
               });
+              trackDynamicRouteName(route.name);
             }
           }
         });
@@ -253,6 +292,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
       // 没有布局就全部作为顶级路由
       dynamicRoutes.forEach(route => {
         router.addRoute(route);
+        trackDynamicRouteName(route.name);
       });
     }
     
@@ -263,6 +303,7 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
       component: () => import('@/views/NotFound.vue'),
       meta: { title: '404' }
     });
+    trackDynamicRouteName('404');
     
     // 4. 最后添加通配符路由 - 直接显示NotFound组件而不是重定向
     router.addRoute({
@@ -271,12 +312,15 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
       component: () => import('@/views/NotFound.vue'),
       meta: { hidden: true }
     });
+    trackDynamicRouteName('NotFound');
     
     
     hasAddedDynamicRoutes = true;
   } catch (error) {
     console.error('添加动态路由失败:', error);
+    clearDynamicRoutes();
     hasAddedDynamicRoutes = false; // 确保失败时重置标志
+    throw error;
   }
 }
 

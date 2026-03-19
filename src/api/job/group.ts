@@ -1,55 +1,11 @@
 import { jobRequest as request } from '@/utils/request';
-
-export interface GroupConfigSearchParams {
-  groupName: string;
-  groupStatus: boolean;
-  pageNo: number;
-  pageSize:number;
-}
-
-export interface GroupConfigRequestVO {
-  id?: number;
-  groupName: string; // 组名称, 长度为1~64字符且类型为数字、字母、下划线和短横线
-  groupStatus: boolean; // 组状态不能为空
-  token: string; // 令牌不能为空
-  description?: string; // 描述，可以为空
-  groupPartition: number; // 分区不能为空
-  idGeneratorMode: number; // 唯一id生成模式, 不能为空
-  initScene: boolean; // 初始化场景, 不能为空
-}
-
-export interface GroupConfigResponseVO {
-  total: number;
-  data: GroupConfig[];
-}
-
-export interface GroupConfig {
-  id: number;
-  groupName: string; 
-  namespaceId: string;
-  namespaceName: string;
-  groupStatus: boolean; 
-  groupPartition: number;
-  routeKey:number;
-  version: number;
-  description?: string; 
-  idGeneratorMode: number; 
-  initScene: boolean;
-  onlinePodList: string[];
-  token: string;
-  createdDat: string;
-  updatedDate: string;
-}
-
-export interface GroupConfigUpdateVO {
-  groupName: string; // 组名称, 长度为1~64字符且类型为数字、字母、下划线和短横线
-  groupStatus: boolean; // 组状态不能为空
-}
-
-export interface CommonSelectedVO {
-  label: string;
-  value: string;
-}
+import type {
+  CommonSelectedVO,
+  GroupConfigRequestVO,
+  GroupConfigResponseVO,
+  GroupConfigSearchParams,
+  GroupConfigUpdateVO
+} from '@/types/job';
 
 /** get groupConfig list */
 export function getGroupPage(params:GroupConfigSearchParams) {

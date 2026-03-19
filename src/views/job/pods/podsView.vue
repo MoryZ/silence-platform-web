@@ -3,7 +3,8 @@ import { ref, reactive, computed } from 'vue';
 import { message, Tag } from 'ant-design-vue';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
-import { getJobPods, type JobPodParams } from '@/api/job/pods';
+import { getJobPods } from '@/api/job/pods';
+import type { JobPodParams } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import { formatDate } from '@/utils/common';
 

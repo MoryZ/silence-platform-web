@@ -3,7 +3,7 @@ import { reactive, watch, ref } from 'vue';
 import { $t } from '@/locales';
 import { translateOptions } from '@/utils/common';
 import { alarmWebhookTypeRecordOptions } from '@/constants/business';
-import { NotifyRecipient } from '@/api/job/notify-recipients';
+import type { NotifyRecipient } from '@/types/job';
 
 defineOptions({
   name: 'WebhookForm'

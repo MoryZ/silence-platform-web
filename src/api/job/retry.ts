@@ -1,16 +1,5 @@
 import { jobRequest as request } from '@/utils/request';
-
-
-export interface RetrySearchParams {
-  pageNo: number;
-  pageSize: number;
-  sort: string;
-  groupName?: string;
-  sceneName?: string;
-  idempotentId?: string;
-  bizNo?: string;
-  retryStatus?: number;
-}
+import type { RetrySearchParams } from '@/types/job';
 /** get retryTask list */
 export function fetchGetRetryList(params?: RetrySearchParams) {
   return request.get<any>('/api/v1/retries', { params });

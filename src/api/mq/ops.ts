@@ -1,44 +1,5 @@
 import { mqRequest as request } from '@/utils/request';
-
-export interface ClusterStats {
-  clusterName: string
-  brokerCount: number
-  topicCount: number
-  consumerGroupCount: number
-  totalMessageCount: number
-  avgTps: number
-  avgLatency: number
-}
-
-export interface BrokerStats {
-  brokerAddr: string
-  brokerName: string
-  brokerId: number
-  messageCount: number
-  tps: number
-  cpuUsage: number
-  memoryUsage: number
-  diskUsage: number
-  putLatency: number
-  getLatency: number
-  status: 'ONLINE' | 'OFFLINE'
-}
-
-export interface TopicStats {
-  topic: string
-  messageCount: number
-  tps: number
-  avgMessageSize: number
-  lastUpdateTime: number
-}
-
-export interface ConsumerStats {
-  groupName: string
-  messageCount: number
-  tps: number
-  diffTotal: number
-  lastConsumeTime: number
-}
+import type { ClusterStats, BrokerStats, TopicStats, ConsumerStats, HistoryStatsParams, HistoryStats } from '@/types/mq/opsApi';
 
 // 获取集群统计信息
 export const queryClusterStats = async (): Promise<ClusterStats> => {
@@ -66,7 +27,7 @@ export const queryHistoryStats = async (params: {
   name?: string
   begin: number
   end: number
-}): Promise<any[]> => {
+}): Promise<HistoryStats> => {
   return await request.get('/api/v1/ops/history/stats', { params })
 }
 

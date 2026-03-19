@@ -1,27 +1,5 @@
 import { jobRequest as request } from '@/utils/request';
-
-export interface NameSpace {
-  id: number;
-  name: string;
-  uniqueId: string;
-  description: string;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface NameSpacePage {
- total: number
- data: NameSpace[]
-}
-
-export interface NameSpaceParams {
-  name: string;
-  uniqueId: string;
-  pageNo: number;
-  pageSize: number;
-}
+import type { NameSpace, NameSpacePage, NameSpaceParams } from '@/types/job';
 
 /**
  * 分页获取配置环境列表

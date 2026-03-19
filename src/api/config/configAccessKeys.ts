@@ -1,30 +1,9 @@
 import { configRequest as request } from '@/utils/request';
-
-export interface ConfigAccessKeys {
-  id: number;
-  componentCode: string;
-  accessKey: string;
-  secretKey: string;
-  description: string;
-  enabled: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface ConfigAccessKeysResponse {
-  data: ConfigAccessKeys[];
-  total: number;
-}
-
-export interface ConfigAccessKeysParams {
-  componentCode?: string;
-  enabled?: boolean;
-  pageNo: number;
-  pageSize: number;
-  sort: string;
-}
+import type {
+  ConfigAccessKeys,
+  ConfigAccessKeysResponse,
+  ConfigAccessKeysParams,
+} from '@/types/config';
 
 /**
  * 获取配置AccessKeys列表

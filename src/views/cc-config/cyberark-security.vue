@@ -148,13 +148,12 @@ import {
   createConfigCyberarkInfo,
   updateConfigCyberarkInfo,
   deleteConfigCyberarkInfo,
-  type ConfigCyberarkInfo,
-  type ConfigCyberarkInfoParams,
   enableConfigCyberarkInfo,
   disableConfigCyberarkInfo,
 } from '@/api/config/configCyberark';
-import { getConfigComponents, type ConfigComponent } from '@/api/config/configComponent';
+import { getConfigComponents } from '@/api/config/configComponent';
 import { getAllConfigSubsystem } from '@/api/config/configSubsystem';
+import type { ConfigCyberarkInfo, ConfigCyberarkInfoParams, ConfigComponent } from '@/types/config';
 
 // 表格列定义
 const columns = [

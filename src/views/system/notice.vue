@@ -100,10 +100,9 @@ import {
   getNotices,
   createNotice,
   markNoticeAsRead,
-  type Notice,
-  type NoticeParams
 } from '../../api/auth/notice';
-import { getUserList, type User } from '../../api/auth/user';
+import { getUserList } from '../../api/auth/user';
+import type { Notice, NoticeParams, User } from '@/types/auth';
 import dayjs from 'dayjs';
 import SearchPanel from '../../components/SearchPanel.vue';
 

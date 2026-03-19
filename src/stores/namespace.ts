@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { NameSpace } from '@/api/job/namespace';
+import type { NameSpace } from '@/types/job';
 import { ls } from '@/utils/stoarge';
 import { CURRENT_NAMESPACE } from '@/utils/constant';
 

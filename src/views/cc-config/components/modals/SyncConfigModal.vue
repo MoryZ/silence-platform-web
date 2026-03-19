@@ -111,11 +111,9 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import type { FormInstance } from 'ant-design-vue';
-import type { ConfigEnvironment } from '@/api/config/configEnvironment';
-import type { ConfigItem } from '@/api/config/configItem';
+import type { ConfigEnvironment, ConfigItem, ConfigComponent } from '@/types/config';
 import { getConfigItemList } from '@/api/config/configItem';
 import { getConfigComponents } from '@/api/config/configComponent';
-import type { ConfigComponent } from '@/api/config/configComponent';
 
 interface Props {
   open: boolean;
@@ -174,7 +172,7 @@ watch(() => form.value.targetEnvironmentId, async (newEnvId) => {
     const targetEnv = props.targetEnvironments.find(env => env.id === newEnvId);
     // 调用 getConfigItemList 获取该环境下的所有配置项（命名空间）
     const response = await getConfigItemList(form.value.targetComponentId || 0, targetEnv?.name || '');
-    availableNamespaces.value = response?.data || response || [];
+    availableNamespaces.value = response || [];
   } catch (error) {
     console.error('加载命名空间列表失败:', error);
     availableNamespaces.value = [];
@@ -188,7 +186,7 @@ const loadComponents = async () => {
   try {
     componentsLoading.value = true;
     const response = await getConfigComponents({});
-    components.value = (response as any)?.data || response || [];
+    components.value = response || [];
   } catch (error) {
     console.error('加载对象信息失败:', error);
     components.value = [];

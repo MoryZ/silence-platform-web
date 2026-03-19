@@ -70,8 +70,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { ApartmentOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons-vue'
 import { useConfigStore } from '@/stores/config'
-import { getAllConfigSubsystem, type ConfigSubsystem } from '@/api/config/configSubsystem'
-import { getConfigComponents, type ConfigComponent } from '@/api/config/configComponent'
+import { getAllConfigSubsystem } from '@/api/config/configSubsystem'
+import { getConfigComponents } from '@/api/config/configComponent'
+import type { ConfigSubsystem, ConfigComponent } from '@/types/config'
 
 const configStore = useConfigStore()
 const showComponentFilter = ref(false)

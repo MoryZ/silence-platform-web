@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, watch, ref } from 'vue';
 import { $t } from '@/locales';
-import { NotifyRecipient } from '@/api/job/notify-recipients';
+import type { NotifyRecipient } from '@/types/job';
 
 defineOptions({
   name: 'WeComForm'

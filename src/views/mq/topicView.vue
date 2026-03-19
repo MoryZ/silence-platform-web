@@ -16,7 +16,7 @@ import {
 } from '@/api/mq/topic'
 import { resetOffset, skipAccumulate } from '@/api/mq/consumer'
 import { queryClusterList } from '@/api/mq/cluster'
-import type { TopicConfig, TopicConsumerInfo } from '@/api/mq/topic'
+import type { TopicConfig, TopicConsumerInfo } from '@/types/mq/topicApi';
 import { SearchOutlined } from '@ant-design/icons-vue'
 import moment from 'moment'
 import 'moment/locale/zh-cn'

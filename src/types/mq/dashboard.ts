@@ -45,8 +45,30 @@ export interface AlertMessage {
   status: 'NEW' | 'READ'
 }
 
-export interface DashboardResponse {
-  status: number
-  errMsg?: string
-  data?: any
+/**
+ * 时间序列数据点 [timestamp, value]
+ */
+export type TimeSeriesDataPoint = [number, string];
+
+/**
+ * Topic 时间序列数据
+ */
+export interface TopicTimeSeriesData {
+  [topicName: string]: TimeSeriesDataPoint[];
+}
+
+/**
+ * Broker 时间序列数据
+ */
+export interface BrokerTimeSeriesData {
+  [brokerAddr: string]: TimeSeriesDataPoint[];
+}
+
+/**
+ * Dashboard API 泛型响应封装
+ */
+export interface DashboardResponse<T = unknown> {
+  code: number;
+  data?: T;
+  message?: string | null;
 } 

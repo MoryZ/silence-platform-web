@@ -2,8 +2,7 @@ import { ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { getConfigItems } from '@/api/config/configItem';
 import { getConfigEnvironments } from '@/api/config/configEnvironment';
-import type { ConfigItem } from '@/api/config/configItem';
-import type { ConfigEnvironment } from '@/api/config/configEnvironment';
+import type { ConfigItem, ConfigEnvironment } from '@/types/config';
 
 /**
  * 配置数据管理 Composable

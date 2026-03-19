@@ -1,43 +1,5 @@
 import { authRequest as request } from '@/utils/request';
-
-export interface Menu {
-  id: number;
-  type: number;
-  parentId: number;
-  name: string;
-  status: boolean;
-  sort: number;
-  path: string;
-  component: string;
-  redirect: string;
-  moduleType?: string; // 菜单所属模块
-  meta: {
-    title: string;
-    icon: string;
-    show: boolean;
-    requiresAuth: boolean;
-  };
-  children: Menu[];
-}
-
-export interface MenuResponse {
-  key: string;
-  type: number;
-  parentId: number;
-  name: string;
-  status: boolean;
-  sort: number;
-  path: string;
-  component: string;
-  redirect: string;
-  meta: {
-    title: string;
-    icon: string;
-    show: boolean;
-    requiresAuth: boolean;
-  };
-  children: MenuResponse[];
-}
+import type { Menu } from '@/types/auth';
 
 /**
  * 获取菜单树

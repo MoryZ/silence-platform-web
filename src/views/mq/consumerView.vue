@@ -14,7 +14,7 @@ import {
 } from '@/api/mq/consumer'
 import { queryClusterList } from '@/api/mq/cluster'
 import type { GroupConsumeInfo, ConsumerRunningInfo, ConsumerConnection, ConsumerConfigInfo } from '@/types/mq/consumer'
-import { TopicConsumerInfo } from '@/api/mq/topic'
+import type { TopicConsumerInfo } from '@/types/mq/topicApi';
 
 // State
 const loading = ref(false)

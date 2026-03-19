@@ -4,9 +4,8 @@ import { addDynamicRoutes } from "@/router";
 import {
   login as apiLogin,
   logout as apiLogout,
-  type UserInfo,
-  type LoginParams,
 } from "@/api/auth/user";
+import type { UserInfo, LoginParams } from '@/types/auth';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ls } from "@/utils/stoarge";
@@ -88,9 +87,11 @@ export const useUserStore = defineStore("user", () => {
   
   
   // 登出
-  async function handleLogout() {
+  async function handleLogout(skipRemoteLogout: boolean = false) {
     try {
-      await apiLogout();
+      if (!skipRemoteLogout) {
+        await apiLogout();
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

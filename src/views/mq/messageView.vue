@@ -8,7 +8,7 @@ import { SearchOutlined } from '@ant-design/icons-vue'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { sendMessage } from '@/api/mq/topic'
-import type { MessageRequest } from '@/api/mq/topic'
+import type { MessageRequest } from '@/types/mq/topicApi';
 import dayjs from 'dayjs'
 
 moment.locale('zh-cn')
@@ -39,7 +39,7 @@ const totalCount = ref(0)
 
 const showSendDialog = ref(false)
 const showMessageDetailDialog = ref(false)
-const currentMessage = ref<Message | null>(null)
+const currentMessage = ref<MessageView | null>(null)
 const newMessage = ref<MessageRequest>({ topic: '', tag: '', key: '', messageBody: '', traceEnabled: false })
 
 // Tabs
@@ -106,7 +106,7 @@ const searchMessages = async () => {
     } else if (activeTab.value === 'messageId') {
       // messageId tab 查询
       const result = await viewMessage(messageId.value, searchForm.topic)
-      if (result && result.messageView) {
+      if (result && result?.messageView) {
         currentMessage.value = result.messageView
         showMessageDetailDialog.value = true
       } else {
@@ -413,7 +413,7 @@ const messageTypes = [
     >
       <a-descriptions :column="2" border>
         <a-descriptions-item label="消息ID">
-          {{ currentMessage?.msgId }}
+          {{ currentMessage?.messageId }}
         </a-descriptions-item>
         <a-descriptions-item label="Topic">
           {{ currentMessage?.topic }}

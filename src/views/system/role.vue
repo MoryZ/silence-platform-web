@@ -184,12 +184,11 @@ import {
   deleteRole, 
   setRolePermissions,
   getRolePermissions,
-  Role, 
-  RoleParams,
   disableRole,
   enableRole
 } from '@/api/auth/role';
-import { getMenuTree, Menu, MenuResponse } from '@/api/auth/menu';
+import { getMenuTree } from '@/api/auth/menu';
+import type { Role, RoleParams, Menu, MenuResponse } from '@/types/auth';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import { ROLE_PERMISSIONS } from '@/utils/permissionConstants';

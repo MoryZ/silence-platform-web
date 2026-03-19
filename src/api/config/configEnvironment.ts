@@ -1,22 +1,5 @@
 import { configRequest as request } from '@/utils/request';
-
-export interface ConfigEnvironment {
-  id: number;
-  name: string;
-  displayName: string;
-  envType: number;
-  display: boolean;
-  configComponentId: number;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface ConfigEnvironmentParams {
-  configComponentId: number;
-  envType: number;
-}
+import type { ConfigEnvironment, ConfigEnvironmentParams } from '@/types/config';
 
 /**
  * 获取配置环境列表

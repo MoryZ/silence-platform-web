@@ -1,29 +1,5 @@
 import { jobRequest as request } from '@/utils/request';
-
-export interface JobBatch {
-    id: number;
-    groupName: string;
-    jobName: string;
-    taskType: number;
-    jobId: number;
-    taskBatchStatus: number;
-    createdDate: string; // 可进一步优化为 Date 类型
-    updatedDate: string; // 可进一步优化为 Date 类型
-    operationReason: number;
-    executorType: number;
-    executorInfo: string;
-}
-
-export interface JobBatchSearchParams {
-  groupName: string;
-  jobName: string;
-  taskBatchStatuses: string[];
-  createdDateStart: string;
-  createdDateEnd: string;
-  pageNo: number;
-  pageSize: number;
-  sort: string;
-}
+import type { JobBatch, JobBatchSearchParams } from '@/types/job';
 
 /** get Job page */
 export function getJobBatchPage(params?: JobBatchSearchParams) {

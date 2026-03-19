@@ -3,7 +3,7 @@ import { ref, watch } from 'vue';
 import type { FormInstance } from 'ant-design-vue';
 import { Tag, Tooltip, message } from 'ant-design-vue';
 import { failStrategyOptions, taskTypeRecord, workFlowNodeStatusOptions } from '@/constants/business';
-import type { Job } from '@/api/job/job';
+import type { Job } from '@/types/job';
 import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';

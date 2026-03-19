@@ -1,24 +1,17 @@
 import { authRequest as request } from '@/utils/request';
-
-export interface OAuthLoginParams {
-  provider: 'github' | 'google' | 'wechat' | 'qq';
-  code?: string; // OAuth 授权码
-  state?: string; // 状态参数，用于防止 CSRF 攻击
-}
-
-export interface OAuthCallbackResult {
-  token: string;
-  userInfo: any;
-  menus: any[];
-  needBind: boolean; // 是否需要绑定账号
-}
+import type {
+  OAuthProvider,
+  OAuthLoginParams,
+  OAuthCallbackResult,
+  OAuthUrlResponse,
+} from '@/types/auth';
 
 /**
  * 获取第三方登录授权 URL
  * @param provider 第三方平台类型
  * @returns 授权 URL
  */
-export function getOAuthUrl(provider: 'github' | 'google' | 'wechat' | 'qq'): Promise<{ url: string; state: string }> {
+export function getOAuthUrl(provider: OAuthProvider): Promise<OAuthUrlResponse> {
   return request.get(`/api/v1/auth/oauth/${provider}/url`);
 }
 
@@ -41,7 +34,7 @@ export function oauthCallback(params: OAuthLoginParams): Promise<OAuthCallbackRe
  * @param password 密码
  */
 export function bindOAuthAccount(
-  provider: 'github' | 'google' | 'wechat' | 'qq',
+  provider: OAuthProvider,
   username: string,
   password: string
 ): Promise<OAuthCallbackResult> {

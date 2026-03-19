@@ -92,7 +92,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { BellOutlined, DeleteOutlined } from '@ant-design/icons-vue'
-import { getNoticeByStatus, markAllNoticeAsRead, clearNotice, type Notice } from '@/api/auth/notice'
+import { getNoticeByStatus, markAllNoticeAsRead, clearNotice } from '@/api/auth/notice'
+import type { Notice } from '@/types/auth'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'

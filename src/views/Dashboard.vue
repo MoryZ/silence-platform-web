@@ -129,7 +129,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import { ls } from '@/utils/stoarge'
 import { RECENT_VISITED_PRODUCTS } from '@/utils/constant'
-import { getStatistics, Statistics } from '@/api/auth/dashboard'
+import { getStatistics } from '@/api/auth/dashboard'
+import type { Statistics } from '@/types/auth'
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
 

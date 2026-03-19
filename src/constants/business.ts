@@ -13,16 +13,6 @@ export const enableStatusNumberRecord: Record<number, string> = {
 
 export const enableStatusNumberOptions = transformRecordToNumberOption(enableStatusNumberRecord, true);
 
-export const roleTypeRecord: Record<number, string> = {
-  1: 'R_USER',
-  2: 'R_ADMIN'
-};
-
-export const podsType: Record<number, string> = {
-  1: 'page.pods.type.client',
-  2: 'page.pods.type.server'
-};
-
 export const alarmTypeRecord: Record<number, string> = {
   1: 'page.notifyRecipient.dingDing',
   2: 'page.notifyRecipient.email',
@@ -76,12 +66,6 @@ export const groupConfigStatusRecord: Record<number, string> = {
   1: 'common.status.enable'
 };
 export const groupConfigStatusOptions = transformRecordToNumberOption(groupConfigStatusRecord, true);
-
-export const groupConfigIdModeRecord: Record<number, string> = {
-  1: 'page.groupConfig.idMode.segment',
-  2: 'page.groupConfig.idMode.idWorker'
-};
-export const groupConfigIdModeOptions = transformRecordToNumberOption(groupConfigIdModeRecord);
 
 export const groupConfigYesOrNoRecord: Record<number, string> = {
   0: 'common.yesOrNo.no',

@@ -1,6 +1,6 @@
-import { Message, MessageQuery, MessagePageResult, MessageTrace, MessageTraceQuery } from '@/types/mq/message';
+import type { Message, MessageQuery, MessagePageResult, MessageTrace, MessageTraceQuery, MessageView, MessageViewResult } from '@/types/mq/message';
 import { mqRequest as request } from '@/utils/request';
-import { PaginationResult } from '@/types/mq/api';
+import type { PaginationResult } from '@/types/mq/api';
 
 
 // 查询消息
@@ -10,14 +10,8 @@ export const queryMessages = async (
   return await request.get('/api/v1/message/queryMessagePageByTopic', { params })
 }
 
-export interface MessageView {
-  messageTrackList: []
-  messageView: Message
-
-}
-
 // 根据messageId 和 topic查看消息详情
-export const viewMessage = async (messageId: string, topic?: string): Promise<MessageView> => {
+export const viewMessage = async (messageId: string, topic?: string): Promise<MessageViewResult> => {
   return await request.get('/api/v1/message/viewMessage?msgId=' + messageId + '&topic=' + topic)
 }
 

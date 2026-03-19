@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
-import { createJob, getJobPage, Job, triggerJob, updateJob, deleteJob, importJob, exportJob } from '@/api/job/job';
+import { createJob, getJobPage, triggerJob, updateJob, deleteJob, importJob, exportJob } from '@/api/job/job';
+import type { Job } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import { fetchSystemUser } from '@/api/job/systemUser';
 import SearchPanel from '@/components/SearchPanel.vue';

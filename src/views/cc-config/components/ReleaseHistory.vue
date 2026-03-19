@@ -118,8 +118,8 @@ import monaco from '../../../utils/monaco';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { getConfigItemReleaseHistories, type ConfigItemReleaseHistory } from '../../../api/config/configItemReleaseHistory';
-import type { ConfigItem } from '../../../api/config/configItem';
+import { getConfigItemReleaseHistories } from '../../../api/config/configItemReleaseHistory';
+import type { ConfigItem, ConfigItemReleaseHistory } from '@/types/config';
 
 // 扩展 dayjs 插件
 dayjs.extend(utc);

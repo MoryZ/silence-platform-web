@@ -129,8 +129,7 @@ import ConfigDiffModal from './modals/ConfigDiffModal.vue';
 import { useConfigOperations } from './composables/useConfigOperations';
 import { STATUS_MAP, FORMAT_MAP, TYPE_MAP, TABLE_COLUMNS } from './constants/configConstants';
 import { getConfigItemById, getConfigItemList } from '@/api/config/configItem';
-import type { ConfigItem } from '@/api/config/configItem';
-import type { ConfigEnvironment } from '@/api/config/configEnvironment';
+import type { ConfigItem, ConfigEnvironment } from '@/types/config';
 
 interface Props {
   dataSource: ConfigItem[];

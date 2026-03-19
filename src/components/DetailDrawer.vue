@@ -126,7 +126,7 @@ const rows = computed(() => {
 </script>
 
 <style scoped>
-.detail-drawer >>> .ant-drawer-body {
+.detail-drawer :deep(.ant-drawer-body) {
   padding: 24px 32px 24px 32px;
 }
 

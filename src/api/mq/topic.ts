@@ -1,114 +1,19 @@
 import { mqRequest as request } from '@/utils/request';
-
-export interface TopicType {
-  messageTypeList: string[]
-  topicNameList: string[]
-}
-
-export interface TopicConfig {
-  topicName: string
-  readQueueNums: number
-  writeQueueNums: number
-  perm: number
-  order: boolean
-  unit: boolean
-  hasUnitSubscription: boolean
-  brokerNameList: string[]
-  clusterNameList: string[]
-}
-
-export interface TopicStats {
-  offsetTable: Record<string, object>
-}
-
-export interface TopicRouteData {
-  orderTopicConf: string
-  queueData: {
-    brokerName: string
-    readQueueNums: number
-    writeQueueNums: number
-    perm: number
-    topicSynFlag: number
-  }[]
-  brokerDatas: {
-    cluster: string
-    brokerName: string
-    brokerAddrs: Record<number, string>
-    zoneName: string
-    enableActingMaster: boolean
-  }[]
-  filterServerTable: Record<string, string[]>
-  topicQueueMappingByBroker: Record<string, object>
-}
-
-export interface CreateTopicRequest {
-  topicName: string
-  readQueueNums: number
-  writeQueueNums: number
-  perm: number
-  order: boolean
-  unit: boolean
-  hasUnitSubscription: boolean
-  brokerNameList: string[]
-  clusterNameList: string[]
-}
-
-export interface UpdateTopicRequest {
-  brokerNameList: string[]
-  clusterNameList: string[]
-  messageType: string
-  topicName: string
-  readQueueNums: number
-  writeQueueNums: number
-  perm: number
-  order: boolean
-  unit: boolean
-  hasUnitSubscription: boolean
-}
-
-export interface TopicConsumerInfo {
-  topic: string
-  diffTotal: number
-  lastTimestamp: number
-  queueStatInfoList: QueueStatInfo[]
-}
-
-export interface QueueStatInfo {
-  brokerName: string
-  queueId: number
-  brokerOffset: number
-  consumerOffset: number
-  clientInfo: string
-  lastTimestamp: number
-}
-
-export interface TopicConfigInfo {
-  clusterNameList: string[]
-  brokerNameList: string[]
-  topicName: string
-  writeQueueNums: number
-  readQueueNums: number
-  perm: number
-  order: boolean
-  messageType: string
-}
-
-export interface MessageRequest {
-  topic: string
-  tag: string
-  key: string
-  messageBody: string
-  traceEnabled: boolean
-}
-
-export interface GroupList {
-  groupList: string[]
-}
-
-export interface TopicInfo {
-  topicList: string[]
-  brokerAddr: string
-}
+import type {
+  TopicType,
+  TopicConfig,
+  TopicStats,
+  TopicRouteData,
+  CreateTopicRequest,
+  UpdateTopicRequest,
+  TopicConsumerInfo,
+  QueueStatInfo,
+  TopicConfigInfo,
+  MessageRequest,
+  GroupList,
+  TopicInfo,
+  SendResult
+} from '@/types/mq/topicApi';
 // 刷新Topic列表
 export const refreshTopic = async (): Promise<boolean> => {
   return await request.post('/api/v1/topics/refresh')
@@ -186,7 +91,7 @@ export const examineTopicConfig = async (
 }
 
 //发送消息
-export const sendMessage = async (params: MessageRequest): Promise<any> => {
+export const sendMessage = async (params: MessageRequest): Promise<SendResult> => {
   return await request.post('/api/v1/topics/send', params)
 }
 

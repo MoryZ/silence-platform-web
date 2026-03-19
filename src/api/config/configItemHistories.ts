@@ -1,28 +1,8 @@
 import { configRequest as request } from '@/utils/request';
-import type { AxiosResponse } from 'axios';
-
-export interface ConfigItemHistory {
-  id: number;
-  configEnvironmentId: number;
-  configItemId: number;
-  oldContent: string;
-  content: string;
-  md5: string;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-  operationType: number;
-}
-
-export interface ConfigItemHistoryResponse {
-  data: ConfigItemHistory[];
-  total: number;
-}
-
-export interface ConfigItemHistoryParams {
-  configItemId: number;
-}
+import type {
+  ConfigItemHistory,
+  ConfigItemHistoryParams,
+} from '@/types/config';
 
 /**
  * 获取配置项列表

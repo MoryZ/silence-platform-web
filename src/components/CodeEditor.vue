@@ -83,7 +83,7 @@ import monaco from '../utils/monaco';
 import { ClockCircleOutlined } from '@ant-design/icons-vue';
 import moment from 'moment';
 
-import { ConfigItemHistory } from '@/api/config/configItemHistories';
+import type { ConfigItemHistory } from '@/types/config';
 
 const props = defineProps({
   open: {

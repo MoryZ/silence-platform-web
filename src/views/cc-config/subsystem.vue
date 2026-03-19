@@ -165,16 +165,14 @@ import {
   createConfigSubsystem,
   updateConfigSubsystem,
   deleteConfigSubsystem,
-  type ConfigSubsystem,
-  type ConfigSubsystemParams,
 } from '../../api/config/configSubsystem';
 import {
   getConfigComponents,
   createConfigComponent,
   updateConfigComponent,
   deleteConfigComponent,
-  type ConfigComponent,
 } from '../../api/config/configComponent';
+import type { ConfigSubsystem, ConfigSubsystemParams, ConfigComponent } from '@/types/config';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import SearchPanel from '../../components/SearchPanel.vue';

@@ -115,7 +115,7 @@ import { useConfigStore } from '@/stores/config';
 import { useEnvStore } from '@/stores/env';
 import { useEnvironmentManagement } from './composables/useEnvironmentManagement';
 import { useConfigData } from './composables/useConfigData';
-import type { ConfigItem } from '@/api/config/configItem';
+import type { ConfigItem } from '@/types/config';
 
 // 获取 store 实例
 const configStore = useConfigStore();
@@ -321,5 +321,5 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@import './styles/center.scss';
+@use './styles/center.scss';
 </style>

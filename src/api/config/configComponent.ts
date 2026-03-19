@@ -1,22 +1,5 @@
 import { configRequest as request } from '@/utils/request';
-import type { AxiosResponse } from 'axios';
-
-export interface ConfigComponent {
-  id: number;
-  name: string;
-  code: string;
-  description: string;
-  subsystemId: number;
-  status: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdDate: string;
-  updatedDate: string;
-}
-
-export interface ConfigComponentParams {
-  subsystemId?: number;
-}
+import type { ConfigComponent, ConfigComponentParams } from '@/types/config';
 
 /**
  * 获取组件列表

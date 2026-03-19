@@ -1,25 +1,5 @@
 import { mqRequest as request } from '@/utils/request';
-
-export interface TopicData {
-  topic: string
-  messageCount: number
-  tps: number
-}
-
-export interface BrokerData {
-  brokerAddr: string
-  messageCount: number
-  tps: number
-  cpuUsage: number
-  memoryUsage: number
-  diskUsage: number
-}
-
-export interface ClusterData {
-  clusterName: string
-  brokerCount: number
-  topicCount: number
-}
+import type { TopicData, BrokerData, ClusterData } from '@/types/mq/remoteApi';
 
 export const queryTopic = async (): Promise<TopicData[]> => {
   return await request.get('/api/v1/topic/list')
