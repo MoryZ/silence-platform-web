@@ -52,6 +52,7 @@ const cachedViews = computed(() => {
   const extractComponentNames = (menuItems: any[]) => {
     let names: string[] = []
     menuItems.forEach(item => {
+      if (Number(item?.type) === 3) return
       if (item.path) {
         const derivedName = item.name || item.path.replace(/^\//, '').replace(/\//g, '-')
         names.push(derivedName)
@@ -124,6 +125,9 @@ function filterMenusByPermission(menus: any[]): any[] {
   if (!Array.isArray(menus)) return []
   
   return menus.map(menu => {
+    // type=3 表示“按钮”，不应作为左侧导航菜单渲染
+    if (Number(menu?.type) === 3) return null
+
     // 如果是超管，显示所有菜单（包括子菜单）
     if (isSuperAdmin()) {
       if (menu.children && menu.children.length > 0) {

@@ -280,11 +280,6 @@ const columns = [
     key: 'username',
   },
   {
-    title: '角色',
-    dataIndex: 'roles',
-    key: 'roles',
-  },
-  {
     title: '昵称',
     dataIndex: 'nickname',
     key: 'nickname',
@@ -387,8 +382,7 @@ const rules = {
       message: '请输入正确的手机号码格式', 
       trigger: 'blur' 
     }
-  ],
-  roleIds: [{ required: true, message: '请选择角色', type: 'array', trigger: 'change' }],
+  ]
 };
 
 // 角色选项

@@ -73,6 +73,30 @@ const filteredMenuList = computed(() => {
     if (!props.menuList || props.menuList.length === 0) {
       return [];
     }
+
+    // type=3 表示“按钮”，不应渲染到左侧导航
+    const stripButtonNodes = (menus: any[]): any[] => {
+      if (!Array.isArray(menus)) return []
+      return menus
+        .map(menu => {
+          if (!menu) return null
+          if (Number(menu.type) === 3) return null
+
+          const next: any = { ...menu }
+          if (Array.isArray(next.children) && next.children.length > 0) {
+            const filteredChildren = stripButtonNodes(next.children)
+            if (filteredChildren.length > 0) {
+              next.children = filteredChildren
+            } else {
+              delete next.children
+            }
+          } else {
+            delete next.children
+          }
+          return next
+        })
+        .filter(Boolean)
+    }
     
     // 递归去重函数，处理嵌套菜单
     const deduplicateMenus = (menus: any[]): any[] => {
@@ -102,7 +126,8 @@ const filteredMenuList = computed(() => {
       return result;
     };
     
-    const result = deduplicateMenus(props.menuList);
+    const cleanedMenus = stripButtonNodes(props.menuList)
+    const result = deduplicateMenus(cleanedMenus);
     return result;
   } catch (error) {
     menuError.value = true;
@@ -162,6 +187,7 @@ function getOpenKeysByPath(path: string) {
 
   const dfs = (menus: any[], ancestors: string[]) => {
     for (const menu of menus) {
+      if (Number(menu?.type) === 3) continue
       if (!menu || !menu.path) continue;
       const newAncestors = [...ancestors, menu.path];
       if (pathMatches(menu.path, path)) {
@@ -191,6 +217,7 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
   const getTopLevelMenu = (path: string): string | null => {
     // 首先检查是否是顶级菜单本身
     for (const menu of storedMenus) {
+      if (Number(menu?.type) === 3) continue
       if (menu.path && path === menu.path) {
         return menu.path;
       }
@@ -198,8 +225,10 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
     
     // 然后检查是否是顶级菜单的子项
     for (const menu of storedMenus) {
+      if (Number(menu?.type) === 3) continue
       if (menu.children) {
         for (const child of menu.children) {
+          if (Number(child?.type) === 3) continue
           if (child.path && path.startsWith(child.path)) {
             return menu.path || null;
           }
@@ -209,12 +238,14 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
     
     // 最后检查是否是嵌套路径（但只匹配有子菜单的顶级菜单）
     for (const menu of storedMenus) {
+      if (Number(menu?.type) === 3) continue
       if (menu.path && menu.children && path.startsWith(menu.path + '/')) {
         // 确保这个路径不是其他顶级菜单的直接子项
         let isDirectChild = false;
         for (const otherMenu of storedMenus) {
           if (otherMenu.children) {
             for (const child of otherMenu.children) {
+              if (Number(child?.type) === 3) continue
               if (child.path && path.startsWith(child.path)) {
                 isDirectChild = true;
                 break;

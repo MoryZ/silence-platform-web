@@ -328,6 +328,9 @@ export async function addDynamicRoutes(menus: MenuItem[], force: boolean = false
 function transformRoutes(routes: any[], parentPath: string = ''): RouteRecordRaw[] {
   return routes
     .filter(route => {
+      // type=3 表示“按钮”，不应生成可访问的路由
+      if (Number(route?.type) === 3) return false
+
       // 过滤掉路径为空的路由
       if (!route.path) {
         return false;
