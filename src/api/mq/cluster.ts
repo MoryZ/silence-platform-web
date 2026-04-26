@@ -3,7 +3,60 @@ import type { ClusterInfo, BrokerDetail, ClusterData, BrokerConfig } from '@/typ
 
 // 获取集群列表及详细信息
 export const queryClusterList = async (): Promise<ClusterData> => {
-  return await request.get('/api/v1/cluster/list')
+  const response = await request.get('/api/v1/clusters') as any
+
+  const root = response && typeof response === 'object' ? response : {}
+  const source = root?.clusterInfo && typeof root.clusterInfo === 'object' ? root.clusterInfo : root
+
+  const clusterAddrTable = source?.clusterAddrTable && typeof source.clusterAddrTable === 'object'
+    ? source.clusterAddrTable
+    : {}
+  const brokerAddrTable = source?.brokerAddrTable && typeof source.brokerAddrTable === 'object'
+    ? source.brokerAddrTable
+    : {}
+
+  const brokerServer = root?.brokerServer && typeof root.brokerServer === 'object'
+    ? root.brokerServer
+    : Object.fromEntries(
+        Object.entries(brokerAddrTable).map(([brokerName, brokerInfo]: [string, any]) => {
+          const brokerAddrs = brokerInfo?.brokerAddrs && typeof brokerInfo.brokerAddrs === 'object'
+            ? brokerInfo.brokerAddrs
+            : {}
+          const nodes = Object.fromEntries(
+            Object.keys(brokerAddrs).map((id) => [
+              id,
+              {
+                brokerVersionDesc: '-',
+                putTps: '0 0 0',
+                getTotalTps: '0 0 0',
+                msgPutTotalYesterdayMorning: '0',
+                msgGetTotalYesterdayMorning: '0',
+                msgPutTotalTodayNow: '0',
+                msgGetTotalTodayNow: '0'
+              }
+            ])
+          )
+          return [brokerName, nodes]
+        })
+      )
+
+  const messageTypes = root?.messageTypes && typeof root.messageTypes === 'object'
+    ? root.messageTypes
+    : {
+        NORMAL: 'NORMAL',
+        FIFO: 'FIFO',
+        DELAY: 'DELAY',
+        TRANSACTION: 'TRANSACTION'
+      }
+
+  return {
+    clusterInfo: {
+      clusterAddrTable,
+      brokerAddrTable
+    },
+    brokerServer,
+    messageTypes
+  }
 }
 
 // 获取Broker配置信息

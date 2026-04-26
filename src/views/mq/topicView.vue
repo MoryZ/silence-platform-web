@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { message, Modal, DatePicker } from 'ant-design-vue'
 import {
-  queryTopicTypeList,
+  queryTopicList,
   queryTopicStats,
   queryTopicRoute,
   queryTopicConsumers,
@@ -188,12 +188,10 @@ const filteredTopics = computed(() => {
   })
 })
 
-const paginatedTopics = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredTopics.value.slice(start, end).map((topic, idx) => ({
+const displayTopics = computed(() => {
+  return filteredTopics.value.map((topic, idx) => ({
     ...topic,
-    topicType: getTopicType(start + idx)
+    topicType: getTopicType(idx)
   }))
 })
 
@@ -201,34 +199,59 @@ const paginatedTopics = computed(() => {
 const loadTopicList = async () => {
   loading.value = true
   try {
-    refreshTopic()
-    const response = await queryTopicTypeList()
+    const response = await queryTopicList({
+      pageNo: currentPage.value,
+      pageSize: pageSize.value,
+      topicName: filterStr.value?.trim() || undefined
+    })
     if (response) {
-      const data = response
+      const raw = response as any
+      const payload = raw && typeof raw === 'object' ? raw : {}
+      const nested = payload?.data
+      const data = nested && typeof nested === 'object' && !Array.isArray(nested) ? nested : payload
+
+      const topicRows: any[] = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.topicList)
+            ? data.topicList
+            : Array.isArray(data?.topicNameList)
+              ? data.topicNameList
+              : []
+
+      const topicNameList: string[] = topicRows
+        .map((item: any) => (typeof item === 'string' ? item : (item?.topicName || item?.topic || '')))
+        .filter(Boolean)
+
+      const messageTypeList: string[] = topicRows
+        .map((item: any) => (typeof item === 'object' ? (item?.messageType || 'NORMAL') : 'NORMAL'))
       
       // Extract topic list and message types
-      if (data.topicNameList && data.messageTypeList) {
-        topics.value = data.topicNameList.map((topicName: string, index: number) => {
+      if (topicNameList.length > 0) {
+        topics.value = topicRows.map((item: any, index: number) => {
+          const topicName = typeof item === 'string' ? item : (item?.topicName || item?.topic || '')
           return {
             topic: topicName, // Keep original topic field for compatibility
             topicName: topicName, // Add topicName field
-            readQueueNums: 4,  // Default values until we get specific topic config
-            writeQueueNums: 4,
-            perm: 6,
-            order: data.messageTypeList[index] === 'FIFO',
+            readQueueNums: typeof item === 'object' ? (item?.readQueueNums ?? 4) : 4,
+            writeQueueNums: typeof item === 'object' ? (item?.writeQueueNums ?? 4) : 4,
+            perm: typeof item === 'object' ? (item?.perm ?? 6) : 6,
+            order: messageTypeList[index] === 'FIFO',
             unit: false,
             hasUnitSubscription: false,
             brokerNameList: [],
             clusterNameList: [],
-            messageType: data.messageTypeList[index]
+            messageType: messageTypeList[index] || 'NORMAL'
           }
         })
         
-        messageTypes.value = data.messageTypeList
-        totalCount.value = topics.value.length
+        messageTypes.value = messageTypeList
+        totalCount.value = Number(payload?.total ?? payload?.totalCount ?? data?.total ?? data?.totalCount ?? topicNameList.length)
       } else {
-        console.error('API response format unexpected:', data)
-        message.error('获取Topic列表格式不正确')
+        topics.value = []
+        messageTypes.value = []
+        totalCount.value = Number(payload?.total ?? payload?.totalCount ?? data?.total ?? data?.totalCount ?? 0)
       }
     } else {
       console.error('API response is empty')
@@ -242,8 +265,11 @@ const loadTopicList = async () => {
   }
 }
 
-const handlePageChange = (page: number) => {
+const handlePageChange = (page: number, size?: number) => {
   currentPage.value = page
+  if (size) {
+    pageSize.value = size
+  }
   loadTopicList()
 }
 
@@ -776,6 +802,11 @@ const getRowKey = (record: { topicName: string }) => record.topicName;
 const getConsumerRowKey = (record: { groupName?: string; id?: string }) => record.groupName || record.id || Math.random().toString();
 
 onMounted(async () => {
+  try {
+    await refreshTopic()
+  } catch (error) {
+    console.error('刷新Topic缓存失败:', error)
+  }
   loadTopicList()
 })
 </script>
@@ -845,7 +876,7 @@ onMounted(async () => {
       </div>
 
       <a-table 
-        :dataSource="paginatedTopics" 
+        :dataSource="displayTopics" 
         :columns="[
           { title: '主题', dataIndex: 'topicName', key: 'topicName', width:100 },
           { title: '操作', key: 'action', width: 500 }
@@ -915,8 +946,10 @@ onMounted(async () => {
       <div class="pagination-container">
         <a-pagination
           v-model:current="currentPage"
-          :pageSize="pageSize"
+          v-model:pageSize="pageSize"
           :total="totalCount"
+          show-size-changer
+          :page-size-options="['10', '20', '40']"
           :showTotal="(total: number, range: number[]) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`"
           @change="handlePageChange"
         />

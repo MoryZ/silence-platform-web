@@ -20,16 +20,45 @@ export const refreshTopic = async (): Promise<boolean> => {
 }
 
 // 获取Topic类型列表
-export const queryTopicTypeList = async (): Promise<TopicType> => {
-  return await request.get('/api/v1/topics/topicType')
+export const queryTopicTypeList = async (params?: {
+  pageNo?: number
+  pageSize?: number
+  topicName?: string
+}): Promise<TopicType> => {
+  return await request.get('/api/v1/topics/topicType', {
+    params
+  })
 }
 
 
 // 获取Topic列表
-export const queryTopicList = async (skipSysProcess?: boolean, skipRetryAndDlq?: boolean): Promise<TopicInfo> => {
-  return await request.get('/api/v1/topics', {
-    params: { skipSysProcess, skipRetryAndDlq}
-  })
+export const queryTopicList = async (
+  paramsOrSkipSysProcess?: {
+    skipSysProcess?: boolean
+    skipRetryAndDlq?: boolean
+    pageNo?: number
+    pageSize?: number
+    topicName?: string
+  } | boolean,
+  skipRetryAndDlq?: boolean
+): Promise<TopicInfo> => {
+  const params = typeof paramsOrSkipSysProcess === 'object'
+    ? paramsOrSkipSysProcess
+    : {
+        skipSysProcess: paramsOrSkipSysProcess,
+        skipRetryAndDlq
+      }
+
+  const query = new URLSearchParams()
+  if (typeof params.pageNo === 'number') query.append('pageNo', String(params.pageNo))
+  if (typeof params.pageSize === 'number') query.append('pageSize', String(params.pageSize))
+  if (typeof params.topicName === 'string' && params.topicName.trim()) query.append('topicName', params.topicName.trim())
+  if (typeof params.skipSysProcess === 'boolean') query.append('skipSysProcess', String(params.skipSysProcess))
+  if (typeof params.skipRetryAndDlq === 'boolean') query.append('skipRetryAndDlq', String(params.skipRetryAndDlq))
+
+  const url = query.toString() ? `/api/v1/topics?${query.toString()}` : '/api/v1/topics'
+
+  return await request.get(url)
 }
 
 // 获取Topic统计信息

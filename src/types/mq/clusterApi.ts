@@ -1,6 +1,12 @@
 export interface ClusterInfo {
   clusterAddrTable: Record<string, string[]>;
-  brokerAddrTable: Record<string, Record<number, string>>;
+  brokerAddrTable: Record<string, {
+    cluster: string;
+    brokerName: string;
+    brokerAddrs: Record<string, string>;
+    enableActingMaster?: boolean;
+    zoneName?: string;
+  }>;
 }
 
 export interface BrokerDetail {

@@ -1,6 +1,16 @@
 export interface TopicType {
-  messageTypeList: string[];
-  topicNameList: string[];
+  messageTypeList?: string[];
+  topicNameList?: string[];
+  topicList?: Array<string | { topicName?: string; topic?: string; messageType?: string }>;
+  total?: number;
+  totalCount?: number;
+  data?: {
+    messageTypeList?: string[];
+    topicNameList?: string[];
+    topicList?: Array<string | { topicName?: string; topic?: string; messageType?: string }>;
+    total?: number;
+    totalCount?: number;
+  };
 }
 
 export interface TopicConfig {
@@ -104,8 +114,16 @@ export interface GroupList {
 }
 
 export interface TopicInfo {
-  topicList: string[];
-  brokerAddr: string;
+  topicList?: Array<string | { topicName?: string; topic?: string; messageType?: string }>;
+  brokerAddr?: string;
+  total?: number;
+  totalCount?: number;
+  data?: {
+    topicList?: Array<string | { topicName?: string; topic?: string; messageType?: string }>;
+    total?: number;
+    totalCount?: number;
+    brokerAddr?: string;
+  };
 }
 
 export interface ResetOffsetConfig {
