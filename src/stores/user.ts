@@ -4,7 +4,9 @@ import { addDynamicRoutes } from "@/router";
 import {
   login as apiLogin,
   logout as apiLogout,
+  getUserInfo as fetchUserInfo,
 } from "@/api/auth/user";
+import { getCurrentUserMenus } from "@/api/auth/menu";
 import type { UserInfo, LoginParams } from '@/types/auth';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -41,44 +43,94 @@ export const useUserStore = defineStore("user", () => {
     userInfo.value = info;
     ls.set(USER_INFO, info);
   };
+
+  const extractPermissionsFromMenus = (menus: any[]): string[] => {
+    const permissions = new Set<string>();
+
+    const walk = (nodes: any[]) => {
+      if (!Array.isArray(nodes)) {
+        return;
+      }
+
+      nodes.forEach((node) => {
+        const permission = node?.meta?.permission;
+        if (typeof permission === 'string' && permission.trim()) {
+          permissions.add(permission.trim());
+        }
+
+        if (Array.isArray(node?.children) && node.children.length > 0) {
+          walk(node.children);
+        }
+      });
+    };
+
+    walk(menus);
+    return Array.from(permissions);
+  };
+
+  const extractRolesFromUserInfo = (info: any): string[] => {
+    const roles = new Set<string>();
+
+    if (Array.isArray(info?.roles)) {
+      info.roles.forEach((role: unknown) => {
+        if (typeof role === 'string' && role.trim()) {
+          roles.add(role.trim());
+        }
+      });
+    }
+
+    if (Array.isArray(info?.userRoles)) {
+      info.userRoles.forEach((userRole: any) => {
+        const code = userRole?.role?.code;
+        if (typeof code === 'string' && code.trim()) {
+          roles.add(code.trim());
+        }
+      });
+    }
+
+    return Array.from(roles);
+  };
+
+  async function bootstrapUserContext() {
+    const [currentUserInfo, menus] = await Promise.all([
+      fetchUserInfo(),
+      getCurrentUserMenus(),
+    ]);
+
+    const roles = extractRolesFromUserInfo(currentUserInfo);
+    const permissions = extractPermissionsFromMenus(menus as any[]);
+    const permissionStore = usePermissionStore();
+    permissionStore.setPermissions(permissions);
+
+    setUserInfo({
+      ...currentUserInfo,
+      roles,
+      permissions,
+    });
+
+    if (Array.isArray(menus) && menus.length > 0) {
+      const menuItems = menus as unknown as MenuItem[];
+      ls.set(MENUS, menuItems);
+      await addDynamicRoutes(menuItems, true);
+      return { hasMenus: true };
+    }
+
+    ls.remove(MENUS);
+    return { hasMenus: false };
+  }
   
   // 登录
   async function handleLogin(loginParams: LoginParams) {
     try {
       const data = await apiLogin(loginParams);
-      const { token, userInfo, menus } = data;
+      const { token } = data;
       
       // 设置token
       setToken(token);
-      
-      // 设置用户信息
-      setUserInfo(userInfo);
 
-      // 保存菜单数据
-      if (Array.isArray(menus) && menus.length > 0) {
-        ls.set(MENUS, menus);
-        
-        // 设置权限
-        const permissionStore = usePermissionStore();
-        // 优先从 userInfo.permissions 中获取权限
-        if (userInfo.permissions && userInfo.permissions.length > 0) {
-          permissionStore.setPermissions(userInfo.permissions);
-          console.log('权限已从 userInfo 设置:', userInfo.permissions);
-        } else {
-          // 备用方案：从菜单树中提取权限
-          permissionStore.extractPermissions({ menus });
-          console.log('权限已从菜单树提取:', permissionStore.permissions);
-        }
-        
-        // 设置菜单和路由，强制重新添加
-        await addDynamicRoutes(menus, true);
-      } else {
-        console.log('没有菜单数据');
-        // 清空之前的菜单数据
-        ls.remove(MENUS);
-      }
+      const { hasMenus } = await bootstrapUserContext();
       
-      return { success: true, hasMenus: Array.isArray(menus) && menus.length > 0 };
+      return { success: true, hasMenus };
     } catch (error) {
       console.error('Login failed:', error);
       return false;
@@ -128,6 +180,7 @@ export const useUserStore = defineStore("user", () => {
     getUserData,
     setToken,
     setUserInfo,
+    bootstrapUserContext,
     handleLogin,
     getUserInfo,
     getMenus,

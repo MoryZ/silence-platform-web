@@ -3,7 +3,7 @@
     <a-card v-permission="MENU_PERMISSIONS.PAGE" title="菜单管理" :bordered="false">
       <template #extra>
         <a-button 
-          v-permission="'system:menu:add'"
+          v-permission="MENU_PERMISSIONS.ADD"
           type="primary" 
           @click="handleAdd"
         > 
@@ -58,10 +58,19 @@
 
           <template v-if="column.key === 'action'">
             <a-space>
-              <a v-permission="'system:menu:add'" @click="handleAdd(record)">新增</a>
-              <a v-permission="'system:menu:edit'" @click="handleEdit(record)">编辑</a>
+              <a v-permission="MENU_PERMISSIONS.ADD" @click="handleAdd(record)">新增</a>
+              <a v-permission="MENU_PERMISSIONS.EDIT" @click="handleEdit(record)">编辑</a>
+              <a-divider v-if="hasMenuStatusPermission()" type="vertical" />
+              <a-switch
+                v-if="hasMenuStatusPermission()"
+                :checked="record.status === true"
+                :loading="toggleLoading[record.id]"
+                size="small"
+                @change="(checked: boolean) => handleToggleStatus(record, checked)"
+              />
+              <a-divider v-if="hasMenuStatusPermission()" type="vertical" />
               <a-popconfirm title="确定要删除这个菜单吗？" @confirm="handleDelete(record)">
-                <a v-permission="'system:menu:delete'" class="danger-text">删除</a>
+                <a v-permission="MENU_PERMISSIONS.DELETE" class="danger-text">删除</a>
               </a-popconfirm>
             </a-space>
           </template>
@@ -235,8 +244,9 @@ import * as Icons from '@ant-design/icons-vue'
 import SearchPanel from '@/components/SearchPanel.vue'
 import CommonPagination from '@/components/CommonPagination.vue'
 import { MENU_PERMISSIONS } from '@/utils/permissionConstants'
+import { hasPermission } from '@/utils/permissionCheck'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue'
-import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/auth/menu'
+import { getMenuList, addMenu, updateMenu, deleteMenu, enableMenu, disableMenu } from '@/api/auth/menu'
 import type { Menu } from '@/types/auth'
 import { ls } from '@/utils/stoarge'
 import { MENUS } from '@/utils/constant'
@@ -305,6 +315,16 @@ const tableData = ref<Menu[]>([])
 const modalVisible = ref(false)
 const formRef = ref<FormInstance>()
 const currentRecord = ref<Menu | null>(null)
+const toggleLoading = ref<Record<number, boolean>>({})
+const hasMenuStatusPermission = () => hasPermission(MENU_PERMISSIONS.ENABLE) || hasPermission(MENU_PERMISSIONS.DISABLE)
+
+const ensurePermission = (permission: string, actionName: string) => {
+  if (!hasPermission(permission)) {
+    message.warning(`暂无${actionName}权限`)
+    return false
+  }
+  return true
+}
 
 // 搜索表单
 const searchForm = reactive({
@@ -671,6 +691,8 @@ function convertMenusToTree(menus: Menu[]): any[] {
 
 // 新增菜单
 function handleAdd(parent?: Menu) {
+  if (!ensurePermission(MENU_PERMISSIONS.ADD, '新增菜单')) return
+
   resetForm()
 
   if (parent) {
@@ -687,6 +709,8 @@ function handleAdd(parent?: Menu) {
 
 // 编辑菜单
 function handleEdit(record: Menu) {
+  if (!ensurePermission(MENU_PERMISSIONS.EDIT, '编辑菜单')) return
+
   resetForm()
   currentRecord.value = record
 
@@ -731,9 +755,37 @@ function handleEdit(record: Menu) {
   modalVisible.value = true
 }
 
+// 切换菜单状态
+async function handleToggleStatus(record: Menu, checked: boolean) {
+  const targetPermission = checked ? MENU_PERMISSIONS.ENABLE : MENU_PERMISSIONS.DISABLE
+  const actionName = checked ? '启用菜单' : '禁用菜单'
+  if (!ensurePermission(targetPermission, actionName)) return
+
+  toggleLoading.value[record.id] = true
+  try {
+    if (checked) {
+      await enableMenu(record.id)
+      message.success('启用成功')
+    } else {
+      await disableMenu(record.id)
+      message.success('禁用成功')
+    }
+    await fetchMenus()
+    await syncMenusToLocalStorage()
+  } catch (error) {
+    message.error(checked ? '启用失败' : '禁用失败')
+    // 恢复开关状态
+    await fetchMenus()
+  } finally {
+    toggleLoading.value[record.id] = false
+  }
+}
+
 // 删除菜单
 async function handleDelete(record: Menu) {
   try {
+    if (!ensurePermission(MENU_PERMISSIONS.DELETE, '删除菜单')) return
+
     await deleteMenu(record.id)
     message.success('删除成功')
     await fetchMenus()
@@ -747,6 +799,10 @@ async function handleDelete(record: Menu) {
 // 保存菜单
 async function handleModalOk() {
   try {
+    const targetPermission = formState.id ? MENU_PERMISSIONS.EDIT : MENU_PERMISSIONS.ADD
+    const actionName = formState.id ? '编辑菜单' : '新增菜单'
+    if (!ensurePermission(targetPermission, actionName)) return
+
     await formRef.value?.validate()
 
     // 构建菜单数据

@@ -6,10 +6,10 @@
         <h2 class="card-title">通知管理</h2>
         <div class="header-actions">
           <a-button 
-            v-permission="'system:notice:add'"
+            v-permission="NOTICE_PERMISSIONS.ADD"
             type="primary" 
             class="action-button" 
-            @click="showCreateModal = true"
+            @click="handleOpenCreateModal"
           >
             <plus-outlined />
             新增通知
@@ -39,7 +39,7 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
-              <a v-if="record.status === 0" @click="handleMarkAsRead(record)">标记已读</a>
+              <a v-if="record.status === 0" v-permission="NOTICE_PERMISSIONS.MARK_READ" @click="handleMarkAsRead(record)">标记已读</a>
               <span v-else style="color: #999;">已读</span>
             </template>
           </template>
@@ -105,6 +105,15 @@ import { getUserList } from '../../api/auth/user';
 import type { Notice, NoticeParams, User } from '@/types/auth';
 import dayjs from 'dayjs';
 import SearchPanel from '../../components/SearchPanel.vue';
+import { hasPermission } from '@/utils/permissionCheck';
+
+const ensurePermission = (permission: string, actionName: string) => {
+  if (!hasPermission(permission)) {
+    message.warning(`暂无${actionName}权限`);
+    return false;
+  }
+  return true;
+};
 
 // 搜索参数
 const searchParams = reactive({
@@ -298,8 +307,15 @@ const fetchUserList = async () => {
 };
 
 // 新增通知
+const handleOpenCreateModal = () => {
+  if (!ensurePermission(NOTICE_PERMISSIONS.ADD, '新增通知')) return;
+  showCreateModal.value = true;
+};
+
 const handleCreateNotice = async () => {
   try {
+    if (!ensurePermission(NOTICE_PERMISSIONS.ADD, '新增通知')) return;
+
     await createFormRef.value?.validate();
     createLoading.value = true;
     
@@ -343,6 +359,8 @@ watch(showCreateModal, (open) => {
 // 标记单个通知为已读
 const handleMarkAsRead = async (notice: Notice) => {
   try {
+    if (!ensurePermission(NOTICE_PERMISSIONS.MARK_READ, '标记已读')) return;
+
     await markNoticeAsRead(notice.id);
     message.success('标记已读成功');
     fetchNotifications();

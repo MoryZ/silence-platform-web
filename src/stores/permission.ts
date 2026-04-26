@@ -31,12 +31,15 @@ export const usePermissionStore = defineStore('permission', {
     // 从登录响应中提取权限
     extractPermissions(loginData: any) {
       const permissions: string[] = []
+      const visited = new Set<string>()
       
       // 递归遍历菜单树，提取所有按钮权限
       const extractFromMenu = (menus: any[]) => {
         menus.forEach(menu => {
-          if (menu.type === 'BUTTON' && menu.perms) {
-            permissions.push(menu.perms)
+          const permission = menu?.meta?.permission
+          if (typeof permission === 'string' && permission.trim() && !visited.has(permission.trim())) {
+            visited.add(permission.trim())
+            permissions.push(permission.trim())
           }
           if (menu.children) {
             extractFromMenu(menu.children)
@@ -44,7 +47,8 @@ export const usePermissionStore = defineStore('permission', {
         })
       }
       
-      extractFromMenu(loginData.menus || [])
+      const menus = Array.isArray(loginData) ? loginData : (loginData?.menus || [])
+      extractFromMenu(menus)
       this.setPermissions(permissions)
     },
     

@@ -4,7 +4,7 @@
       <template #title>角色管理</template>
       <template #extra>
         <a-button 
-          v-permission="'system:role:add'"
+          v-permission="ROLE_PERMISSIONS.ADD"
           type="primary" 
           @click="handleAdd"
         >
@@ -37,6 +37,7 @@
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'status'">
             <a-switch 
+              v-if="hasRoleStatusPermission()"
               :checked="text === true"
               :loading="toggleLoading[record.id]"
               @change="(checked: boolean) => handleToggleStatus(record, checked)"
@@ -46,18 +47,19 @@
                 borderColor: text === true ? '#1677ff' : '#d9d9d9'
               }"
             />
+            <span v-else>-</span>
           </template>
           <template v-else-if="column.key === 'createdDate'">
             {{ formatDate(text) }}
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a v-permission="'system:role:edit'" @click="handleEdit(record)">编辑</a>
-              <a-divider v-if="hasPermission('system:role:edit') && (hasPermission('system:role:setPermissions') || hasPermission('system:role:delete'))" type="vertical" />
-              <a v-permission="'system:role:setPermissions'" @click="handlePermission(record)">权限设置</a>
-              <a-divider v-if="hasPermission('system:role:setPermissions') && hasPermission('system:role:delete')" type="vertical" />
+              <a v-permission="ROLE_PERMISSIONS.EDIT" @click="handleEdit(record)">编辑</a>
+              <a-divider v-if="hasPermission(ROLE_PERMISSIONS.EDIT) && (hasPermission(ROLE_PERMISSIONS.ASSIGN_PERMISSIONS) || hasPermission(ROLE_PERMISSIONS.DELETE))" type="vertical" />
+              <a v-permission="ROLE_PERMISSIONS.ASSIGN_PERMISSIONS" @click="handlePermission(record)">权限设置</a>
+              <a-divider v-if="hasPermission(ROLE_PERMISSIONS.ASSIGN_PERMISSIONS) && hasPermission(ROLE_PERMISSIONS.DELETE)" type="vertical" />
               <a-popconfirm title="确定要删除该角色吗？" @confirm="handleDelete(record)">
-                <a v-permission="'system:role:delete'" class="danger">删除</a>
+                <a v-permission="ROLE_PERMISSIONS.DELETE" class="danger">删除</a>
               </a-popconfirm>
             </a-space>
           </template>
@@ -196,6 +198,15 @@ import { ROLE_PERMISSIONS } from '@/utils/permissionConstants';
 // 权限检查
 const permissionStore = usePermissionStore();
 const hasPermission = (permission: string) => permissionStore.hasPermission(permission);
+const hasRoleStatusPermission = () => hasPermission(ROLE_PERMISSIONS.ENABLE) || hasPermission(ROLE_PERMISSIONS.DISABLE);
+
+const ensurePermission = (permission: string, actionName: string) => {
+  if (!hasPermission(permission)) {
+    message.warning(`暂无${actionName}权限`);
+    return false;
+  }
+  return true;
+};
 
 // 表格列定义
 const columns = [
@@ -517,6 +528,8 @@ const handleTableChange = (pageNo: number, pageSize: number) => {
 };
 
 const handleAdd = () => {
+  if (!ensurePermission(ROLE_PERMISSIONS.ADD, '新增角色')) return;
+
   modalTitle.value = '新增角色';
   form.id = undefined;
   form.name = '';
@@ -528,6 +541,8 @@ const handleAdd = () => {
 };
 
 const handleEdit = (record: any) => {
+  if (!ensurePermission(ROLE_PERMISSIONS.EDIT, '编辑角色')) return;
+
   modalTitle.value = '编辑角色';
   Object.assign(form, record);
   showModal.value = true;
@@ -535,6 +550,10 @@ const handleEdit = (record: any) => {
 
 const handleModalOk = async () => {
   try {
+    const targetPermission = form.id ? ROLE_PERMISSIONS.EDIT : ROLE_PERMISSIONS.ADD;
+    const actionName = form.id ? '编辑角色' : '新增角色';
+    if (!ensurePermission(targetPermission, actionName)) return;
+
     await formRef.value?.validate();
     if (form.id) {
       // 编辑角色
@@ -572,6 +591,8 @@ const handleModalCancel = () => {
 };
 
 const handlePermission = async (record: Role) => {
+  if (!ensurePermission(ROLE_PERMISSIONS.ASSIGN_PERMISSIONS, '设置角色权限')) return;
+
   currentRole.value = record;
   showPermissionModal.value = true;
   
@@ -619,6 +640,8 @@ const handlePermission = async (record: Role) => {
 
 const handlePermissionOk = async () => {
   try {
+    if (!ensurePermission(ROLE_PERMISSIONS.ASSIGN_PERMISSIONS, '设置角色权限')) return;
+
     // 处理 checkedPermissions.value 可能是对象或数组的情况
     let permissionKeys: string[] = [];
     
@@ -658,6 +681,14 @@ const handlePermissionCancel = () => {
 };
 
 const handleToggleStatus = async (record: Role, checked: boolean) => {
+  if (!hasRoleStatusPermission()) {
+    message.warning('暂无角色状态管理权限');
+    return;
+  }
+  const targetPermission = checked ? ROLE_PERMISSIONS.ENABLE : ROLE_PERMISSIONS.DISABLE;
+  const actionName = checked ? '启用角色' : '禁用角色';
+  if (!ensurePermission(targetPermission, actionName)) return;
+
   toggleLoading.value[record.id] = true;
   try {
     if (checked) {
@@ -680,6 +711,8 @@ const handleToggleStatus = async (record: Role, checked: boolean) => {
 
 const handleDelete = async (record: Role) => {
   try {
+    if (!ensurePermission(ROLE_PERMISSIONS.DELETE, '删除角色')) return;
+
     await deleteRole(record.id);
     message.success('删除成功');
     handleSearch();

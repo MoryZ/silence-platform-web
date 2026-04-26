@@ -3,20 +3,23 @@
     v-model:open="visible"
     trigger="click"
     placement="bottomRight"
-    :overlay-style="{ width: '336px', padding: 0 }"
+    :overlay-style="{ width: '380px', padding: 0 }"
     overlay-class-name="notification-popover-overlay"
   >
     <template #content>
       <div class="notification-popup">
         <div class="notification-header">
-          <div class="header-title">
-            <span>通知</span>
-            <a-badge :count="unreadCount" />
+          <div class="header-main">
+            <div class="header-title-row">
+              <span class="header-title">通知</span>
+              <a-badge :count="unreadCount" />
+            </div>
+            <div class="header-subtitle">消息中心</div>
           </div>
-          <a-button type="link" @click="handleMarkAllAsRead">全部标记为已读</a-button>
+          <a-button type="link" class="mark-read-btn" @click="handleMarkAllAsRead">全部已读</a-button>
         </div>
         <a-spin :spinning="loading">
-          <a-tabs v-model:activeKey="activeTab">
+          <a-tabs v-model:activeKey="activeTab" class="notification-tabs">
             <a-tab-pane key="0" tab="未读消息">
               <div class="notification-list">
                 <div
@@ -26,7 +29,7 @@
                   @click="viewNotificationDetail(item)"
                 >
                   <div class="avatar">
-                    <a-avatar :style="{ background: '#1890ff' }">
+                    <a-avatar :style="{ background: '#1677ff' }">
                       {{ item.senderName?.[0] || 'N' }}
                     </a-avatar>
                   </div>
@@ -40,7 +43,7 @@
                   </div>
                 </div>
                 <div v-if="notifications.length === 0" class="empty-placeholder">
-                  暂无未读消息
+                  <a-empty :image="Empty.PRESENTED_IMAGE_SIMPLE" description="暂无未读消息" />
                 </div>
               </div>
             </a-tab-pane>
@@ -64,7 +67,7 @@
                   </div>
                 </div>
                 <div v-if="notifications.length === 0" class="empty-placeholder">
-                  暂无已读消息
+                  <a-empty :image="Empty.PRESENTED_IMAGE_SIMPLE" description="暂无已读消息" />
                 </div>
               </div>
             </a-tab-pane>
@@ -92,6 +95,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { BellOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { Empty } from 'ant-design-vue'
 import { getNoticeByStatus, markAllNoticeAsRead, clearNotice } from '@/api/auth/notice'
 import type { Notice } from '@/types/auth'
 import dayjs from 'dayjs'
@@ -148,91 +152,143 @@ onMounted(() => fetchNotifications(0))
 
 <style scoped>
 .notification-popup {
+  position: relative;
+  overflow: hidden;
   background: #fff;
   padding: 0;
-  min-width: 360px;
-  max-width: 420px;
+  min-width: 380px;
+  max-width: 380px;
 }
+
 .notification-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 18px 24px 8px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #222;
+  align-items: flex-start;
+  padding: 16px 16px 6px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
 }
-.notification-header .header-title {
+
+.header-main {
+  min-width: 0;
+}
+
+.header-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
+.header-title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.header-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.mark-read-btn {
+  padding: 0;
+  height: auto;
+  font-size: 13px;
+  color: #1677ff;
+}
+
+.notification-tabs {
+  padding: 0 12px;
+}
+
 .notification-list {
   max-height: 320px;
   overflow-y: auto;
-  padding: 0 24px;
+  padding: 4px 2px 6px 2px;
 }
+
 .notification-item {
   display: flex;
   align-items: flex-start;
-  padding: 16px 0;
-  border-bottom: 1px solid #f5f5f5;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
-.notification-item:last-child {
-  border-bottom: none;
-}
+
 .notification-item:hover {
-  background: #f5faff;
+  border-color: #d6e4ff;
+  box-shadow: 0 6px 16px rgba(22, 119, 255, 0.08);
+  transform: translateY(-1px);
 }
+
 .avatar {
-  margin-right: 14px;
+  margin-right: 12px;
 }
+
 .content {
   flex: 1;
+  min-width: 0;
 }
+
 .title {
-  font-weight: 500;
-  color: #222;
-  margin-bottom: 2px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 4px;
+  line-height: 20px;
 }
+
 .description {
-  color: #888;
+  color: #595959;
   font-size: 13px;
-  margin-bottom: 2px;
+  line-height: 18px;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+
 .time {
-  color: #bbb;
+  color: #8c8c8c;
   font-size: 12px;
 }
+
 .status {
-  margin-left: 8px;
+  margin-left: 6px;
   display: flex;
   align-items: center;
+  padding-top: 4px;
 }
+
 .unread-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #1677ff;
+  box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.12);
 }
+
 .empty-placeholder {
-  padding: 32px 0;
-  text-align: center;
-  color: #bbb;
-  font-size: 14px;
+  padding: 32px 0 24px 0;
 }
+
 .notification-footer {
-  padding: 16px 24px 20px 24px;
-  border-top: 1px solid #f5f5f5;
+  padding: 12px 16px 14px 16px;
+  border-top: 1px solid #f0f0f0;
   background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .clear-button {
-  color: #888;
+  color: #8c8c8c;
   font-size: 14px;
   padding: 0;
   background: none;
@@ -242,24 +298,39 @@ onMounted(() => fetchNotifications(0))
 .clear-button:hover {
   color: #ff4d4f;
 }
+
 .view-all-btn {
-  min-width: 120px;
-  height: 38px;
-  border-radius: 20px;
-  font-size: 15px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(22,119,255,0.08);
+  min-width: 132px;
+  height: 36px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.18);
 }
 </style>
 
 <style>
 /* 全局样式：覆盖 a-popover 的默认样式 */
 .notification-popover-overlay .ant-popover-inner {
-  border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.14);
   padding: 0;
 }
 .notification-popover-overlay .ant-popover-inner-content {
   padding: 0;
+}
+
+.notification-popover-overlay .ant-tabs-nav {
+  margin: 0;
+  padding: 0 2px;
+}
+
+.notification-popover-overlay .ant-tabs-tab {
+  padding: 12px 2px 10px 2px;
+  font-weight: 500;
+}
+
+.notification-popover-overlay .ant-tabs-tab + .ant-tabs-tab {
+  margin-left: 20px;
 }
 </style>

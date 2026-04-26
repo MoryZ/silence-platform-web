@@ -34,8 +34,14 @@ export interface UserInfo {
   phone?: string;
   status?: boolean;
   createdDate?: string;
-  roles: string[];
-  permissions: string[];
+  roles?: string[];
+  permissions?: string[];
+  userRoles?: Array<{
+    role?: {
+      code?: string;
+      name?: string;
+    };
+  }>;
   firstLogin?: boolean;
   forceChangePassword?: boolean;
 }

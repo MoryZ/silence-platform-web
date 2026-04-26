@@ -4,7 +4,7 @@ export interface AuthUser {
   nickname: string;
   avatar: string;
   roles: string[];
-  permissions: string[];
+  permissions?: string[];
 }
 
 export interface AuthLoginParams {

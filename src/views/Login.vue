@@ -694,18 +694,9 @@ const handleOAuthCallback = async (
       return;
     }
     
-    // 设置 token 和用户信息
+    // 先设置 token，再通过独立接口拉取用户信息和菜单
     userStore.setToken(result.token);
-    userStore.setUserInfo(result.userInfo);
-    
-    // 保存菜单数据
-    if (Array.isArray(result.menus) && result.menus.length > 0) {
-      const { MENUS } = await import('@/utils/constant');
-      ls.set(MENUS, result.menus);
-      // 设置路由
-      const { addDynamicRoutes } = await import('@/router');
-      await addDynamicRoutes(result.menus, true);
-    }
+    const bootstrapResult = await userStore.bootstrapUserContext();
     
     message.success('登录成功');
     
@@ -714,7 +705,14 @@ const handleOAuthCallback = async (
     
     // 跳转到首页
     setTimeout(() => {
-      router.replace('/dashboard');
+      const userInfo = userStore.getUserInfo();
+      if (userInfo && (userInfo.firstLogin === true || userInfo.forceChangePassword === true)) {
+        router.replace('/change-password?force=true');
+      } else if (!bootstrapResult.hasMenus) {
+        router.replace('/apply-permission');
+      } else {
+        router.replace('/dashboard');
+      }
     }, 500);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || '第三方登录失败';

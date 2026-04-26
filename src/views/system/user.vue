@@ -40,9 +40,10 @@
           </template>
           <template v-else-if="column.key === 'status'">
             <a-switch 
+              v-if="hasUserStatusPermission()"
               :checked="text === true"
               :loading="toggleLoading[record.id]"
-              :disabled="record.username === 'admin' || !hasUserStatusPermission()"
+              :disabled="record.username === 'admin'"
               @change="(checked: boolean) => handleToggleStatus(record, checked)"
               size="small"
               :style="{
@@ -50,12 +51,7 @@
                 borderColor: text === true ? '#1677ff' : '#d9d9d9'
               }"
             />
-          </template>
-          <template v-else-if="column.key === 'roles'">
-            <span v-if="record.username === 'admin'">超级管理员</span>
-            <span v-else>
-              {{ record.roleIds?.map((id: number) => roleOptions.find(role => role.id === id)?.name).filter(Boolean).join(', ') }}
-            </span>
+            <span v-else>-</span>
           </template>
           <template v-else-if="column.key === 'createdDate'">
             {{ formatDate(text) }}
@@ -63,7 +59,7 @@
           <template v-else-if="column.key === 'action'">
             <a-space>
               <a-button 
-                v-permission="'system:user:edit'"
+                v-permission="USER_PERMISSIONS.EDIT"
                 type="link" 
                 size="small" 
                 @click="handleEdit(record)"
@@ -72,16 +68,7 @@
                 编辑
               </a-button>
               <a-button 
-                v-permission="'system:user:edit'"
-                type="link" 
-                size="small" 
-                @click="handleAssignRoles(record)"
-              >
-                <template #icon><user-switch-outlined /></template>
-                分配角色
-              </a-button>
-              <a-button 
-                v-permission="'system:user:reset-password'"
+                v-permission="USER_PERMISSIONS.RESET_PASSWORD"
                 type="link" 
                 size="small" 
                 @click="handleChangePassword(record)"
@@ -90,7 +77,7 @@
                 修改密码
               </a-button>
               <a-button 
-                v-permission="'system:user:delete'"
+                v-permission="USER_PERMISSIONS.DELETE"
                 type="link" 
                 status="danger" 
                 size="small" 
@@ -145,18 +132,6 @@
         <a-form-item label="电话" name="phone">
           <a-input v-model:value="form.phone" placeholder="请输入电话号码" autocomplete="tel" />
         </a-form-item>
-        <a-form-item label="角色" name="roleIds">
-          <a-select
-            v-model:value="form.roleIds"
-            mode="multiple"
-            placeholder="请选择角色"
-            style="width: 100%"
-          >
-            <a-select-option v-for="role in roleOptions" :key="role.id" :value="role.id">
-              {{ role.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
         <a-form-item label="状态" name="status">
           <a-switch v-model:checked="form.status" :checked-value="true" :unchecked-value="false" />
         </a-form-item>
@@ -191,43 +166,6 @@
       </a-form>
     </a-modal>
 
-    <!-- 角色分配弹窗 -->
-    <a-modal
-      v-model:open="showRoleModal"
-      title="分配角色"
-      ok-text="确定"
-      cancel-text="取消"
-      @ok="handleRoleModalOk"
-      @cancel="handleRoleModalCancel"
-    >
-      <a-form
-        ref="roleFormRef"
-        :model="roleForm"
-        :rules="roleRules"
-        :label-col="{ span: 6 }"
-        :wrapper-col="{ span: 16 }"
-      >
-        <a-form-item label="用户名" name="username">
-          <a-input v-model:value="roleForm.username" disabled />
-        </a-form-item>
-        <a-form-item label="当前角色" name="currentRoles">
-          <a-tag v-for="role in getCurrentRoleNames()" :key="role" color="blue">
-            {{ role }}
-          </a-tag>
-          <span v-if="!getCurrentRoleNames().length" style="color: #999;">暂无角色</span>
-        </a-form-item>
-        <a-form-item label="分配角色" name="roleIds">
-          <a-select
-            v-model:value="roleForm.roleIds"
-            mode="multiple"
-            placeholder="请选择角色"
-            style="width: 100%"
-            :options="roleOptions"
-            :field-names="{ label: 'name', value: 'id' }"
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
   </div>
 </template>
 
@@ -246,7 +184,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   KeyOutlined,
-  UserSwitchOutlined,
 } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
 import SearchPanel from '@/components/SearchPanel.vue';
@@ -262,8 +199,7 @@ import {
   updateUser,
   resetPassword
 } from '@/api/auth/user'
-import { getRoleList, getRoles } from '@/api/auth/role'
-import type { User, Role, RoleResponse } from '@/types/auth'
+import type { User } from '@/types/auth'
 
 // 静态导入头像图片
 import bubbleImg from '@/assets/images/bubble.png'
@@ -357,8 +293,7 @@ const form = reactive<Partial<User>>({
   avatar: defaultAvatarKey,
   email: '',
   phone: '',
-  status: true,
-  roleIds: []
+  status: true
 });
 
 // 表单验证规则
@@ -385,15 +320,20 @@ const rules = {
   ]
 };
 
-// 角色选项
-const roleOptions = ref<Role[]>([]);
-
 // 状态切换加载状态
 const toggleLoading = ref<Record<number, boolean>>({});
 
 // 检查用户状态操作权限
 const hasUserStatusPermission = () => {
   return hasPermission(USER_PERMISSIONS.ENABLE) || hasPermission(USER_PERMISSIONS.DISABLE);
+};
+
+const ensurePermission = (permission: string, actionName: string) => {
+  if (!hasPermission(permission)) {
+    message.warning(`暂无${actionName}权限`);
+    return false;
+  }
+  return true;
 };
 
 
@@ -405,15 +345,6 @@ const passwordForm = reactive({
   username: '',
   newPassword: '',
   confirmPassword: ''
-});
-
-// 角色分配相关
-const showRoleModal = ref(false);
-const roleFormRef = ref<FormInstance>();
-const roleForm = reactive({
-  id: undefined,
-  username: '',
-  roleIds: [] as number[]
 });
 
 // 修改密码验证规则
@@ -434,11 +365,6 @@ const passwordRules = {
       trigger: 'blur'
     }
   ]
-};
-
-// 角色分配验证规则
-const roleRules = {
-  roleIds: [{ required: true, message: '请选择至少一个角色', type: 'array', trigger: 'change' }]
 };
 
 // 搜索字段配置
@@ -553,6 +479,8 @@ const handleTableChange = (pageNo: number, pageSize: number) => {
 };
 
 const handleAdd = () => {
+  if (!ensurePermission(USER_PERMISSIONS.ADD, '新增用户')) return;
+
   modalTitle.value = '新增用户';
   form.id = undefined;
   form.username = '';
@@ -561,13 +489,14 @@ const handleAdd = () => {
   form.avatar = defaultAvatarKey;
   form.email = '';
   form.phone = '';
-  form.roleIds = [];
   form.status = true;
   showModal.value = true;
   
 };
 
 const handleEdit = (record: any) => {
+  if (!ensurePermission(USER_PERMISSIONS.EDIT, '编辑用户')) return;
+
   modalTitle.value = '编辑用户';
   Object.assign(form, record);
   form.avatar = normalizeAvatarKey(record.avatar) || defaultAvatarKey;
@@ -576,6 +505,10 @@ const handleEdit = (record: any) => {
 
 const handleModalOk = async () => {
   try {
+    const targetPermission = form.id ? USER_PERMISSIONS.EDIT : USER_PERMISSIONS.ADD;
+    const actionName = form.id ? '编辑用户' : '新增用户';
+    if (!ensurePermission(targetPermission, actionName)) return;
+
     await formRef.value?.validate();
     const userData: User = {
       id: form.id!,
@@ -585,8 +518,7 @@ const handleModalOk = async () => {
       avatar: form.avatar!,
       email: form.email!,
       phone: form.phone!,
-      status: form.status!,
-      roleIds: form.roleIds || []
+      status: form.status!
     };
 
     if (form.id) {
@@ -614,6 +546,10 @@ const handleModalCancel = () => {
 };
 
 const handleToggleStatus = async (record: any, checked: boolean) => {
+  const targetPermission = checked ? USER_PERMISSIONS.ENABLE : USER_PERMISSIONS.DISABLE;
+  const actionName = checked ? '启用用户' : '禁用用户';
+  if (!ensurePermission(targetPermission, actionName)) return;
+
   toggleLoading.value[record.id] = true;
   try {
     if (checked) {
@@ -636,6 +572,8 @@ const handleToggleStatus = async (record: any, checked: boolean) => {
 
 const handleDelete = async (record: any) => {
   try {
+    if (!ensurePermission(USER_PERMISSIONS.DELETE, '删除用户')) return;
+
     await deleteUser(record.id);
     message.success('删除成功');
     handleSearch();
@@ -648,6 +586,8 @@ const handleDelete = async (record: any) => {
 };
 
 const handleChangePassword = (record: any) => {
+  if (!ensurePermission(USER_PERMISSIONS.RESET_PASSWORD, '重置密码')) return;
+
   passwordForm.id = record.id;
   passwordForm.username = record.username;
   passwordForm.newPassword = '';
@@ -657,6 +597,8 @@ const handleChangePassword = (record: any) => {
 
 const handlePasswordModalOk = async () => {
   try {
+    if (!ensurePermission(USER_PERMISSIONS.RESET_PASSWORD, '重置密码')) return;
+
     await passwordFormRef.value?.validate();
     // 这里应该调用修改密码的 API
     await resetPassword(passwordForm.id!, passwordForm.newPassword);
@@ -676,51 +618,9 @@ const handlePasswordModalCancel = () => {
   passwordFormRef.value?.resetFields();
 };
 
-// 角色分配相关方法
-const handleAssignRoles = (record: any) => {
-  roleForm.id = record.id;
-  roleForm.username = record.username;
-  roleForm.roleIds = record.roleIds || [];
-  showRoleModal.value = true;
-};
-
-const getCurrentRoleNames = () => {
-  if (!roleForm.roleIds || !roleForm.roleIds.length) return [];
-  return roleForm.roleIds
-    .map((id: number) => roleOptions.value.find(role => role.id === id)?.name)
-    .filter(Boolean);
-};
-
-const handleRoleModalOk = async () => {
-  try {
-    await roleFormRef.value?.validate();
-    // 调用更新用户角色的 API
-    await updateUser(roleForm.id!, {
-      roleIds: roleForm.roleIds
-    });
-    message.success('角色分配成功');
-    showRoleModal.value = false;
-    roleFormRef.value?.resetFields();
-    handleSearch(); // 刷新列表
-  } catch (error: any) {
-    // 显示后端返回的具体错误信息
-    const errorMessage = error?.response?.data?.message || error?.message || '角色分配失败';
-    message.error(errorMessage);
-    console.error('角色分配失败:', error);
-  }
-};
-
-const handleRoleModalCancel = () => {
-  showRoleModal.value = false;
-  roleFormRef.value?.resetFields();
-};
-
 // 初始化
 onMounted(() => {
   handleSearch();
-  getRoleList().then((res) => {
-    roleOptions.value = res;
-  });
 });
 </script>
 

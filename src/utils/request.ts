@@ -6,12 +6,16 @@ import { TOKEN } from './constant';
 import { useUserStore } from '@/stores/user';
 import { useNamespaceStore } from '@/stores/namespace';
 
+interface ActionRequestConfig extends AxiosRequestConfig {
+  actionCode?: string;
+}
+
 // 创建自定义的 axios 实例类型
 interface CustomAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete'> {
-  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
-  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
-  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  get<T = any>(url: string, config?: ActionRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: any, config?: ActionRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: any, config?: ActionRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: ActionRequestConfig): Promise<T>;
 }
 
 interface ApiPayload {
@@ -78,6 +82,7 @@ function attachInterceptors(instance: AxiosInstance) {
   // 请求拦截器
   instance.interceptors.request.use(
     (config) => {
+      const actionConfig = config as ActionRequestConfig;
       const token = ls.get(TOKEN)
       if (token) {
         if (!config.headers) config.headers = {} as any;
@@ -88,6 +93,18 @@ function attachInterceptors(instance: AxiosInstance) {
           h['Authorization'] = `Bearer ${token}`;
         }
       }
+
+      if (String(actionConfig.actionCode || '').trim()) {
+        if (!config.headers) config.headers = {} as any;
+        const h: any = config.headers;
+        const actionCode = String(actionConfig.actionCode).trim();
+        if (typeof h.set === 'function') {
+          h.set('X-Action-Code', actionCode);
+        } else {
+          h['X-Action-Code'] = actionCode;
+        }
+      }
+
       return config;
     },
     (error) => {
