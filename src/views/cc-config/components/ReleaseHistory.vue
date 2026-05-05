@@ -319,6 +319,7 @@ const fetchReleaseHistories = async (configItemId: number) => {
       configItemId: configItemId,
       pageNo: pagination.value.current,
       pageSize: pagination.value.pageSize,
+      sort: '-createdDate',
       createdDateStart: createdDateStart,
       createdDateEnd: createdDateEnd
     };

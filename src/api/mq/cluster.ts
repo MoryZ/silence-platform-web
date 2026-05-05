@@ -5,7 +5,8 @@ import type { ClusterInfo, BrokerDetail, ClusterData, BrokerConfig } from '@/typ
 export const queryClusterList = async (): Promise<ClusterData> => {
   const response = await request.get('/api/v1/clusters') as any
 
-  const root = response && typeof response === 'object' ? response : {}
+  const wrapped = response && typeof response === 'object' ? response : {}
+  const root = wrapped?.data && typeof wrapped.data === 'object' ? wrapped.data : wrapped
   const source = root?.clusterInfo && typeof root.clusterInfo === 'object' ? root.clusterInfo : root
 
   const clusterAddrTable = source?.clusterAddrTable && typeof source.clusterAddrTable === 'object'
@@ -61,7 +62,7 @@ export const queryClusterList = async (): Promise<ClusterData> => {
 
 // 获取Broker配置信息
 export const queryBrokerConfig = async (brokerAddr: string): Promise<Record<string, string>> => {
-  return await request.get('/api/v1/cluster/brokerConfig', {
+  return await request.get('/api/v1/clusters/brokerConfig', {
     params: { brokerAddr }
   })
 }

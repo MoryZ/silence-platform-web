@@ -81,6 +81,11 @@ export interface TopicConsumerInfo {
   queueStatInfoList: QueueStatInfo[];
 }
 
+export interface TopicConsumerGroupInfo {
+  groupName: string;
+  topicConsumerInfo: TopicConsumerInfo;
+}
+
 export interface QueueStatInfo {
   brokerName: string;
   queueId: number;

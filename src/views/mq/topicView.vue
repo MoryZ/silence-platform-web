@@ -10,16 +10,14 @@ import {
   createTopic,
   updateTopic,
   deleteTopic,
-  refreshTopic,
   sendMessage,
   queryTopicConsumerInfo
 } from '@/api/mq/topic'
 import { resetOffset, skipAccumulate } from '@/api/mq/consumer'
 import { queryClusterList } from '@/api/mq/cluster'
-import type { TopicConfig, TopicConsumerInfo } from '@/types/mq/topicApi';
+import type { TopicConfig, TopicConsumerGroupInfo } from '@/types/mq/topicApi';
 import { SearchOutlined } from '@ant-design/icons-vue'
 import moment from 'moment'
-import 'moment/locale/zh-cn'
 
 moment.locale('zh-cn')
 
@@ -94,7 +92,7 @@ const currentTopic = ref<TopicConfig & { messageType?: string }>({
 })
 
 const currentTopicStats = ref<any>(null)
-const currentTopicConsumers = ref<any[]>([])
+const currentTopicConsumers = ref<TopicConsumerGroupInfo[]>([])
 const offsetTableData = ref<any[]>([])
 const routeData = ref<any>(null)
 
@@ -110,15 +108,6 @@ const topicMessageTypes = ref([
 ])
 
 const clusterOptions = ref<string[]>([])
-const messageTypeOptions = ref<{ label: string, value: string }[]>([])
-
-const messageTypeLabelMap: Record<string, string> = {
-  NORMAL: '普通消息',
-  FIFO: '顺序消息',
-  DELAY: '延迟消息',
-  TRANSACTION: '事务消息',
-  UNSPECIFIED: '未指定'
-}
 
 // Get topic type by index
 const getTopicType = (index: number): string => {
@@ -287,7 +276,7 @@ const openAddDialog = async () => {
     clusterNameList: [],
     messageType: 'NORMAL'
   }
-  // 2. 拉取集群、broker、消息类型
+  // 2. 拉取集群、broker
   try {
     const res = await queryClusterList()
     // 集群名
@@ -297,13 +286,6 @@ const openAddDialog = async () => {
     // broker
     if (res?.brokerServer) {
       brokerOptions.value = Object.keys(res.brokerServer)
-    }
-    // 消息类型
-    if (res?.messageTypes) {
-      messageTypeOptions.value = Object.keys(res.messageTypes).map(k => ({
-        label: messageTypeLabelMap[k] || k,
-        value: k
-      }))
     }
   } catch (e) {
     message.error('获取集群/消息类型失败')
@@ -398,12 +380,8 @@ const showStats = async (topic: string) => {
 const showConsumers = async (topic: string) => {
   try {
     const response = await queryTopicConsumers(topic)
-    if (response && typeof response === 'object') {
-      // 转成数组 [{ groupName, ...groupData }]
-      currentTopicConsumers.value = Object.entries(response).map(([groupName, groupData]) => ({
-        groupName,
-        ...groupData
-      }))
+    if (Array.isArray(response)) {
+      currentTopicConsumers.value = response
       // 记录当前 topic
       currentTopic.value = { ...currentTopic.value, topicName: topic }
       showConsumerDialog.value = true
@@ -802,11 +780,6 @@ const getRowKey = (record: { topicName: string }) => record.topicName;
 const getConsumerRowKey = (record: { groupName?: string; id?: string }) => record.groupName || record.id || Math.random().toString();
 
 onMounted(async () => {
-  try {
-    await refreshTopic()
-  } catch (error) {
-    console.error('刷新Topic缓存失败:', error)
-  }
   loadTopicList()
 })
 </script>
@@ -1002,11 +975,18 @@ onMounted(async () => {
         <a-form-item label="消息类型">
           <a-select
             v-model:value="currentTopic.messageType"
-            :options="messageTypeOptions"
             placeholder="请选择消息类型"
             style="width: 100%"
             allow-clear
-          />
+          >
+            <a-select-option
+              v-for="type in topicMessageTypes"
+              :key="type.value"
+              :value="type.value"
+            >
+              {{ type.label }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -1104,11 +1084,11 @@ onMounted(async () => {
         <div v-for="group in currentTopicConsumers" :key="group.groupName" style="margin-bottom: 24px;">
           <div style="font-weight: bold; margin-bottom: 8px;">
             消费组：{{ group.groupName }}
-            <span style="margin-left: 24px;">延迟：{{ group.diffTotal }}</span>
-            <span style="margin-left: 24px;">最后消费时间：{{ group.lastTimestamp ? formatTimestamp(group.lastTimestamp) : 'N/A' }}</span>
+            <span style="margin-left: 24px;">延迟：{{ group.topicConsumerInfo?.diffTotal ?? 0 }}</span>
+            <span style="margin-left: 24px;">最后消费时间：{{ group.topicConsumerInfo?.lastTimestamp ? formatTimestamp(group.topicConsumerInfo.lastTimestamp) : 'N/A' }}</span>
           </div>
           <a-table
-            :dataSource="group.queueStatInfoList"
+            :dataSource="group.topicConsumerInfo?.queueStatInfoList || []"
             :columns="[
               { title: 'broker', dataIndex: 'brokerName', key: 'brokerName' },
               { title: 'queue', dataIndex: 'queueId', key: 'queueId' },

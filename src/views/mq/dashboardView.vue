@@ -2,11 +2,10 @@
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import {
   getTopicInfo,
-  getTopicInfoWithTopic,
-  getBrokerInfo,
-  getCurrentTopic
+  getBrokerInfo
 } from '@/api/mq/dashboard'
 import * as echarts from 'echarts'
+import type { BrokerDashboardData, TopicDashboardData } from '@/types/mq/dashboard'
 
 
 const topicList = ref<string[]>([])
@@ -39,116 +38,117 @@ function formatDateForQuery(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+const clearBrokerTrendChart = () => {
+  if (!brokerTrendChart) return
+
+  brokerTrendChart.setOption({
+    title: {
+      text: 'Broker 5min trend',
+      left: 'left'
+    },
+    tooltip: { trigger: 'axis' },
+    legend: { data: [] },
+    xAxis: { type: 'category', data: [] },
+    yAxis: { type: 'value' },
+    series: []
+  }, true)
+}
+
+const clearTopicTrendChart = () => {
+  if (!topicTrendChart) return
+
+  topicTrendChart.setOption({
+    title: {
+      text: '主题 5min trend',
+      left: 'left'
+    },
+    tooltip: { trigger: 'axis' },
+    legend: { data: [] },
+    xAxis: { type: 'category', data: [] },
+    yAxis: { type: 'value' },
+    series: []
+  }, true)
+}
+
 // 处理 broker 数据
-const processBrokerData = (data: Record<string, string[]>) => {
+const processBrokerData = (data: BrokerDashboardData) => {
   try {
+    const brokerSeries = data.series || {}
+    const brokerRealtime = data.brokerRealtime || {}
+    const brokerOrder = (data.brokers || []).filter(Boolean)
+
     // 保存原始数据
-    brokerRawData.value = data
+    brokerRawData.value = brokerSeries
     
-    // 提取 broker 列表和最新值用于 TOP 10 图表
-    const brokerList: { name: string; value: number }[] = []
-    
-    for (const [brokerName, metricsData] of Object.entries(data)) {
-      if (metricsData.length > 0) {
-        // 取最新的一条数据
-        const latestData = metricsData[metricsData.length - 1]
-        const value = parseFloat(latestData.split(',')[1])
-        
-        brokerList.push({
-          name: brokerName,
-          value: value
-        })
-      }
-    }
+    const rankedBrokers = brokerOrder.length > 0
+      ? brokerOrder
+      : Object.keys(brokerRealtime).sort((a, b) => (Number(brokerRealtime[b] || 0) - Number(brokerRealtime[a] || 0)))
+
+    const brokerList: { name: string; value: number }[] = rankedBrokers
+      .slice(0, 10)
+      .map(name => ({
+        name,
+        value: Number(brokerRealtime[name] || 0)
+      }))
     
     // 渲染图表
     renderBrokerTopChart(brokerList)
-    renderBrokerTrendChart(data)
+
+    if (Object.keys(brokerSeries).length > 0) {
+      renderBrokerTrendChart(brokerSeries)
+    } else {
+      clearBrokerTrendChart()
+    }
   } catch (error) {
     console.error('Error processing broker data:', error)
   }
 }
 
 // 处理 topic 数据
-const processTopicData = (data: any[]) => {
+const processTopicData = (data: TopicDashboardData) => {
   try {
-    // 保存原始数据 - 注意修改了类型
-    topicRawData.value = data.reduce((acc, curr) => {
-      const parts = curr.split(',')
-      const timestamp = parts[0]
-      const value = parseFloat(parts[1])
-      
-      if (!acc[selectedTopic.value]) {
-        acc[selectedTopic.value] = []
-      }
-      
-      acc[selectedTopic.value].push(`${timestamp},${value}`)
-      return acc
-    }, {})
+    const topicSeries = data.series || {}
+    const topicRealtime = data.topicRealtime || {}
+    const rankedTopics = (data.topics || []).filter(Boolean)
+
+    topicRawData.value = topicSeries
+    topicList.value = rankedTopics
     
-    // 提取 topic 列表和最新值用于 TOP 10 图表
-    const topicItemList: { name: string; value: number }[] = []
-    
-    if (selectedTopic.value && topicRawData.value[selectedTopic.value]) {
-      const latestData = topicRawData.value[selectedTopic.value][topicRawData.value[selectedTopic.value].length - 1]
-      const value = parseFloat(latestData.split(',')[1])
-      
-      topicItemList.push({
-        name: selectedTopic.value,
-        value: value
-      })
-    }
+    const topTopics = rankedTopics.length > 0
+      ? rankedTopics
+      : Object.keys(topicRealtime).sort((a, b) => (Number(topicRealtime[b] || 0) - Number(topicRealtime[a] || 0)))
+
+    const topicItemList: { name: string; value: number }[] = topTopics
+      .slice(0, 10)
+      .map(name => ({
+        name,
+        value: Number(topicRealtime[name] || 0)
+      }))
     
     // 渲染图表
     renderTopicTopChart(topicItemList)
-    
-    // 如果已选择主题，渲染该主题的趋势
-    if (selectedTopic.value && topicRawData.value[selectedTopic.value]) {
-      renderTopicTrendChart(selectedTopic.value, topicRawData.value[selectedTopic.value])
+
+    const shouldResetSelection = !selectedTopic.value || !topicList.value.includes(selectedTopic.value)
+    if (shouldResetSelection) {
+      selectedTopic.value = topicList.value.length > 0 ? topicList.value[0] : ''
+    }
+
+    if (selectedTopic.value && topicSeries[selectedTopic.value]?.length) {
+      renderTopicTrendChart(selectedTopic.value, topicSeries[selectedTopic.value])
+    } else {
+      clearTopicTrendChart()
     }
   } catch (error) {
     console.error('Error processing topic data:', error)
   }
 }
 
-// 处理当前主题列表
-const processTopicList = (data: string[]) => {
-  try {
-    // 保存原始数据
-    topicCurrentList.value = data
-    
-    // 处理主题列表
-    topicList.value = data.map(item => item.split(',')[0])
-    
-    // 如果还没有选择主题且有主题列表，默认选择第一个
-    if (!selectedTopic.value && topicList.value.length > 0) {
-      selectedTopic.value = topicList.value[0]
-      loadTopicData(selectedTopic.value)
-    }
-  } catch (error) {
-    console.error('Error processing topic list:', error)
-  }
-}
-
-// 加载特定主题的数据
-const loadTopicData = async (topicName: string) => {
-  try {
-    const topicData = await getTopicInfoWithTopic(currentDate.value, topicName)
-    if (topicData && topicData.length > 0) {
-      processTopicData(topicData)
-    }
-  } catch (error) {
-    console.error(`Error loading data for topic ${topicName}:`, error)
-  }
-}
-
 // Methods
 const loadData = async () => {
   try {
-    // 获取主题列表
-    const topicList = await getCurrentTopic()
-    if (topicList.length > 0) {
-      processTopicList(topicList)
+    const topicData = await getTopicInfo(currentDate.value)
+    if (topicData) {
+      processTopicData(topicData)
     }
     
     // 获取 broker 数据
@@ -163,8 +163,10 @@ const loadData = async () => {
 
 // 当选定的主题变化时处理
 const handleTopicChange = () => {
-  if (selectedTopic.value) {
-    loadTopicData(selectedTopic.value)
+  if (selectedTopic.value && topicRawData.value[selectedTopic.value]?.length) {
+    renderTopicTrendChart(selectedTopic.value, topicRawData.value[selectedTopic.value])
+  } else {
+    clearTopicTrendChart()
   }
 }
 

@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, reactive } from 'vue'
 import { message} from 'ant-design-vue'
-import { queryMessages, viewMessage, findByKeyAndTopic } from '@/api/mq/message'
+import { queryMessages, viewMessage, findByKeyAndTopic, consumeMessageDirectly } from '@/api/mq/message'
 import type { MessageQuery, Message, MessageView } from '@/types/mq/message'
 import { queryTopicList } from '@/api/mq/topic'
-import { SearchOutlined } from '@ant-design/icons-vue'
-import moment from 'moment'
-import 'moment/locale/zh-cn'
+import { SearchOutlined, CopyOutlined } from '@ant-design/icons-vue'
 import { sendMessage } from '@/api/mq/topic'
 import type { MessageRequest } from '@/types/mq/topicApi';
 import dayjs from 'dayjs'
-
-moment.locale('zh-cn')
 
 // State
 const loading = ref(false)
@@ -40,6 +36,8 @@ const totalCount = ref(0)
 const showSendDialog = ref(false)
 const showMessageDetailDialog = ref(false)
 const currentMessage = ref<MessageView | null>(null)
+const currentMessageTrackList = ref<Array<{ consumerGroup: string; trackType: string; exceptionDesc?: string | null }>>([])
+const resendLoadingMap = ref<Record<string, boolean>>({})
 const newMessage = ref<MessageRequest>({ topic: '', tag: '', key: '', messageBody: '', traceEnabled: false })
 
 // Tabs
@@ -48,8 +46,27 @@ const activeTab = ref<'topic' | 'messageKey' | 'messageId'>('topic')
 // Methods
 const loadTopics = async () => {
   try {
-    const data = await queryTopicList(true)
-    topics.value = data.topicList.map(item => item).sort()
+    const response = await queryTopicList({
+      pageNo: 1,
+      pageSize: 200,
+      skipSysProcess: true
+    })
+
+    const raw = response as any
+    const rows = Array.isArray(raw?.data?.data)
+      ? raw.data.data
+      : Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw?.topicList)
+          ? raw.topicList
+          : Array.isArray(raw?.data?.topicList)
+            ? raw.data.topicList
+            : []
+
+    topics.value = rows
+      .map((item: any) => (typeof item === 'string' ? item : (item?.topicName || item?.topic || '')))
+      .filter(Boolean)
+      .sort()
    
   } catch (error: any) {
     message.error(error.message || '获取Topic列表失败')
@@ -107,7 +124,7 @@ const searchMessages = async () => {
       // messageId tab 查询
       const result = await viewMessage(messageId.value, searchForm.topic)
       if (result && result?.messageView) {
-        currentMessage.value = result.messageView
+        await loadMessageDetail(messageId.value, searchForm.topic)
         showMessageDetailDialog.value = true
       } else {
         message.info('未找到匹配的消息')
@@ -128,13 +145,74 @@ const handlePageChange = (page: number) => {
   }
 }
 
+const loadMessageDetail = async (msgId: string, topic: string) => {
+  const result = await viewMessage(msgId, topic)
+  currentMessage.value = result.messageView
+  currentMessageTrackList.value = Array.isArray(result.messageTrackList) ? result.messageTrackList : []
+}
+
 const viewMessageDetail = async (msg: Message) => {
   try {
-    const result = await viewMessage(msg.msgId, msg.topic)
-    currentMessage.value = result.messageView
+    await loadMessageDetail(msg.msgId, msg.topic)
     showMessageDetailDialog.value = true
   } catch (error: any) {
     message.error(error.message || '获取消息详情失败')
+  }
+}
+
+const copyText = async (text: string, successText: string) => {
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    message.success(successText)
+  } catch {
+    message.error('复制失败，请手动复制')
+  }
+}
+
+const copyMessageId = async (id: string) => {
+  await copyText(id, 'Message ID 已复制')
+}
+
+const copyFieldValue = async (value: string, label: string) => {
+  await copyText(value, `${label} 已复制`)
+}
+
+const formatStoreSize = (size?: number) => {
+  const value = Number(size || 0)
+  if (value < 1024) return `${value} bytes`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(2)} KB`
+  return `${(value / (1024 * 1024)).toFixed(2)} MB`
+}
+
+const getTrackStatusColor = (status?: string) => {
+  if (status === 'CONSUMED') return 'success'
+  if (status === 'NOT_ONLINE') return 'warning'
+  return 'default'
+}
+
+const resendByTrack = async (consumerGroup: string) => {
+  const msg = currentMessage.value
+  if (!msg?.messageId || !msg?.topic || !consumerGroup) {
+    message.warning('缺少重发参数')
+    return
+  }
+
+  const loadingKey = `${consumerGroup}-${msg.messageId}`
+  resendLoadingMap.value[loadingKey] = true
+
+  try {
+    await consumeMessageDirectly({
+      consumerGroup,
+      topic: msg.topic,
+      msgId: msg.messageId
+    })
+    message.success('Resend Message 成功')
+    await loadMessageDetail(msg.messageId, msg.topic)
+  } catch (error: any) {
+    message.error(error.message || 'Resend Message 失败')
+  } finally {
+    resendLoadingMap.value[loadingKey] = false
   }
 }
 
@@ -208,6 +286,8 @@ watch(activeTab, (newTab) => {
   messages.value = []
   totalCount.value = 0
   showMessageDetailDialog.value = false
+  currentMessageTrackList.value = []
+  resendLoadingMap.value = {}
   if (newTab === 'topic') {
     key.value = ''
     messageId.value = ''
@@ -225,7 +305,8 @@ watch(activeTab, (newTab) => {
 // Computed
 const formattedProperties = computed(() => {
   if (!currentMessage.value?.properties) return []
-  return Object.entries(currentMessage.value.properties).map(([key, value]) => ({
+  return Object.entries(currentMessage.value.properties).map(([key, value], index) => ({
+    id: `${key}-${index}`,
     key,
     value
   }))
@@ -244,6 +325,7 @@ const messageTypes = [
     <!-- Tabs -->
     <a-tabs
       v-model:activeKey="activeTab"
+      class="message-tabs"
       tabPosition="top"
       type="line"
       style="margin-bottom:16px; width:100%;"
@@ -252,11 +334,6 @@ const messageTypes = [
       <a-tab-pane key="messageKey" tab="MESSAGE KEY" />
       <a-tab-pane key="messageId" tab="MESSAGE ID" />
     </a-tabs>
-
-    <!-- Total Count -->
-    <div style="margin-bottom:16px;font-weight:bold;">
-      Total {{ totalCount }} Messages
-    </div>
 
     <!-- Search Filters -->
     <a-form layout="inline" style="margin-bottom:16px">
@@ -320,37 +397,46 @@ const messageTypes = [
       </a-form-item>
     </a-form>
 
-    <!-- Results Table -->
-    <a-table
-      :dataSource="messages"
-      :rowKey="(record: Message) => record.msgId"
-      :pagination="false"
-      bordered
-    >
-      <a-table-column title="Message ID" dataIndex="msgId" key="msgId" />
-      <a-table-column title="Tag" :dataIndex="['properties', 'TAGS']" key="tag" />
-      <a-table-column title="Key" :dataIndex="['properties', 'KEYS']" key="key" />
-      <a-table-column title="StoreTime" dataIndex="storeTimestamp" key="storeTimestamp">
-        <template #customRender="{ text }">
-          {{ text ? moment(text).format('YYYY-MM-DD HH:mm:ss') : '' }}
-        </template>
-      </a-table-column>
-      <a-table-column title="Operation" key="operation">
-        <template #default="{ record }">
-          <a-button type="primary" size="small" @click="viewMessageDetail(record)">消息详情</a-button>
-        </template>
-      </a-table-column>
-    </a-table>
+    <template v-if="activeTab !== 'messageId'">
+      <!-- Results Table -->
+      <a-table
+        :dataSource="messages"
+        :rowKey="(record: Message) => record.msgId"
+        :pagination="false"
+        bordered
+      >
+        <a-table-column title="Message ID" dataIndex="msgId" key="msgId">
+          <template #customRender="{ text }">
+            <span>{{ text }}</span>
+            <a-button type="link" size="small" @click="copyMessageId(text)">
+              <template #icon><CopyOutlined /></template>
+            </a-button>
+          </template>
+        </a-table-column>
+        <a-table-column title="Tag" :dataIndex="['properties', 'TAGS']" key="tag" />
+        <a-table-column title="Key" :dataIndex="['properties', 'KEYS']" key="key" />
+        <a-table-column title="StoreTime" dataIndex="storeTimestamp" key="storeTimestamp">
+          <template #customRender="{ text }">
+            {{ text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '' }}
+          </template>
+        </a-table-column>
+        <a-table-column title="Operation" key="operation">
+          <template #default="{ record }">
+            <a-button type="primary" size="small" @click="viewMessageDetail(record)">消息详情</a-button>
+          </template>
+        </a-table-column>
+      </a-table>
 
-    <!-- Pagination -->
-    <div style="text-align:right;margin-top:16px">
-      <a-pagination
-        v-model:current="currentPage"
-        :pageSize="pageSize"
-        :total="totalCount"
-        @change="handlePageChange"
-      />
-    </div>
+      <!-- Pagination -->
+      <div style="text-align:right;margin-top:16px">
+        <a-pagination
+          v-model:current="currentPage"
+          :pageSize="pageSize"
+          :total="totalCount"
+          @change="handlePageChange"
+        />
+      </div>
+    </template>
 
     <!-- Send Message Dialog -->
     <a-modal
@@ -361,17 +447,18 @@ const messageTypes = [
       <a-form :model="newMessage" label-width="100px">
         <a-form-item label="Topic" required>
           <a-select
-            v-model="newMessage.topic"
+            v-model:value="newMessage.topic"
             placeholder="选择Topic"
-            filterable
+            show-search
             style="width: 100%"
           >
-            <a-option
+            <a-select-option
               v-for="topic in topics"
               :key="topic"
-              :label="topic"
               :value="topic"
-            />
+            >
+              {{ topic }}
+            </a-select-option>
           </a-select>
         </a-form-item>
 
@@ -410,51 +497,124 @@ const messageTypes = [
       v-model:open="showMessageDetailDialog"
       title="消息详情"
       width="800px"
+      class="message-detail-modal"
     >
       <a-descriptions :column="2" border>
+        <a-descriptions-item label="Topic">
+          {{ currentMessage?.topic || '-' }}
+          <a-button
+            v-if="currentMessage?.topic"
+            type="link"
+            size="small"
+            @click="copyFieldValue(currentMessage.topic, 'Topic')"
+          >
+            <template #icon><CopyOutlined /></template>
+          </a-button>
+        </a-descriptions-item>
         <a-descriptions-item label="消息ID">
           {{ currentMessage?.messageId }}
+          <a-button
+            v-if="currentMessage?.messageId"
+            type="link"
+            size="small"
+            @click="copyMessageId(currentMessage.messageId)"
+          >
+            <template #icon><CopyOutlined /></template>
+          </a-button>
         </a-descriptions-item>
-        <a-descriptions-item label="Topic">
-          {{ currentMessage?.topic }}
+        <a-descriptions-item label="StoreHost">
+          {{ currentMessage?.storeHost || '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="存储大小">
-          {{ currentMessage ? `${(currentMessage.storeSize / 1024).toFixed(2)} KB` : '' }}
+        <a-descriptions-item label="BornHost">
+          {{ currentMessage?.bornHost || '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="队列ID">
-          {{ currentMessage?.queueId }}
+        <a-descriptions-item label="StoreTime">
+          {{ currentMessage?.storeTimestamp ? dayjs(currentMessage.storeTimestamp).format('YYYY-MM-DD HH:mm:ss') : '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="存储时间">
-          {{ currentMessage ? new Date(currentMessage.storeTimestamp).toLocaleString() : '' }}
+        <a-descriptions-item label="BornTime">
+          {{ currentMessage?.bornTimestamp ? dayjs(currentMessage.bornTimestamp).format('YYYY-MM-DD HH:mm:ss') : '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="生产时间">
-          {{ currentMessage ? new Date(currentMessage.bornTimestamp).toLocaleString() : '' }}
+        <a-descriptions-item label="Queue ID">
+          {{ currentMessage?.queueId ?? '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="生产者">
-          {{ currentMessage?.bornHost }}
+        <a-descriptions-item label="Queue Offset">
+          {{ currentMessage?.queueOffset ?? currentMessage?.offset ?? '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="存储节点">
-          {{ currentMessage?.storeHost }}
+        <a-descriptions-item label="StoreSize">
+          {{ currentMessage ? formatStoreSize(currentMessage.storeSize) : '-' }}
         </a-descriptions-item>
-        <a-descriptions-item label="重试次数">
-          {{ currentMessage?.reconsumeTimes }}
+        <a-descriptions-item label="ReconsumeTimes">
+          {{ currentMessage?.reconsumeTimes ?? 0 }}
+        </a-descriptions-item>
+        <a-descriptions-item label="BodyCRC">
+          {{ currentMessage?.bodyCRC ?? '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="SysFlag">
+          {{ currentMessage?.sysFlag ?? '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Flag">
+          {{ currentMessage?.flag ?? '-' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="PreparedTransactionOffset">
+          {{ currentMessage?.preparedTransactionOffset ?? '-' }}
         </a-descriptions-item>
       </a-descriptions>
 
       <div class="message-section">
         <div class="section-title">消息内容</div>
-        <a-textarea
-          :value="currentMessage?.messageBody"
-          rows="6"
-          readonly
-        />
+        <div class="body-line">
+          <span>{{ currentMessage?.messageBody || '-' }}</span>
+          <a-button
+            v-if="currentMessage?.messageBody"
+            type="link"
+            size="small"
+            @click="copyFieldValue(currentMessage.messageBody, 'Message Body')"
+          >
+            <template #icon><CopyOutlined /></template>
+          </a-button>
+        </div>
       </div>
 
       <div class="message-section" v-if="formattedProperties.length > 0">
         <div class="section-title">消息属性</div>
-        <a-table :data="formattedProperties" border stripe>
-          <a-table-column label="属性名" prop="key" />
-          <a-table-column label="属性值" prop="value" show-overflow-tooltip />
+        <a-table :dataSource="formattedProperties" :pagination="false" bordered :rowKey="(record) => record.id">
+          <a-table-column title="属性名" dataIndex="key" key="key" width="220" />
+          <a-table-column title="属性值" dataIndex="value" key="value">
+            <template #customRender="{ text }">
+              <span>{{ text }}</span>
+              <a-button type="link" size="small" @click="copyFieldValue(text, '属性值')">
+                <template #icon><CopyOutlined /></template>
+              </a-button>
+            </template>
+          </a-table-column>
+        </a-table>
+      </div>
+
+      <div class="message-section" v-if="currentMessageTrackList.length > 0">
+        <div class="section-title">消息追踪</div>
+        <a-table :dataSource="currentMessageTrackList" :pagination="false" bordered :rowKey="(record, index) => `${record.consumerGroup}-${index}`">
+          <a-table-column title="Consumer group" dataIndex="consumerGroup" key="consumerGroup" width="260" />
+          <a-table-column title="状态" dataIndex="trackType" key="trackType" width="140">
+            <template #customRender="{ text }">
+              <a-tag :color="getTrackStatusColor(text)">{{ text }}</a-tag>
+            </template>
+          </a-table-column>
+          <a-table-column title="操作" key="action" width="180">
+            <template #default="{ record }">
+              <a-button
+                size="small"
+                @click="resendByTrack(record.consumerGroup)"
+                :loading="resendLoadingMap[`${record.consumerGroup}-${currentMessage?.messageId || ''}`]"
+              >
+                Resend Message
+              </a-button>
+            </template>
+          </a-table-column>
+          <a-table-column title="异常信息" dataIndex="exceptionDesc" key="exceptionDesc">
+            <template #customRender="{ text }">
+              {{ text || '-' }}
+            </template>
+          </a-table-column>
         </a-table>
       </div>
     </a-modal>
@@ -464,6 +624,15 @@ const messageTypes = [
 <style scoped>
 .message-page {
   padding: 20px;
+}
+
+:deep(.message-tabs .ant-tabs-nav-list) {
+  display: flex;
+  flex-direction: row;
+}
+
+:deep(.message-tabs .ant-tabs-tab + .ant-tabs-tab) {
+  margin-left: 32px;
 }
 
 .search-card {
@@ -513,6 +682,34 @@ const messageTypes = [
   margin-bottom: 10px;
   font-weight: 500;
   color: var(--a-text-color-primary);
+}
+
+.body-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #eceef2;
+  border-radius: 6px;
+  background: #fafbfd;
+  padding: 10px 12px;
+  word-break: break-all;
+}
+
+.body-line span {
+  flex: 1;
+}
+
+:deep(.message-detail-modal .ant-modal-body) {
+  padding-top: 12px;
+}
+
+:deep(.message-detail-modal .ant-descriptions-item-content) {
+  word-break: break-all;
+}
+
+:deep(.message-detail-modal .ant-tag) {
+  font-weight: 500;
 }
 
 :deep(.a-form) {

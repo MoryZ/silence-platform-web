@@ -64,6 +64,38 @@ export interface BrokerTimeSeriesData {
   [brokerAddr: string]: TimeSeriesDataPoint[];
 }
 
+export interface DashboardSeriesData {
+  [name: string]: string[];
+}
+
+export interface BrokerDashboardData {
+  queryDate?: string[];
+  brokers?: string[];
+  brokerRealtime?: Record<string, number>;
+  series?: DashboardSeriesData;
+}
+
+export interface TopicDashboardData {
+  queryDate?: string[];
+  topics?: string[];
+  topicRealtime?: Record<string, number>;
+  series?: DashboardSeriesData;
+}
+
+export interface TopicDetailData {
+  queryDate?: string[];
+  topicName?: string;
+  realtime?: number;
+  series?: string[];
+}
+
+export interface TopicCurrentData {
+  queryTime?: string;
+  totalTopics?: number;
+  topics?: string[];
+  topicRealtime?: Record<string, number>;
+}
+
 /**
  * Dashboard API 泛型响应封装
  */

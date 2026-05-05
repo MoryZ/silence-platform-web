@@ -17,8 +17,8 @@ export const viewTraceMessageDetail = async (msgId: string): Promise<MessageTrac
 
 
 // 查询消息轨迹图谱
-export const viewMessageTraceGraph = async (msgId: string, traceTopic?: string): Promise<MessageTraceGraph> => {
-  return await request.get('/api/v1/messageTrace/viewMessageTraceGraph?msgId=' + msgId)
+export const viewMessageTraceGraph = async (msgId: string, topic?: string): Promise<MessageTraceGraph> => {
+  return await request.get('/api/v1/messageTrace/viewMessageTraceGraph?msgId=' + msgId + '&topic=' + topic)
 }
 
 

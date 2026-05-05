@@ -11,6 +11,18 @@ const configDialogVisible = ref(false)
 const currentBrokerDetail = ref<any>(null)
 const currentBrokerConfig = ref<any>(null)
 
+const statusItems = computed(() => {
+  const rawData = currentBrokerDetail.value?.rawData
+  if (!rawData || typeof rawData !== 'object') {
+    return [] as Array<{ key: string; value: string }>
+  }
+
+  return Object.entries(rawData).map(([key, value]) => ({
+    key,
+    value: value === null ? 'null' : String(value)
+  }))
+})
+
 // 处理嵌套的数据结构，转换为表格可用的扁平结构
 const tableData = computed(() => {
   if (!clusterData.value) {
@@ -223,14 +235,13 @@ const handleConfigDialogOpen = () => {
         <a-descriptions-item label="Broker ID">{{ currentBrokerDetail?.index }}</a-descriptions-item>
         <a-descriptions-item label="地址">{{ currentBrokerDetail?.brokerAddr }}</a-descriptions-item>
         <a-descriptions-item label="版本">{{ currentBrokerDetail?.version }}</a-descriptions-item>
-        <a-descriptions-item label="运行时间">{{ currentBrokerDetail?.rawData?.runtime }}</a-descriptions-item>
-        <a-descriptions-item label="启动时间">{{ currentBrokerDetail?.rawData?.bootTimestamp ? new Date(parseInt(currentBrokerDetail.rawData.bootTimestamp)).toLocaleString() : '' }}</a-descriptions-item>
-        <a-descriptions-item label="生产消息TPS">{{ currentBrokerDetail?.inTPS?.toFixed(2) || '0.00' }}</a-descriptions-item>
-        <a-descriptions-item label="消费消息TPS">{{ currentBrokerDetail?.outTPS?.toFixed(2) || '0.00' }}</a-descriptions-item>
-        <a-descriptions-item label="昨日生产总数">{{ currentBrokerDetail?.inTotalYest || 0 }}</a-descriptions-item>
-        <a-descriptions-item label="昨日消费总数">{{ currentBrokerDetail?.outTotalYest || 0 }}</a-descriptions-item>
-        <a-descriptions-item label="今日生产总数">{{ currentBrokerDetail?.inTotalToday || 0 }}</a-descriptions-item>
-        <a-descriptions-item label="今日消费总数">{{ currentBrokerDetail?.outTotalToday || 0 }}</a-descriptions-item>
+        <a-descriptions-item
+          v-for="item in statusItems"
+          :key="item.key"
+          :label="item.key"
+        >
+          {{ item.value }}
+        </a-descriptions-item>
       </a-descriptions>
     </a-modal>
 

@@ -26,9 +26,27 @@ const columns = [
 const loadTopics = async () => {
   loading.value = true
   try {
-    const response = await queryTopicList()
-    if (response && response.topicList.length > 0) {
-      topicOptions.value = response.topicList.sort().map((t: string) => ({
+    const response = await queryTopicList({
+      pageNo: 1,
+      pageSize: 200
+    })
+    const raw = response as any
+    const rows = Array.isArray(raw?.data?.data)
+      ? raw.data.data
+      : Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw?.topicList)
+          ? raw.topicList
+          : Array.isArray(raw?.data?.topicList)
+            ? raw.data.topicList
+            : []
+
+    const topicList = rows
+      .map((item: any) => (typeof item === 'string' ? item : (item?.topicName || item?.topic || '')))
+      .filter(Boolean)
+
+    if (topicList.length > 0) {
+      topicOptions.value = topicList.sort().map((t: string) => ({
         label: t,
         value: t
       }))
@@ -50,9 +68,9 @@ const queryClientByTopicAndGroup = async () => {
 
   loading.value = true
   try {
-    const response = await queryProducerConnection(selectedTopic.value, producerGroup.value)
+    const response = await queryProducerConnection(producerGroup.value, selectedTopic.value)
     if (response) {
-      connections.value = response.connectionSet
+      connections.value = response
       if (connections.value.length === 0) {
         message.info('未找到匹配的生产者连接')
       }
@@ -69,7 +87,7 @@ const queryClientByTopicAndGroup = async () => {
 const handleSearch = async () => {
   if (!selectedTopic.value || !producerGroup.value) return
   const res = await queryProducerConnection(producerGroup.value, selectedTopic.value)
-  tableData.value = res.connectionSet || []
+  tableData.value = res || []
 }
 
 onMounted(() => {

@@ -7,13 +7,14 @@ import type {
   CreateTopicRequest,
   UpdateTopicRequest,
   TopicConsumerInfo,
+  TopicConsumerGroupInfo,
   QueueStatInfo,
   TopicConfigInfo,
   MessageRequest,
   GroupList,
-  TopicInfo,
-  SendResult
+  TopicInfo
 } from '@/types/mq/topicApi';
+import type { SendResult } from '@/types/mq/topic';
 // 刷新Topic列表
 export const refreshTopic = async (): Promise<boolean> => {
   return await request.post('/api/v1/topics/refresh')
@@ -94,11 +95,19 @@ export const deleteTopic = async (topic: string): Promise<boolean> => {
 
 // 获取Topic的消费者信息
 export const queryTopicConsumers = async (
-  topic: string
-): Promise<TopicConsumerInfo[]> => {
-  return await request.get('/api/v1/topics/queryConsumerByTopic', {
-    params: { topic }
-  })
+  topicName: string
+): Promise<TopicConsumerGroupInfo[]> => {
+  const response = await request.get('/api/v1/topics/queryConsumerByTopic', {
+    params: { topicName }
+  }) as any
+
+  const wrapped = response && typeof response === 'object' ? response : {}
+  if (Array.isArray(wrapped)) {
+    return wrapped as TopicConsumerGroupInfo[]
+  }
+
+  const data = wrapped?.data
+  return Array.isArray(data) ? data as TopicConsumerGroupInfo[] : []
 }
 
 // 获取Topic的消费者信息

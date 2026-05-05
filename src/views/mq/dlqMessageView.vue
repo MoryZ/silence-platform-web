@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { queryConsumerGroupList } from '@/api/mq/consumer'
+import { queryDLQMessages, resendMessage } from '@/api/mq/dlqMessage'
+import { viewMessage} from '@/api/mq/message'
 import type { MessageView } from '@/types/mq/message'
 import type { DLQMessageQuery, ResendDLQMessageRequest, ConsumerGroupInfo } from '@/types/mq/dlqMessage'
 
@@ -16,10 +19,12 @@ const messages = ref<MessageView[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalCount = ref(0)
+const activeTab = ref<'consumer' | 'messageId'>('consumer')
 
 const showResendDialog = ref(false)
 const showMessageDetailDialog = ref(false)
 const currentMessage = ref<MessageView | null>(null)
+const currentMessageTrackList = ref<Array<{ consumerGroup: string; trackType: string; exceptionDesc?: string }>>([])
 const resendConfig = ref<ResendDLQMessageRequest>({
   msgId: '',
   topicName: '',
@@ -30,12 +35,26 @@ const resendConfig = ref<ResendDLQMessageRequest>({
 const loadConsumerGroups = async () => {
   loading.value = true
   try {
-    const response = await fetch('/consumer/groupList.query')
-    const data = await response.json()
-    if (data.status === 0) {
-      consumerGroups.value = data.data
+    const response = await queryConsumerGroupList() as any
+    const code = Number(response?.code ?? 200)
+    const rawList = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : []
+
+    if (code === 200) {
+      consumerGroups.value = rawList
+        .map((item: any) => ({
+          groupName: item?.groupName || item?.group || '',
+          count: Number(item?.count ?? 0),
+          messageModel: item?.messageModel || '',
+          consumeType: item?.consumeType || '',
+          version: item?.version || ''
+        }))
+        .filter((item: ConsumerGroupInfo) => !!item.groupName)
     } else {
-      message.error(data.errMsg || '获取消费者组列表失败')
+      message.error(response?.message || '获取消费者组列表失败')
     }
   } catch (error: any) {
     message.error(error.message || '获取消费者组列表失败')
@@ -49,36 +68,41 @@ const searchMessages = async () => {
     message.warning('请选择消费者组')
     return
   }
+  if (activeTab.value === 'messageId' && !messageId.value) {
+    message.warning('请输入消息ID')
+    return
+  }
 
   loading.value = true
   try {
+    const beginTimestamp = beginTime.value ? new Date(beginTime.value).getTime() : undefined
+    const endTimestamp = endTime.value ? new Date(endTime.value).getTime() : undefined
+
     const query: DLQMessageQuery = {
       topic: `%DLQ%${selectedGroup.value}`,
       consumerGroup: selectedGroup.value,
-      begin: (currentPage.value - 1) * pageSize.value,
-      end: currentPage.value * pageSize.value,
-      beginTime: beginTime.value || undefined,
-      endTime: endTime.value || undefined,
-      messageId: messageId.value || undefined
+      begin: activeTab.value === 'consumer' && Number.isFinite(beginTimestamp) ? beginTimestamp : undefined,
+      end: activeTab.value === 'consumer' && Number.isFinite(endTimestamp) ? endTimestamp : undefined,
+      pageNo: currentPage.value,
+      pageSize: pageSize.value,
+      messageId: activeTab.value === 'messageId' ? (messageId.value || undefined) : undefined
     }
 
-    const response = await fetch('/message/queryDLQMessageByConsumerGroup.query', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(query)
-    })
+    const response = await queryDLQMessages(query) as any
 
-    const data = await response.json()
-    if (data.status === 0) {
-      messages.value = data.data.messages
-      totalCount.value = data.data.total
+    const page = response?.data?.page || response?.page
+    if (page && Array.isArray(page.data)) {
+      messages.value = page.data.map((item: any) => ({
+        ...item,
+        messageId: item?.messageId || item?.msgId || '',
+        messageBody: item?.messageBody || item?.body || ''
+      }))
+      totalCount.value = Number(page.total ?? 0)
       if (messages.value.length === 0) {
         message.info('未找到匹配的死信队列消息')
       }
     } else {
-      message.error(data.errMsg || '查询死信队列消息失败')
+      message.error('查询死信队列消息失败')
     }
   } catch (error: any) {
     message.error(error.message || '查询死信队列消息失败')
@@ -92,37 +116,73 @@ const handlePageChange = (page: number) => {
   searchMessages()
 }
 
-const viewMessageDetail = (message: MessageView) => {
-  currentMessage.value = message
-  showMessageDetailDialog.value = true
+const viewMessageDetail = async (row: MessageView) => {
+  try {
+    loading.value = true
+    const messageId = row.messageId || (row as any).msgId
+    if (!messageId) {
+      message.warning('消息ID不能为空')
+      return
+    }
+    const detailTopic = row?.properties?.RETRY_TOPIC || row.topic
+    const result = await viewMessage(messageId, detailTopic)
+    currentMessageTrackList.value = Array.isArray(result?.messageTrackList) ? result.messageTrackList : []
+    const detail = result?.messageView || row
+    currentMessage.value = {
+      ...detail,
+      messageId: detail?.messageId || (detail as any)?.msgId || messageId,
+      messageBody: detail?.messageBody || (detail as any)?.body || ''
+    }
+    showMessageDetailDialog.value = true
+  } catch (error: any) {
+    message.error(error.message || '获取消息详情失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 const openResendDialog = (message: MessageView) => {
+  const fallbackMsgId = (message as any)?.msgId || ''
+  const resolvedMsgId = message.messageId || fallbackMsgId
+  const retryTopic = message?.properties?.RETRY_TOPIC
+  const resolvedTopic = retryTopic || message.topic
+
   resendConfig.value = {
-    msgId: message.messageId,
-    topicName: message.topic,
+    msgId: resolvedMsgId,
+    topicName: resolvedTopic,
     consumerGroup: selectedGroup.value
   }
   showResendDialog.value = true
 }
 
-const resendMessage = async () => {
+const resendDlqMessage = async () => {
   try {
-    const response = await fetch('/message/resendDLQMessage.do', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(resendConfig.value)
-    })
+    const payload: ResendDLQMessageRequest = {
+      topicName: resendConfig.value.topicName?.trim(),
+      msgId: resendConfig.value.msgId?.trim(),
+      consumerGroup: resendConfig.value.consumerGroup?.trim(),
+      clientId: resendConfig.value.clientId
+    }
 
-    const data = await response.json()
-    if (data.status === 0) {
+    if (!payload.msgId || !payload.topicName || !payload.consumerGroup) {
+      message.warning('重发参数不完整，请重新选择消息后再试')
+      return
+    }
+
+    // topic 误传成 msgId 时会触发后端 route info 错误，这里前端直接拦截。
+    if (payload.topicName === payload.msgId) {
+      message.error('topicName 参数异常（与 msgId 相同），请重新打开重发弹窗')
+      return
+    }
+
+    const data = await resendMessage(payload) as any
+
+    if (!data?.remark) {
       message.success('重发消息成功')
       showResendDialog.value = false
       await searchMessages()
     } else {
-      message.error(data.errMsg || '重发消息失败')
+      message.error(data.remark || '重发消息失败')
     }
   } catch (error: any) {
     message.error(error.message || '重发消息失败')
@@ -139,6 +199,14 @@ const resetForm = () => {
   totalCount.value = 0
 }
 
+const handleTabChange = (key: string) => {
+  activeTab.value = key as 'consumer' | 'messageId'
+  currentPage.value = 1
+  messages.value = []
+  totalCount.value = 0
+  currentMessageTrackList.value = []
+}
+
 onMounted(() => {
   loadConsumerGroups()
 })
@@ -151,6 +219,28 @@ const formattedProperties = computed(() => {
     value
   }))
 })
+
+const displayMessageBody = computed(() => {
+  const raw = currentMessage.value?.messageBody || ''
+  if (!raw) return ''
+  try {
+    const decoded = atob(raw)
+    const utf8 = decodeURIComponent(
+      Array.from(decoded)
+        .map(ch => `%${ch.charCodeAt(0).toString(16).padStart(2, '0')}`)
+        .join('')
+    )
+    return utf8
+  } catch {
+    return raw
+  }
+})
+
+const trackStatusColor = (trackType?: string) => {
+  if (trackType === 'CONSUMED') return 'green'
+  if (trackType === 'NOT_ONLINE') return 'orange'
+  return 'blue'
+}
 
 const delayLevels = [
   { label: '不延时', value: 0 },
@@ -177,130 +267,145 @@ const delayLevels = [
 
 <template>
   <div class="dlq-message-page">
-    <a-card class="search-card" v-loading="loading">
-      <template #header>
-        <div class="card-header">
-          <h3 class="header-title">死信队列消息查询</h3>
-          <div class="header-actions">
-            <a-button @click="resetForm">重置</a-button>
-            <a-button type="primary" @click="loadConsumerGroups">
-              刷新
-            </a-button>
+    <div class="search-panel">
+      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange" class="top-tabs">
+        <a-tab-pane key="consumer" tab="Consumer" />
+        <a-tab-pane key="messageId" tab="Message ID" />
+      </a-tabs>
+      <div class="tab-content-form">
+        <div v-if="activeTab === 'consumer'" class="toolbar-row">
+          <div class="toolbar-field">
+            <label>Consumer:</label>
+            <a-select
+              v-model:value="selectedGroup"
+              placeholder="请选择消费者组"
+              allow-clear
+              show-search
+              class="consumer-select"
+            >
+              <a-select-option
+                v-for="group in consumerGroups"
+                :key="group.groupName"
+                :value="group.groupName"
+              >
+                {{ group.groupName }}
+              </a-select-option>
+            </a-select>
           </div>
-        </div>
-      </template>
-
-      <a-form :inline="true" @submit.prevent="searchMessages">
-        <a-form-item label="消费者组" required>
-          <a-select
-            v-model="selectedGroup"
-            placeholder="请选择消费者组"
-            clearable
-            filterable
-            style="width: 300px"
-          >
-            <a-option
-              v-for="group in consumerGroups"
-              :key="group.groupName"
-              :label="group.groupName"
-              :value="group.groupName"
+          <div class="toolbar-field">
+            <label>Begin:</label>
+            <a-date-picker
+              v-model:value="beginTime"
+              placeholder="开始时间"
+              show-time
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              class="time-picker"
             />
-          </a-select>
-        </a-form-item>
+          </div>
+          <div class="toolbar-field">
+            <label>End:</label>
+            <a-date-picker
+              v-model:value="endTime"
+              placeholder="结束时间"
+              show-time
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              class="time-picker"
+            />
+          </div>
+          <a-button class="toolbar-button" type="primary" @click="searchMessages">Search</a-button>
+          <a-button class="toolbar-button" disabled>batchReSend</a-button>
+        </div>
+        <div v-if="activeTab === 'consumer'" class="toolbar-actions-row">
+          <a-button disabled>batchExport</a-button>
+        </div>
+        <div v-if="activeTab === 'messageId'" class="toolbar-row">
+          <div class="toolbar-field">
+            <label>Consumer:</label>
+            <a-select
+              v-model:value="selectedGroup"
+              placeholder="请选择消费者组"
+              allow-clear
+              show-search
+              class="consumer-select"
+            >
+              <a-select-option
+                v-for="group in consumerGroups"
+                :key="group.groupName"
+                :value="group.groupName"
+              >
+                {{ group.groupName }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="toolbar-field message-id-field">
+            <label>MessageId:</label>
+            <a-input
+              v-model:value="messageId"
+              placeholder="输入消息ID"
+              class="message-id-input"
+            />
+          </div>
+          <a-button class="toolbar-button" type="primary" @click="searchMessages">Search</a-button>
+        </div>
+      </div>
+    </div>
 
-        <a-form-item label="时间范围">
-          <a-date-picker
-            v-model="beginTime"
-            type="datetime"
-            placeholder="开始时间"
-            style="width: 200px"
-          />
-          <span class="range-separator">至</span>
-          <a-date-picker
-            v-model="endTime"
-            type="datetime"
-            placeholder="结束时间"
-            style="width: 200px"
-          />
-        </a-form-item>
-
-        <a-form-item label="消息ID">
-          <a-input
-            v-model="messageId"
-            placeholder="输入消息ID"
-            clearable
-            style="width: 300px"
-          />
-        </a-form-item>
-
-        <a-form-item>
-          <a-button type="primary" @click="searchMessages">
-            查询
-          </a-button>
-        </a-form-item>
-      </a-form>
-
+    <a-card class="table-card" v-loading="loading">
       <a-table
         :dataSource="messages"
         :pagination="false"
         bordered
+        :rowKey="(record: MessageView) => record.messageId || record.topic"
         :locale="{ emptyText: '暂无数据' }"
       >
-        <a-table-column label="消息ID" prop="messageId" min-width="220" show-overflow-tooltip />
-        <a-table-column label="Topic" prop="topic" min-width="180" show-overflow-tooltip />
-        <a-table-column label="存储大小" prop="storeSize" width="100">
-          <template #default="{ row }">
-            {{ (row.storeSize / 1024).toFixed(2) }} KB
+        <a-table-column title="消息ID" dataIndex="messageId" key="messageId" width="260" />
+        <a-table-column title="Tag" key="tag" width="180">
+          <template #customRender="{ record }">
+            {{ record?.properties?.TAGS || '-' }}
           </template>
         </a-table-column>
-        <a-table-column label="队列ID" prop="queueId" width="80" />
-        <a-table-column label="存储时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.storeTimestamp).toLocaleString() }}
+        <a-table-column title="Key" key="key" width="220">
+          <template #customRender="{ record }">
+            {{ record?.properties?.KEYS || '-' }}
           </template>
         </a-table-column>
-        <a-table-column label="生产时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.bornTimestamp).toLocaleString() }}
+        <a-table-column title="StoreTime" key="storeTimestamp" width="200">
+          <template #customRender="{ record }">
+            {{ record.storeTimestamp ? new Date(record.storeTimestamp).toLocaleString() : '-' }}
           </template>
         </a-table-column>
-        <a-table-column label="生产者" prop="bornHost" width="150" show-overflow-tooltip />
-        <a-table-column label="存储节点" prop="storeHost" width="150" show-overflow-tooltip />
-        <a-table-column label="重试次数" prop="reconsumeTimes" width="100" />
-        <a-table-column label="消息类型" prop="msgType" width="120">
-          <template #default="{ row }">
-            <a-tag :type="row.msgType === 'NORMAL' ? '' : 'warning'">
-              {{ row.msgType }}
-            </a-tag>
-          </template>
-        </a-table-column>
-        <a-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <a-button
-              type="primary"
-              size="small"
-              @click="viewMessageDetail(row)"
-            >
-              详情
-            </a-button>
-            <a-button
-              type="success"
-              size="small"
-              @click="openResendDialog(row)"
-            >
-              重发
-            </a-button>
+        <a-table-column title="操作" key="action" width="180" fixed="right">
+          <template #customRender="{ record }">
+            <div class="action-buttons">
+              <a-button
+                type="primary"
+                size="small"
+                @click="viewMessageDetail(record)"
+              >
+                详情
+              </a-button>
+              <a-button
+                type="primary"
+                ghost
+                size="small"
+                @click="openResendDialog(record)"
+              >
+                重发
+              </a-button>
+            </div>
           </template>
         </a-table-column>
       </a-table>
 
       <div class="pagination-container" v-if="totalCount > 0">
         <a-pagination
-          v-model:current-page="currentPage"
+          v-model:current="currentPage"
           :page-size="pageSize"
           :total="totalCount"
-          layout="total, prev, pager, next"
-          @current-change="handlePageChange"
+          :show-total="(total) => `Total ${total}`"
+          @change="handlePageChange"
         />
       </div>
 
@@ -310,39 +415,41 @@ const delayLevels = [
     </a-card>
 
     <!-- 重发消息对话框 -->
-    <a-dialog
-      v-model="showResendDialog"
+    <a-modal
+      v-model:open="showResendDialog"
       title="重发死信队列消息"
-      width="500px"
+      :width="500"
+      @cancel="showResendDialog = false"
     >
       <a-form :model="resendConfig" label-width="100px">
         <a-form-item label="Topic">
           <a-input
-            v-model="resendConfig.topicName"
+            v-model:value="resendConfig.topicName"
             readonly
           />
         </a-form-item>
 
         <a-form-item label="消费者组">
           <a-input
-            v-model="resendConfig.consumerGroup"
+            v-model:value="resendConfig.consumerGroup"
             readonly
           />
         </a-form-item>
       </a-form>
       <template #footer>
         <a-button @click="showResendDialog = false">取消</a-button>
-        <a-button type="primary" @click="resendMessage">
+        <a-button type="primary" @click="resendDlqMessage">
           重发
         </a-button>
       </template>
-    </a-dialog>
+    </a-modal>
 
     <!-- 消息详情对话框 -->
-    <a-dialog
-      v-model="showMessageDetailDialog"
+    <a-modal
+      v-model:open="showMessageDetailDialog"
       title="消息详情"
-      width="800px"
+      :width="800"
+      @cancel="showMessageDetailDialog = false"
     >
       <a-descriptions :column="2" border>
         <a-descriptions-item label="消息ID">
@@ -381,22 +488,46 @@ const delayLevels = [
 
       <div class="message-section">
         <div class="section-title">消息内容</div>
-        <a-input
-          type="textarea"
+        <a-textarea
           :rows="6"
-          :model-value="currentMessage?.messageBody"
+          :value="displayMessageBody"
           readonly
         />
       </div>
 
       <div class="message-section" v-if="formattedProperties.length > 0">
         <div class="section-title">消息属性</div>
-        <a-table :data="formattedProperties" border stripe>
-          <a-table-column label="属性名" prop="key" />
-          <a-table-column label="属性值" prop="value" show-overflow-tooltip />
+        <a-table :dataSource="formattedProperties" :pagination="false" bordered :rowKey="(record: any) => record.key">
+          <a-table-column title="属性名" dataIndex="key" key="key" width="220" />
+          <a-table-column title="属性值" dataIndex="value" key="value" />
         </a-table>
       </div>
-    </a-dialog>
+
+      <div class="message-section" v-if="currentMessageTrackList.length > 0">
+        <div class="section-title">消息轨迹</div>
+        <a-table
+          :dataSource="currentMessageTrackList"
+          :pagination="false"
+          bordered
+          :rowKey="(record: any, index: number) => `${record.consumerGroup}-${index}`"
+        >
+          <a-table-column title="Consumer Group" dataIndex="consumerGroup" key="consumerGroup" width="260" />
+          <a-table-column title="状态" dataIndex="trackType" key="trackType" width="140">
+            <template #customRender="{ record }">
+              <a-tag :color="trackStatusColor(record.trackType)">{{ record.trackType }}</a-tag>
+            </template>
+          </a-table-column>
+          <a-table-column title="异常信息" dataIndex="exceptionDesc" key="exceptionDesc">
+            <template #customRender="{ record }">
+              {{ record.exceptionDesc || '-' }}
+            </template>
+          </a-table-column>
+        </a-table>
+      </div>
+      <template #footer>
+        <a-button @click="showMessageDetailDialog = false">关闭</a-button>
+      </template>
+    </a-modal>
   </div>
 </template>
 
@@ -405,30 +536,88 @@ const delayLevels = [
   padding: 20px;
 }
 
-.search-card {
+.search-panel {
+  padding: 8px 12px 20px;
+  background: #fff;
+  border-radius: 2px;
   margin-bottom: 20px;
 }
+.top-tabs {
+  margin-bottom: 0;
+}
 
-.card-header {
+:deep(.top-tabs .ant-tabs-nav-list) {
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
+}
+
+:deep(.top-tabs .ant-tabs-tab) {
+  margin-right: 24px !important;
+}
+
+:deep(.top-tabs .ant-tabs-tab + .ant-tabs-tab) {
+  margin-left: 0 !important;
+}
+
+.tab-content-form {
+  margin-top: 8px;
+}
+
+.toolbar-row {
+  display: flex;
   align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 18px 24px 8px;
 }
 
-.header-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
+.toolbar-actions-row {
+  padding: 0 24px 8px;
 }
 
-.header-actions {
+.toolbar-field {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 
-.range-separator {
-  margin: 0 8px;
-  color: var(--a-text-color-secondary);
+.toolbar-field label {
+  color: #111827;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.consumer-select {
+  width: 420px;
+}
+
+.time-picker {
+  width: 285px;
+}
+
+.message-id-field {
+  flex: 1;
+  min-width: 420px;
+}
+
+.message-id-input {
+  width: 100%;
+  max-width: 640px;
+}
+
+.toolbar-button {
+  min-width: 128px;
+  height: 44px;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-card {
+  margin-bottom: 20px;
 }
 
 .pagination-container {
@@ -454,29 +643,35 @@ const delayLevels = [
   color: var(--a-text-color-primary);
 }
 
-:deep(.a-form) {
-  margin-bottom: 20px;
-}
-
 :deep(.a-descriptions) {
   margin-bottom: 20px;
 }
 
-:deep(.a-table) {
-  margin-top: 10px;
+:deep(.ant-tabs-nav) {
+  margin-bottom: 0;
 }
 
-:deep(.ant-tabs-nav) {
-  margin-bottom: 12px;
-}
 :deep(.ant-tabs-tab) {
   font-size: 16px;
   font-weight: 500;
   padding: 8px 32px;
 }
 
-:deep(.ant-form-inline .ant-form-item) {
-  margin-right: 24px;
-  margin-bottom: 8px;
+:deep(.ant-tabs-content-holder) {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .consumer-select,
+  .time-picker,
+  .message-id-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .message-id-field {
+    min-width: 0;
+    width: 100%;
+  }
 }
 </style> 

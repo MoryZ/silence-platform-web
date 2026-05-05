@@ -2,6 +2,7 @@ import type {PaginationQuery } from '@/types/mq/api'
 
 export interface MessageView {
   queueId: number
+  queueOffset?: number
   storeSize: number
   messageId: string
   topic: string
@@ -10,6 +11,11 @@ export interface MessageView {
   bornHost: string
   storeHost: string
   reconsumeTimes: number
+  sysFlag?: number
+  commitLogOffset?: number
+  bodyCRC?: number
+  preparedTransactionOffset?: number
+  flag?: number
   msgType: string
   properties: Record<string, string>
   messageBody: string

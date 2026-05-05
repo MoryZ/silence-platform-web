@@ -518,7 +518,8 @@ const handleModalOk = async () => {
       avatar: form.avatar!,
       email: form.email!,
       phone: form.phone!,
-      status: form.status!
+      status: form.status!,
+      roleIds: form.roleIds ?? []
     };
 
     if (form.id) {

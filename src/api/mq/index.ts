@@ -87,7 +87,7 @@ export {
   findByKeyAndTopic,
   queryMessageTraces,
   exportMessages,
-  resendMessage
+  consumeMessageDirectly
 } from './message'
 
 export type {

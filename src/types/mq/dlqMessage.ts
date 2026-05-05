@@ -3,10 +3,10 @@ import type { MessageView } from './message'
 export interface DLQMessageQuery {
   topic: string
   consumerGroup: string
-  begin: number
-  end: number
-  beginTime?: string
-  endTime?: string
+  begin?: number
+  end?: number
+  pageNo?: number
+  pageSize?: number
   messageId?: string
 }
 

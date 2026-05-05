@@ -23,6 +23,11 @@ export const exportDLQMessages = async (consumerGroup: string, msgId: string): P
     })
 }
 
+// 重发消息
+export const resendMessage = async ( params: ResendDLQMessageRequest): Promise<void> => {
+  return await request.post('/api/v1/dlqMessage/resend', params)
+}
+
 // 批量重发死信队列消息
 export const batchResendDLQMessage = async (params: ResendDLQMessageRequest[]): Promise<void> => {
   return await request.post('/api/v1/dlqMessage/batchResendDlqMessage', params)

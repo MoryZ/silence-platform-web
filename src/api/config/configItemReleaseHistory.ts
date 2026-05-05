@@ -5,7 +5,7 @@ import type {
 } from '@/types/config';
 
 /**
- * 获取配置项列表
+ * 获取发布历史列表
  */
 export function getConfigItemReleaseHistories(params: ConfigItemReleaseHistoryParams) {
   return request.get<ConfigItemReleaseHistoryResponse>('/api/v1/configItemReleaseHistories', { params });

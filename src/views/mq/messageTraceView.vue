@@ -49,11 +49,35 @@ const graphOption = ref<any>(null)
 const graphLoading = ref(false)
 const traceGraphData = ref<any>(null)
 
+const normalizeMessage = (item: any) => ({
+  ...item,
+  msgId: item?.msgId || item?.messageId || '',
+  messageId: item?.messageId || item?.msgId || ''
+})
+
 // Methods
 const loadTopics = async () => {
   try {
-    const data = await queryTopicList(true)
-    topics.value = data.topicList.sort()
+    const response = await queryTopicList({
+      pageNo: 1,
+      pageSize: 200,
+      skipSysProcess: true
+    }) as any
+
+    const rows = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.topicList)
+          ? response.topicList
+          : Array.isArray(response?.data?.topicList)
+            ? response.data.topicList
+            : []
+
+    topics.value = rows
+      .map((item: any) => (typeof item === 'string' ? item : (item?.topicName || item?.topic || '')))
+      .filter(Boolean)
+      .sort()
   } catch (e) {
     message.error('获取Topic失败')
   }
@@ -72,14 +96,14 @@ const search = async () => {
         return
       }
       const result = await findByKeyAndTopic(searchForm.value.key, searchForm.value.topic)
-      messages.value = result || []
+      messages.value = (result || []).map((item: any) => normalizeMessage(item))
     } else if (activeTab.value === 'messageId') {
       if (!searchForm.value.messageId) {
         message.warning('请输入消息ID')
         return
       }
       const result = await viewMessage(searchForm.value.messageId, searchForm.value.topic)
-      messages.value = result && result.messageView ? [result.messageView] : []
+      messages.value = result && result.messageView ? [normalizeMessage(result.messageView)] : []
     }
   } catch (e) {
     message.error('查询失败')
@@ -90,11 +114,16 @@ const search = async () => {
 
 const handleViewTraceDetail = async (record: any) => {
   try {
-    const res = await viewTraceMessageDetail(record.msgId)
-    traceDetail.value = res
+    const targetMsgId = record?.msgId || record?.messageId
+    if (!targetMsgId) {
+      message.warning('消息ID为空，无法查询轨迹详情')
+      return
+    }
+    // const res = await viewTraceMessageDetail(targetMsgId)
+    // traceDetail.value = res
 
     graphLoading.value = true
-    const graphRes = await viewMessageTraceGraph(record.msgId)
+    const graphRes = await viewMessageTraceGraph(targetMsgId, searchForm.value.topic)
     graphOption.value = buildTraceGraphOption(graphRes)
     traceGraphData.value = graphRes
     graphLoading.value = false
