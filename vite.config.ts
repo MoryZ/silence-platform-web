@@ -19,8 +19,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '^/(auth|config|job|mq)/api/v1': {
-        target: 'http://110.40.135.216:8086', 
-        // target: 'http://127.0.0.1:9900', 
+        //target: 'http://110.40.135.216:8086', 
+        target: 'http://127.0.0.1:8086',  // 注意改成 127.0.0.1
         changeOrigin: true
       }
     },
