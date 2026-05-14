@@ -51,9 +51,9 @@
     <!-- 表格下方操作按钮 -->
     <div class="bottom-actions">
       <a-button type="primary" @click="handleCloneNamespace">克隆命名空间</a-button>
-      <a-button :disabled="selectedRowKeys.length === 0" @click="handleCompare">比较配置</a-button>
+      <a-button @click="handleCompare">比较配置</a-button>
       <a-button @click="handleSync">同步配置</a-button>
-      <a-button type="primary" :disabled="!selectedRowKeys.length" @click="handleBatchPublish">批量发布</a-button>
+      <a-button type="primary" @click="handleBatchPublish">批量发布</a-button>
     </div>
 
     <!-- 新增配置弹窗 -->
@@ -76,7 +76,7 @@
     <CompareConfigModal
       v-model:open="showCompareModal"
       :loading="compareLoading"
-      :source-item="selectedItems[0]"
+      :source-item="selectedItems[0] || null"
       :source-environment-name="currentEnvironment?.name || ''"
       :target-environments="targetEnvironments"
       @confirm="handleCompareConfirm"
@@ -86,7 +86,7 @@
     <SyncConfigModal
       v-model:open="showSyncModal"
       :loading="syncLoading"
-      :source-item="selectedItems[0]"
+      :source-item="selectedItems[0] || null"
       :source-environment-name="currentEnvironment?.name || ''"
       :target-environments="targetEnvironments"
       @confirm="handleSyncConfirm"
@@ -146,6 +146,7 @@ interface Emits {
   (e: 'view-release-history', record: ConfigItem): void;
   (e: 'publish', record: ConfigItem): void;
   (e: 'refresh-data'): void;
+  (e: 'batch-publish', record: ConfigItem): void;
 }
 
 const props = defineProps<Props>();
@@ -161,6 +162,21 @@ const selectedItems = ref<ConfigItem[]>([]);
 const onSelectChange = (keys: number[], rows: ConfigItem[]) => {
   selectedRowKeys.value = keys;
   selectedItems.value = rows;
+};
+
+const getSingleSelectedItem = () => {
+  if (selectedItems.value.length !== 1) {
+    message.warning('请选择一个命名空间');
+    return null;
+  }
+
+  const selectedItem = selectedItems.value[0];
+  if (!selectedItem) {
+    message.warning('请选择一个命名空间');
+    return null;
+  }
+
+  return selectedItem;
 };
 
 // 使用配置操作 Composable
@@ -230,6 +246,11 @@ const handleAdd = () => {
 
 // 处理克隆命名空间
 const handleCloneNamespace = () => {
+  const selectedItem = getSingleSelectedItem();
+  if (!selectedItem) {
+    return;
+  }
+
   if (!currentEnvironment.value) {
     message.error('请先选择环境');
     return;
@@ -239,14 +260,8 @@ const handleCloneNamespace = () => {
 
 // 处理比较配置
 const handleCompare = () => {
-  if (selectedRowKeys.value.length === 0) {
-    message.warning('请至少选择一条记录');
-    return;
-  }
-  
-  const selectedItem = selectedItems.value[0];
+  const selectedItem = getSingleSelectedItem();
   if (!selectedItem) {
-    message.error('未找到选中的配置项');
     return;
   }
   
@@ -282,8 +297,8 @@ const handleCompareConfirm = async (data: { targetItem: ConfigItem; targetEnviro
 
 // 处理同步配置
 const handleSync = () => {
-  if (!selectedRowKeys.value.length) {
-    message.warning('请先选择要同步的配置项');
+  const selectedItem = getSingleSelectedItem();
+  if (!selectedItem) {
     return;
   }
   showSyncModal.value = true;
@@ -319,12 +334,12 @@ const handleSyncConfirm = async (data: { targetEnvironmentId: number; targetName
 
 // 处理批量发布
 const handleBatchPublish = () => {
-  if (!selectedRowKeys.value.length) {
-    message.warning('请先选择要发布的配置项');
+  const selectedItem = getSingleSelectedItem();
+  if (!selectedItem) {
     return;
   }
-  console.log('批量发布选中的配置项:', selectedRowKeys.value);
-  message.info('批量发布功能开发中...');
+
+  emit('batch-publish', selectedItem);
 };
 
 // 处理刷新数据

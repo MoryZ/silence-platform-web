@@ -1,51 +1,53 @@
 <template>
-  <a-modal
-    v-model:open="visible"
-    title="发布历史"
-    :width="1400"
-    :footer="null"
-    @cancel="handleClose"
-  >
-    <div class="release-history-container">
+  <div class="release-history-page">
+    <div class="page-header">
+      <div class="page-title-group">
+        <h2>发布历史</h2>
+        <p class="page-subtitle">按环境、命名空间与时间范围查询发布记录</p>
+      </div>
+    </div>
+
+    <a-empty
+      v-if="!selectedComponentId || !currentEnv"
+      description="请先在配置管理中选择组件与环境类型"
+    />
+
+    <div v-else class="release-history-container">
+      <div class="environment-selector">
+        <div class="env-tabs-wrapper">
+          <div class="env-tabs-container">
+            <div
+              v-for="env in environments"
+              :key="env.id"
+              :class="['env-tab', { active: Number(activeEnvironmentKey) === env.id }]"
+              @click="handleEnvironmentChange(String(env.id))"
+            >
+              <span class="env-tab-name">{{ env.displayName || env.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 顶部搜索栏 -->
       <div class="search-bar">
         <div class="search-controls">
           <a-select
             v-model:value="selectedConfigItemId"
-            style="width: 200px"
-            placeholder="选择配置项"
-            @change="handleConfigItemChange"
-          >
-            <a-select-option
-              v-for="item in props.dataSource"
-              :key="item.id"
-              :value="item.id"
-            >
-              {{ item.namespaceId }}
-            </a-select-option>
-          </a-select>
-          
+            :options="namespaceOptions"
+            :field-names="{ label: 'label', value: 'value' }"
+            placeholder="请选择命名空间"
+            style="width: 280px"
+            @change="handleNamespaceChange"
+          />
+
           <a-range-picker
             v-model:value="dateRange"
-            :show-time="{ format: 'HH:mm' }"
-            format="YYYY-MM-DD HH:mm"
-            style="width: 300px"
-            @change="handleDateChange"
+            :show-time="{ format: 'HH:mm:ss' }"
+            format="YYYY-MM-DD HH:mm:ss"
+            style="width: 360px"
           />
-          
-          <a-input-group compact style="width: 200px">
-            <a-input
-              v-model:value="searchKeyword"
-              placeholder="搜索发布记录"
-              style="width: 160px"
-              @pressEnter="handleSearch"
-            />
-            <a-button type="primary" @click="handleSearch">
-              <template #icon>
-                <SearchOutlined />
-              </template>
-            </a-button>
-          </a-input-group>
+
+          <a-button type="primary" @click="handleSearch">查询</a-button>
           
           <a-button @click="handleResetSearch">重置</a-button>
         </div>
@@ -55,7 +57,12 @@
         <!-- 左侧：发布历史列表 -->
         <div class="left-panel">
           <div class="history-table">
+            <a-empty
+              v-if="!selectedConfigItemId && !loading"
+              description="请先选择命名空间"
+            />
             <a-table
+              v-else
               :data-source="filteredHistoryList"
               :loading="loading"
               :pagination="pagination"
@@ -107,19 +114,22 @@
         </div>
       </div>
     </div>
-  </a-modal>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch, onUnmounted, nextTick, shallowRef, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { SearchOutlined } from '@ant-design/icons-vue';
 import monaco from '../../../utils/monaco';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { getConfigItemReleaseHistories } from '../../../api/config/configItemReleaseHistory';
-import type { ConfigItem, ConfigItemReleaseHistory } from '@/types/config';
+import { getConfigEnvironments } from '../../../api/config/configEnvironment';
+import { getConfigItems } from '../../../api/config/configItem';
+import { useConfigStore } from '@/stores/config';
+import { useEnvStore } from '@/stores/env';
+import type { ConfigEnvironment, ConfigItem, ConfigItemReleaseHistory } from '@/types/config';
 
 // 扩展 dayjs 插件
 dayjs.extend(utc);
@@ -127,20 +137,29 @@ dayjs.extend(timezone);
 
 
 interface Props {
-  dataSource: ConfigItem[];
-  open: boolean;
-  selectedConfigItem?: ConfigItem | null;
-}
-
-interface Emits {
-  (e: 'refresh-data'): void;
-  (e: 'close'): void;
+  configItemId: number | null;
+  namespaceId?: string;
+  configEnvironmentId?: number | null;
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const configStore = useConfigStore();
+const envStore = useEnvStore();
 
-const visible = ref(false);
+const selectedComponentId = computed(() => configStore.selectedComponentIds[0] || null);
+const currentEnv = computed(() => envStore.currentEnv);
+
+const environments = ref<ConfigEnvironment[]>([]);
+const activeEnvironmentKey = ref('');
+const namespaceItems = ref<ConfigItem[]>([]);
+
+const namespaceOptions = computed(() => {
+  return namespaceItems.value.map((item) => ({
+    label: item.namespaceId,
+    value: item.id,
+  }));
+});
+
 const loading = ref(false);
 const releaseHistoryList = shallowRef<ConfigItemReleaseHistory[]>([]);
 const selectedHistory = shallowRef<ConfigItemReleaseHistory | null>(null);
@@ -152,7 +171,6 @@ let newEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 // 搜索和筛选相关
 const selectedConfigItemId = ref<number | null>(null);
 const dateRange = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
-const searchKeyword = ref('');
 
 // 分页
 const pagination = ref({
@@ -238,90 +256,141 @@ const getRowProps = (record: ConfigItemReleaseHistory) => {
 
 // 过滤后的历史列表（仅前端关键词搜索，日期范围通过后端API查询）
 const filteredHistoryList = computed(() => {
-  let filtered = releaseHistoryList.value;
-  
-  // 按关键词搜索（前端过滤）
-  if (searchKeyword.value) {
-    const keyword = searchKeyword.value.toLowerCase();
-    filtered = filtered.filter(item => 
-      item.releaseName.toLowerCase().includes(keyword) ||
-      item.createdBy.toLowerCase().includes(keyword)
-    );
-  }
-  
-  // 日期范围已通过后端API查询，这里不再进行前端过滤
-  
-  return filtered;
+  return releaseHistoryList.value;
 });
 
-// 监听弹窗打开
-watch(() => props.open, (isOpen) => {
-  // 确保状态同步
-  visible.value = isOpen;
-  
-  if (isOpen) {
-    // 重置状态
-    loading.value = false;
-    selectedHistory.value = null;
-    releaseHistoryList.value = [];
-    searchKeyword.value = '';
-    dateRange.value = null;
-    pagination.value.current = 1;
-    
-    // 清理编辑器
-    if (oldEditor) {
-      try {
-        oldEditor.dispose();
-      } catch (e) {
-        console.error('清理旧编辑器失败:', e);
-      }
-      oldEditor = null;
-    }
-    if (newEditor) {
-      try {
-        newEditor.dispose();
-      } catch (e) {
-        console.error('清理新编辑器失败:', e);
-      }
-      newEditor = null;
-    }
-    
-    // 如果有选中的配置项，加载数据
-    if (props.selectedConfigItem) {
-      selectedConfigItemId.value = props.selectedConfigItem.id;
-      fetchReleaseHistories(props.selectedConfigItem.id);
-    }
-  }
-}, { immediate: true });
+const resetPageState = () => {
+  loading.value = false;
+  selectedHistory.value = null;
+  releaseHistoryList.value = [];
+  pagination.value.current = 1;
 
-// 监听 visible 变化，同步到父组件
-watch(visible, (val) => {
-  if (!val) {
-    emit('close');
+  if (oldEditor) {
+    try {
+      oldEditor.dispose();
+    } catch (e) {
+      console.error('清理旧编辑器失败:', e);
+    }
+    oldEditor = null;
   }
-});
+  if (newEditor) {
+    try {
+      newEditor.dispose();
+    } catch (e) {
+      console.error('清理新编辑器失败:', e);
+    }
+    newEditor = null;
+  }
+};
+
+const fetchEnvironments = async () => {
+  if (!selectedComponentId.value || !currentEnv.value) {
+    environments.value = [];
+    activeEnvironmentKey.value = '';
+    namespaceItems.value = [];
+    selectedConfigItemId.value = null;
+    return;
+  }
+
+  try {
+    const response = await getConfigEnvironments({
+      configComponentId: Number(selectedComponentId.value),
+      envType: Number(currentEnv.value),
+    });
+
+    let envData: ConfigEnvironment[] = [];
+    if (Array.isArray(response)) {
+      envData = response;
+    } else if (response && typeof response === 'object' && Array.isArray((response as any).data)) {
+      envData = (response as any).data;
+    }
+
+    environments.value = envData;
+
+    if (!environments.value.length) {
+      activeEnvironmentKey.value = '';
+      namespaceItems.value = [];
+      selectedConfigItemId.value = null;
+      return;
+    }
+
+    const candidateEnvironmentId =
+      props.configEnvironmentId && environments.value.some((env) => env.id === props.configEnvironmentId)
+        ? props.configEnvironmentId
+        : Number(activeEnvironmentKey.value) && environments.value.some((env) => env.id === Number(activeEnvironmentKey.value))
+          ? Number(activeEnvironmentKey.value)
+          : environments.value[0].id;
+
+    activeEnvironmentKey.value = String(candidateEnvironmentId);
+    await fetchNamespaceList(candidateEnvironmentId);
+  } catch (error) {
+    console.error('加载环境列表失败:', error);
+    message.error('加载环境列表失败');
+  }
+};
+
+const fetchNamespaceList = async (environmentId: number) => {
+  try {
+    const response = await getConfigItems({
+      pageNo: 1,
+      pageSize: 1000,
+      configEnvironmentId: environmentId,
+    });
+
+    namespaceItems.value = response?.data || [];
+
+    const matchedById = props.configItemId
+      ? namespaceItems.value.find((item) => item.id === props.configItemId)
+      : null;
+    const matchedByNamespace = props.namespaceId
+      ? namespaceItems.value.find((item) => item.namespaceId === props.namespaceId)
+      : null;
+
+    const keepSelected =
+      selectedConfigItemId.value && namespaceItems.value.some((item) => item.id === selectedConfigItemId.value)
+        ? selectedConfigItemId.value
+        : null;
+
+    selectedConfigItemId.value = keepSelected || matchedById?.id || matchedByNamespace?.id || namespaceItems.value[0]?.id || null;
+
+    resetPageState();
+    if (selectedConfigItemId.value) {
+      await fetchReleaseHistories(selectedConfigItemId.value);
+    }
+  } catch (error) {
+    console.error('加载命名空间列表失败:', error);
+    message.error('加载命名空间列表失败');
+    namespaceItems.value = [];
+    selectedConfigItemId.value = null;
+  }
+};
+
+watch(
+  [selectedComponentId, currentEnv],
+  () => {
+    fetchEnvironments();
+  },
+  { immediate: true }
+);
 
 // 获取发布历史
 const fetchReleaseHistories = async (configItemId: number) => {
   loading.value = true;
   try {
-    // 处理日期范围，转换为 UTC 时间
-    let createdDateStart = '';
-    let createdDateEnd = '';
-    if (dateRange.value && dateRange.value.length === 2) {
-      const [start, end] = dateRange.value;
-      // 转换为 UTC 时间格式
-      createdDateStart = start.utc().format('YYYY-MM-DD HH:mm:ss');
-      createdDateEnd = end.utc().format('YYYY-MM-DD HH:mm:ss');
-    }
+    const createdDateStart = dateRange.value?.[0]
+      ? dateRange.value[0].utc().format('YYYY-MM-DDTHH:mm:ss[Z]')
+      : undefined;
+    const createdDateEnd = dateRange.value?.[1]
+      ? dateRange.value[1].utc().format('YYYY-MM-DDTHH:mm:ss[Z]')
+      : undefined;
 
     const requestParams = {
       configItemId: configItemId,
       pageNo: pagination.value.current,
       pageSize: pagination.value.pageSize,
       sort: '-createdDate',
-      createdDateStart: createdDateStart,
-      createdDateEnd: createdDateEnd
+      createdDateStart,
+      createdDateEnd,
     };
 
     const response = await getConfigItemReleaseHistories(requestParams);
@@ -438,36 +507,41 @@ const initEditors = (oldContent: string, newContent: string) => {
 };
 
 
-
-// 处理配置项变化
-const handleConfigItemChange = (value: number) => {
-  selectedConfigItemId.value = value;
-  fetchReleaseHistories(value);
-};
-
-// 处理日期变化
-const handleDateChange = () => {
-  // 日期变化时重新获取数据
-  if (selectedConfigItemId.value) {
-    pagination.value.current = 1; // 重置到第一页
-    fetchReleaseHistories(selectedConfigItemId.value);
-  }
-};
-
 // 处理搜索
 const handleSearch = () => {
-  // 搜索时重新获取数据
+  if (!selectedConfigItemId.value) {
+    message.warning('请先选择命名空间');
+    return;
+  }
+
+  pagination.value.current = 1;
+  fetchReleaseHistories(selectedConfigItemId.value);
+};
+
+const handleNamespaceChange = () => {
+  selectedHistory.value = null;
+  releaseHistoryList.value = [];
+
   if (selectedConfigItemId.value) {
-    pagination.value.current = 1; // 重置到第一页
+    pagination.value.current = 1;
     fetchReleaseHistories(selectedConfigItemId.value);
   }
+};
+
+const handleEnvironmentChange = (key: string) => {
+  activeEnvironmentKey.value = key;
+  selectedHistory.value = null;
+  releaseHistoryList.value = [];
+  selectedConfigItemId.value = null;
+  fetchNamespaceList(Number(key));
 };
 
 // 重置搜索
 const handleResetSearch = () => {
-  searchKeyword.value = '';
   dateRange.value = null;
-  selectedConfigItemId.value = null;
+  if (selectedConfigItemId.value) {
+    fetchReleaseHistories(selectedConfigItemId.value);
+  }
 };
 
 // 处理表格变化
@@ -476,42 +550,6 @@ const handleTableChange = (pag: any) => {
   pagination.value.pageSize = pag.pageSize;
   if (selectedConfigItemId.value) {
     fetchReleaseHistories(selectedConfigItemId.value);
-  }
-};
-
-// 关闭弹窗
-const handleClose = () => {
-  try {
-    visible.value = false;
-    loading.value = false;
-    selectedHistory.value = null;
-    releaseHistoryList.value = [];
-    searchKeyword.value = '';
-    dateRange.value = null;
-    selectedConfigItemId.value = null;
-    pagination.value.current = 1;
-    
-    // 清理编辑器
-    if (oldEditor) {
-      try {
-        oldEditor.dispose();
-      } catch (e) {
-        console.error('清理旧编辑器失败:', e);
-      }
-      oldEditor = null;
-    }
-    if (newEditor) {
-      try {
-        newEditor.dispose();
-      } catch (e) {
-        console.error('清理新编辑器失败:', e);
-      }
-      newEditor = null;
-    }
-  } catch (error) {
-    console.error('关闭弹窗时出现异常:', error);
-    // 确保 visible 状态被重置
-    visible.value = false;
   }
 };
 
@@ -527,10 +565,101 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+.release-history-page {
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 12px;
+
+  .page-title-group {
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .page-subtitle {
+      margin: 6px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+}
+
 .release-history-container {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  min-height: calc(100vh - 220px);
+}
+
+.environment-selector {
+  margin-bottom: 16px;
+
+  .env-tabs-wrapper {
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f0f0f0;
+  }
+
+  .env-tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .env-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    background: #fafafa;
+    border: 1px solid #e8e8e8;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    &:hover:not(.active) {
+      background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+      border-color: #bfd4f2;
+      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.12);
+      transform: translateY(-1px);
+
+      .env-tab-name {
+        color: #1677ff;
+        font-weight: 500;
+      }
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+      border-color: #1677ff;
+      box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+      transform: translateY(-2px);
+
+      .env-tab-name {
+        color: #fff;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      &:hover {
+        box-shadow: 0 6px 16px rgba(22, 119, 255, 0.4);
+        transform: translateY(-2px) scale(1.02);
+      }
+    }
+
+    .env-tab-name {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+  }
 }
 
 .search-bar {
@@ -553,9 +682,11 @@ onUnmounted(() => {
 }
 
 .left-panel {
-  width: 500px;
+  width: 45%;
+  min-width: 520px;
   border-right: 1px solid #f0f0f0;
-  overflow: hidden;
+  padding-right: 8px;
+  overflow: auto;
 
   .history-table {
     height: 100%;
@@ -568,12 +699,30 @@ onUnmounted(() => {
       }
 
       &.selected-row {
-        background-color: #e6f7ff !important;
-        border-color: #1890ff;
+        box-shadow: inset 4px 0 0 #1677ff;
+
+        > td {
+          background: #d7ebff !important;
+          color: #0f2f57;
+          font-weight: 600;
+          border-bottom-color: #91caff;
+        }
       }
 
       &.selected-row:hover {
-        background-color: #bae7ff !important;
+        > td {
+          background: #c2e0ff !important;
+        }
+      }
+
+      &.selected-row > td:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+      }
+
+      &.selected-row > td:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
       }
     }
   }
@@ -611,7 +760,7 @@ onUnmounted(() => {
     .diff-editors {
       display: flex;
       gap: 8px;
-      height: 400px;
+      height: 540px;
 
       .editor-section {
         flex: 1;

@@ -186,7 +186,7 @@ import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import { getConfigItems } from '../../../api/config/configItem';
 import type { ConfigItem, ConfigEnvironment } from '@/types/config';
-import { batchPublishConfigs, publishConfig } from '../../../api/config/configPublish';
+import { bulkPublishConfig, publishConfig } from '../../../api/config/configPublish';
 import dayjs from 'dayjs';
 import monaco from '../../../utils/monaco';
 import { analyzeChanges, getChangeTypeText, getChangeTypeColor } from '../../../utils/changeAnalyzer';
@@ -769,13 +769,16 @@ const handleBatchPublishSubmit = async () => {
   try {
     await batchPublishFormRef.value?.validate();
     batchPublishLoading.value = true;
-    
-    await batchPublishConfigs({
-      configItemIds: props.selectedItems.map(item => item.id),
+
+    const bulkPublishPayload = props.selectedItems.map((item) => ({
+      configItemId: item.id,
       releaseName: batchPublishForm.value.releaseName,
       releaseType: batchPublishForm.value.releaseType,
-      environmentId: Number(props.activeTabKey)
-    });
+      oldContent: item.oldContent,
+      content: item.content,
+    }));
+    
+    await bulkPublishConfig(bulkPublishPayload);
     
     message.success('发布成功');
     showBatchPublishModal.value = false;

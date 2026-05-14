@@ -204,7 +204,7 @@ const columns = [
   {
     title: '操作',
     key: 'action',
-    width: 200,
+    width: 280,
   },
 ];
 
@@ -232,7 +232,7 @@ const componentColumns = [
   {
     title: '操作',
     key: 'action',
-    width: 150,
+    width: 180,
   },
 ];
 

@@ -3,7 +3,7 @@ import { ref, computed, onMounted, h } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { FullscreenOutlined, FullscreenExitOutlined, CloseOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import { $t } from '@/locales';
-import { tagColor } from '@/utils/common';
+import { tagColor, formatDate } from '@/utils/common';
 import { retryStatusTypeRecord, retryTaskTypeRecord } from '@/constants/business';
 import {
   fetchBatchDeleteRetry,
@@ -279,6 +279,13 @@ const visibleColumns = computed(() => {
   }
   return columns.value.filter(col => columnKeys.value.includes(col.key));
 });
+
+function formatDateTime(dateTime?: string) {
+  if (!dateTime) return '-';
+
+  const formatted = formatDate(dateTime, 'YYYY-MM-DD HH:mm:ss');
+  return formatted === 'Invalid Date' ? dateTime : formatted;
+}
 
 // 获取数据
 async function getData() {
@@ -703,6 +710,9 @@ onMounted(async () => {
     >
       <!-- 操作列插槽 -->
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'nextTriggerAt'">
+          {{ formatDateTime(record.nextTriggerAt) }}
+        </template>
         <template v-if="column.key === 'operation'">
           <div class="operation-buttons">
             <a-button 
@@ -759,7 +769,7 @@ onMounted(async () => {
             {{ detailData.sceneName }}
           </a-descriptions-item>
           <a-descriptions-item :label="$t('page.retry.nextTriggerAt')" :span="1">
-            {{ detailData.nextTriggerAt }}
+            {{ formatDateTime(detailData.nextTriggerAt) }}
           </a-descriptions-item>
           <a-descriptions-item :label="$t('page.retry.retryCount')" :span="1">
             {{ detailData.retryCount }}

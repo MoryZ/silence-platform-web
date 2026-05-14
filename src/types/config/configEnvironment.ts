@@ -13,5 +13,5 @@ export interface ConfigEnvironment {
 
 export interface ConfigEnvironmentParams {
   configComponentId: number;
-  envType: number;
+  envType?: number;
 }

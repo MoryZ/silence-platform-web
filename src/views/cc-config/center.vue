@@ -51,16 +51,9 @@
       @update:pagination="handlePaginationUpdate"
       @view-release-history="handleViewReleaseHistory"
       @publish="handlePublish"
+      @batch-publish="handleBatchPublish"
       @refresh-data="fetchData"
       @search-change="handleSearchChange"
-    />
-
-    <!-- 发布历史组件 -->
-    <ReleaseHistory
-      :data-source="dataSource"
-      :open="showReleaseHistory"
-      :selected-config-item="selectedConfigItemForHistory"
-      @close="showReleaseHistory = false"
     />
 
     <!-- 发布管理组件 -->
@@ -105,9 +98,9 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import ConfigManagement from './components/ConfigManagement.vue';
-import ReleaseHistory from './components/ReleaseHistory.vue';
 import PublishManagement from './components/PublishManagement.vue';
 import EnvironmentTabs from './components/EnvironmentTabs.vue';
 import TopSearchBar from './components/TopSearchBar.vue';
@@ -120,6 +113,7 @@ import type { ConfigItem } from '@/types/config';
 // 获取 store 实例
 const configStore = useConfigStore();
 const envStore = useEnvStore();
+const router = useRouter();
 
 // 组件选择相关 - 从 store 获取
 const selectedComponents = computed(() => configStore.selectedComponentIds);
@@ -155,8 +149,6 @@ const {
 
 const activeTabKey = ref<string | number>('');
 const selectedItems = ref<ConfigItem[]>([]);
-const showReleaseHistory = ref(false);
-const selectedConfigItemForHistory = ref<ConfigItem | null>(null);
 const publishManagementRef = ref<any>();
 const childRef = ref<any>();
 
@@ -265,8 +257,14 @@ const handlePaginationUpdate = async (pag: any) => {
  * 处理查看发布历史
  */
 const handleViewReleaseHistory = (record: ConfigItem) => {
-  selectedConfigItemForHistory.value = record;
-  showReleaseHistory.value = true;
+  router.push({
+    path: '/cc-config/release-history',
+    query: {
+      configItemId: String(record.id),
+      configEnvironmentId: String(record.configEnvironmentId),
+      namespaceId: record.namespaceId,
+    },
+  });
 };
 
 /**
@@ -274,6 +272,14 @@ const handleViewReleaseHistory = (record: ConfigItem) => {
  */
 const handlePublish = (record: ConfigItem) => {
   publishManagementRef.value?.openPublishModal(record);
+};
+
+/**
+ * 处理批量发布
+ */
+const handleBatchPublish = (record: ConfigItem) => {
+  selectedItems.value = [record];
+  publishManagementRef.value?.openBatchPublishModal();
 };
 
 /**

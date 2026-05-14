@@ -56,7 +56,7 @@
             @change="handleEnvironmentChange"
           >
             <a-select-option
-              v-for="env in targetEnvironments"
+              v-for="env in environments"
               :key="env.id"
               :value="env.id"
             >
@@ -114,6 +114,7 @@ import type { FormInstance } from 'ant-design-vue';
 import type { ConfigEnvironment, ConfigItem, ConfigComponent } from '@/types/config';
 import { getConfigItemList } from '@/api/config/configItem';
 import { getConfigComponents } from '@/api/config/configComponent';
+import { getConfigEnvironments } from '@/api/config/configEnvironment';
 
 interface Props {
   open: boolean;
@@ -151,6 +152,7 @@ const namespacesLoading = ref(false);
 
 // 数据列表
 const components = ref<ConfigComponent[]>([]);
+const environments = ref<ConfigEnvironment[]>([]);
 const availableNamespaces = ref<ConfigItem[]>([]);
 
 // 第一行: 源命名空间名称（固定）
@@ -195,12 +197,36 @@ const loadComponents = async () => {
   }
 };
 
+// 根据对象信息加载环境列表
+const loadEnvironments = async () => {
+  const componentId = form.value.targetComponentId;
+  if (!componentId) {
+    environments.value = [];
+    form.value.targetEnvironmentId = undefined;
+    form.value.targetNamespaceIds = [];
+    availableNamespaces.value = [];
+    return;
+  }
+
+  try {
+    environmentsLoading.value = true;
+    const response = await getConfigEnvironments({ configComponentId: componentId });
+    environments.value = Array.isArray(response) ? response : (response as any)?.data || [];
+  } catch (error) {
+    console.error('加载环境信息失败:', error);
+    environments.value = [];
+  } finally {
+    environmentsLoading.value = false;
+  }
+};
+
 // 对象信息变化时的处理
 const handleComponentChange = async () => {
   // 重置环境和命名空间
   form.value.targetEnvironmentId = undefined;
   form.value.targetNamespaceIds = [];
   availableNamespaces.value = [];
+  await loadEnvironments();
 };
 
 // 环境信息变化时的处理
@@ -257,6 +283,7 @@ onMounted(() => {
 watch(() => props.open, (newOpen) => {
   if (newOpen) {
     loadComponents();
+    loadEnvironments();
   } else {
     resetForm();
   }
