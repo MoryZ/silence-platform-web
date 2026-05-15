@@ -9,6 +9,7 @@ import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import ColumnSettings from '@/components/ColumnSettings.vue';
 import { jobStatusOptions, taskTypeEnum, triggerTypeEnum, blockStrategyEnum, routeKeyEnum } from '@/constants/jobEnums';
+import JobTriggerInterval from '@/components/common/job-trigger-interval.vue';
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
 
@@ -720,10 +721,27 @@ function handleExport() {
               </a-form-item>
             </a-col>
             <a-col :span="12">
-              <a-form-item label="间隔时长" required>
-                <a-input-number v-model:value="editingData.triggerInterval" min="1" style="width:70%;" />
-                <span style="margin-left:8px;">秒</span>
+              <a-form-item label="间隔/CRON" required>
+                <JobTriggerInterval
+                  v-if="editingData"
+                  v-model:modelValue="triggerIntervalProxy"
+                  :trigger-type="editingData.triggerType"
+                />
+              // 用于 JobTriggerInterval 的 v-model 绑定，保证类型安全和表达式合法
+              const triggerIntervalProxy = computed({
+                get() {
+                  return editingData.value ? String(editingData.value.triggerInterval ?? '') : '';
+                },
+                set(val: string) {
+                  if (editingData.value) {
+                    editingData.value.triggerInterval = val === '' ? 0 : Number(val);
+                  }
+                }
+              });
               </a-form-item>
+              <div v-if="editingData.triggerType === 3" style="margin-bottom: 12px;">
+                <!-- 这里可以放最近5次运行时间预览组件或内容，后续可扩展 -->
+              </div>
             </a-col>
             <a-col :span="12">
               <a-form-item label="超时时间(秒)" required>
