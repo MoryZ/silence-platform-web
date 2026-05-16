@@ -224,7 +224,11 @@ const isShow = (taskBatchStatus: number) => {
                 </NButton>
               </div>
               <template #trigger>
-                <div class="auto-judge cursor-pointer" :class="getClass(item)" @click="showDetail(item!, i)">
+                <div
+                  class="auto-judge cursor-pointer"
+                  :class="getClass(item)"
+                  @click="store.type === 0 ? show(i) : showDetail(item!, i)"
+                >
                   <div v-if="i != 0" class="sort-left" @click.stop="arrTransfer(i, -1)">
                     <SvgIcon icon="ant-design:left-outlined" />
                   </div>

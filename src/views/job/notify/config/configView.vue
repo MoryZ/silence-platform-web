@@ -251,7 +251,7 @@
             </a-tag>
           </a-descriptions-item>
           <a-descriptions-item :label="$t('common.createdDate')" :span="2">
-            {{ detailData?.createDt }}
+            {{ formatDate(detailData?.createdDate) }}
           </a-descriptions-item>
           <a-descriptions-item :label="$t('page.notifyConfig.description')" :span="2">
             {{ detailData?.description }}
@@ -292,7 +292,7 @@ import {
   workflowNotifySceneOptions,
   enableStatusNumberRecord
 } from '@/constants/business';
-import { tagColor, translateOptions } from '@/utils/common';
+import { tagColor, translateOptions, formatDate } from '@/utils/common';
 import { useAppStore } from '@/stores/app';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
@@ -306,7 +306,7 @@ interface NotifyConfig {
   notifyStatus: number;
   notifyScene: number | null;
   notifyThreshold: number;
-  createDt: string;
+  createdDate: string;
   description: string;
 }
 
@@ -442,7 +442,7 @@ const tableColumns = [
     }
   },
   { title: $t('page.notifyConfig.notifyThreshold'), dataIndex: 'notifyThreshold', key: 'notifyThreshold', width: 120 },
-  { title: $t('common.createDt'), dataIndex: 'createDt', key: 'createDt', width: 120, type: 'date' },
+  { title: $t('common.createdDate'), dataIndex: 'createdDate', key: 'createdDate', width: 120, type: 'date', customRender: ({ text }) => formatDate(text) },
   { title: $t('page.notifyConfig.description'), dataIndex: 'description', key: 'description', width: 120 },
   { title: $t('common.operation'), key: 'operation', width: 130, fixed: 'right', align: 'center' }
 ];

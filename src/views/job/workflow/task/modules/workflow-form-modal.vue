@@ -42,12 +42,63 @@ const isDetail = computed(() => props.mode === 'detail');
 function defaultNode() {
   return {
     workflowName: `WF-${Date.now()}`,
+    groupName: undefined,
+    triggerType: 2,
+    triggerInterval: '60',
     workflowStatus: 1,
     blockStrategy: 1,
     description: undefined,
+    ownerId: undefined,
+    notifyIds: [],
     executorTimeout: 60,
-    wfContext: '{"init":""}'
+    wfContext: '{"init":""}',
+    wfContexts: [{ key: 'init', value: '', type: 'string' }]
   };
+}
+
+function normalizeNodeConfig(node: any): any {
+  if (!node || typeof node !== 'object') {
+    return node;
+  }
+
+  if (Array.isArray(node.conditionNodes)) {
+    node.conditionNodes = node.conditionNodes.map((item: any) => {
+      const normalizedItem = { ...item };
+      if (typeof normalizedItem.workflowNodeStatus === 'boolean') {
+        normalizedItem.workflowNodeStatus = Number(normalizedItem.workflowNodeStatus);
+      }
+      if (normalizedItem.childNode) {
+        normalizedItem.childNode = normalizeNodeConfig(normalizedItem.childNode);
+      }
+      return normalizedItem;
+    });
+  }
+
+  if (node.childNode) {
+    node.childNode = normalizeNodeConfig(node.childNode);
+  }
+
+  return node;
+}
+
+function normalizeWorkflowDetail(raw: any) {
+  if (!raw || typeof raw !== 'object') {
+    return raw;
+  }
+
+  const normalized = {
+    ...raw
+  } as any;
+
+  if (typeof normalized.workflowStatus === 'boolean') {
+    normalized.workflowStatus = Number(normalized.workflowStatus);
+  }
+
+  if (normalized.nodeConfig) {
+    normalized.nodeConfig = normalizeNodeConfig(JSON.parse(JSON.stringify(normalized.nodeConfig)));
+  }
+
+  return normalized;
 }
 
 async function loadDetail() {
@@ -56,18 +107,22 @@ async function loadDetail() {
     return;
   }
   spinning.value = true;
-  const { data, error } = await fetchWorkflowInfo(props.recordId);
-  if (!error && data) {
-    if (props.mode === 'copy') {
-      formModel.value = {
-        ...data,
-        workflowName: `Copy of ${data.workflowName}`
-      };
-    } else {
-      formModel.value = data;
+  try {
+    const response: any = await fetchWorkflowInfo(props.recordId);
+    const data = normalizeWorkflowDetail(response?.data ?? response);
+    if (data) {
+      if (props.mode === 'copy') {
+        formModel.value = {
+          ...data,
+          workflowName: `Copy of ${data.workflowName}`
+        };
+      } else {
+        formModel.value = data;
+      }
     }
+  } finally {
+    spinning.value = false;
   }
-  spinning.value = false;
 }
 
 function initForm() {
@@ -117,31 +172,44 @@ async function handleSave() {
     handleClose();
     return;
   }
-  saving.value = true;
-  let result;
-  if (props.mode === 'add' || props.mode === 'copy') {
-    result = await fetchAddWorkflow(formModel.value);
-  } else {
-    result = await fetchUpdateWorkflow(formModel.value);
+  if (!formModel.value?.nodeConfig) {
+    message.warning('DAG 节点不能为空，请先添加至少一个节点');
+    return;
   }
-  saving.value = false;
-  if (!result?.error) {
-    const successMsg =
-      props.mode === 'edit' ? $t('common.updateSuccess') : $t('common.addSuccess');
-    message.success(successMsg);
-    emit('submitted');
-    handleClose();
+
+  saving.value = true;
+  try {
+    let result;
+    if (props.mode === 'add' || props.mode === 'copy') {
+      result = await fetchAddWorkflow(formModel.value);
+    } else {
+      result = await fetchUpdateWorkflow(formModel.value);
+    }
+
+    if (!result?.error) {
+      const successMsg = props.mode === 'edit' ? $t('common.updateSuccess') : $t('common.addSuccess');
+      message.success(successMsg);
+      emit('submitted');
+      handleClose();
+    }
+  } catch (error: any) {
+    message.error(error?.message || '保存失败，请检查 DAG 节点配置');
+  } finally {
+    saving.value = false;
   }
 }
 </script>
 
 <template>
-  <a-drawer
+  <a-modal
     :open="visible"
-    :width="1100"
     :title="drawerTitle"
+    :width="'calc(100vw - 120px)'"
+    wrap-class-name="workflow-form-modal"
+    :footer="null"
+    centered
     destroy-on-close
-    @close="handleClose"
+    @cancel="handleClose"
   >
     <Workflow
       v-model="formModel"
@@ -150,6 +218,27 @@ async function handleSave() {
       @save="handleSave"
       @cancel="handleClose"
     />
-  </a-drawer>
+  </a-modal>
 </template>
+
+<style lang="scss">
+.workflow-form-modal {
+  .ant-modal {
+    max-width: none;
+  }
+
+  .ant-modal-content {
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ant-modal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+</style>
 

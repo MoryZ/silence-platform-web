@@ -57,10 +57,25 @@ watch(
   { immediate: true }
 );
 
+const normalizeTaskForm = (input: Workflow.ConditionNodeType | undefined) => {
+  const normalized = {
+    ...(input || {}),
+    jobTask: {
+      ...(input?.jobTask || {})
+    }
+  } as Workflow.ConditionNodeType;
+
+  if (typeof normalized.workflowNodeStatus === 'boolean') {
+    normalized.workflowNodeStatus = Number(normalized.workflowNodeStatus);
+  }
+
+  return normalized;
+};
+
 watch(
   () => props.modelValue,
   val => {
-    form.value = val;
+    form.value = normalizeTaskForm(val);
   },
   { immediate: true }
 );

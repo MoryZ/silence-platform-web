@@ -105,7 +105,7 @@ const toText = (node: NodeModelType, currentIndex: number) => {
     if (nodeName !== $t('workflow.node.condition.conditionNodes.otherNodeName')) {
       const text = `<span class="content_label">${$t('workflow.node.condition.conditionNodes.expressionType')}: </span>${
         expressionRecord[expressionType!]
-      }\n<span class="content_label">${$t('workflow.node.condition.conditionNodes.nodeExpression')}: </span><span style="display: inline-block; vertical-align: bottom; width: 120px; overflow: hidden; text-overflow: ellipsis">${nodeExpression}<span/>`;
+      }\n<span class="content_label">${$t('workflow.node.condition.conditionNodes.nodeExpression')}: </span><span style="display: inline-block; vertical-align: bottom; width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${nodeExpression}</span>`;
       return text;
     }
     return $t('workflow.node.condition.conditionNodes.otherNodeTip');

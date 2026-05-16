@@ -198,12 +198,22 @@ export function parseArgsJson(value: string) {
 export function parseContent(value?: { key: string; value: string | number | boolean; type: string }[]) {
   if (!value) return undefined;
   return value.reduce<{ [key: string]: string | number | boolean }>((obj, item) => {
+    if (!item.key) {
+      return obj;
+    }
+
     if (item.type === 'string') {
       obj[item.key] = String(item.value);
     }
 
     if (item.type === 'boolean') {
-      obj[item.key] = item.value === 1;
+      if (typeof item.value === 'boolean') {
+        obj[item.key] = item.value;
+      } else if (typeof item.value === 'number') {
+        obj[item.key] = item.value === 1;
+      } else {
+        obj[item.key] = String(item.value).toLowerCase() === 'true';
+      }
     }
 
     if (item.type === 'number') {

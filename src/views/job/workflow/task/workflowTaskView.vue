@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { triggerTypeRecord } from '@/constants/business';
+import { enableStatusNumberRecord, triggerTypeRecord } from '@/constants/business';
 import { fetchGetWorkflowPageList, fetchBatchDeleteWorkflow } from '@/api/job/workflow';
+import { formatDate } from '@/utils/common';
 import WorkflowSearch from './modules/workflow-search.vue';
 import WorkflowTriggerModal from './modules/workflow-trigger-modal.vue';
 import WorkflowFormModal from './modules/workflow-form-modal.vue';
@@ -56,12 +57,14 @@ const columns = ref([
   },
   {
     key: 'id',
+    dataIndex: 'id',
     title: $t('common.index'),
     width: 120,
     align: 'center'
   },
   {
     key: 'workflowName',
+    dataIndex: 'workflowName',
     title: $t('page.workflow.workflowName'),
     width: 200,
     ellipsis: {
@@ -70,43 +73,50 @@ const columns = ref([
   },
   {
     key: 'groupName',
+    dataIndex: 'groupName',
     title: $t('page.workflow.groupName'),
     width: 120
   },
   {
     key: 'nextTriggerAt',
+    dataIndex: 'nextTriggerAt',
     title: $t('page.workflow.nextTriggerAt'),
     width: 120
   },
   {
     key: 'workflowStatus',
+    dataIndex: 'workflowStatus',
     title: $t('page.workflow.workflowStatus'),
     width: 120
   },
   {
     key: 'triggerType',
+    dataIndex: 'triggerType',
     title: $t('page.workflow.triggerType'),
     width: 120
   },
   {
     key: 'triggerInterval',
+    dataIndex: 'triggerInterval',
     title: $t('page.workflow.triggerInterval'),
     width: 120
   },
   {
     key: 'executorTimeout',
+    dataIndex: 'executorTimeout',
     title: $t('page.workflow.executorTimeout'),
     width: 120
   },
   {
-    key: 'updateDt',
+    key: 'updatedDate',
+    dataIndex: 'updatedDate',
     title: $t('page.workflow.updateDt'),
     width: 120
   },
   {
     key: 'operation',
     title: $t('common.operation'),
-    width: 200,
+    width: 260,
     align: 'center'
   }
 ]);
@@ -116,12 +126,15 @@ async function getData() {
   loading.value = true;
   try {
     const response = await fetchGetWorkflowPageList(searchParams.value);
-    if (response && response.data) {
-      data.value = response.data.items || response.data || [];
-      mobilePagination.value.total = response.data.total || 0;
-    }
+    // request 拦截器已返回 payload.data，这里直接按分页对象解析
+    const pageData = response ?? {};
+    const list = pageData?.items ?? pageData?.data ?? [];
+    data.value = Array.isArray(list) ? list : [];
+    mobilePagination.value.total = Number(pageData?.total ?? data.value.length ?? 0);
   } catch (error) {
     console.error('获取数据失败:', error);
+    data.value = [];
+    mobilePagination.value.total = 0;
   } finally {
     loading.value = false;
   }
@@ -186,7 +199,33 @@ function getTriggerTypeColor(triggerType: number): string {
 }
 
 function getTriggerTypeLabel(triggerType: number): string {
-  return triggerTypeRecord[triggerType] || '';
+  const key = triggerTypeRecord[triggerType];
+  return key ? $t(key) : '-';
+}
+
+function getWorkflowStatusLabel(status: number | boolean | null | undefined): string {
+  const numeric = typeof status === 'boolean' ? Number(status) : Number(status);
+  const key = enableStatusNumberRecord[numeric as 0 | 1];
+  return key ? $t(key) : '-';
+}
+
+function formatDateTime(value: string | number | Date | null | undefined): string {
+  if (!value) return '-';
+  return formatDate(value, 'YYYY-MM-DD HH:mm:ss');
+}
+
+function handleMoreAction(action: string, id: string) {
+  if (action === 'copy') {
+    copy(id);
+    return;
+  }
+  if (action === 'batchList') {
+    goToBatch(id);
+    return;
+  }
+  if (action === 'delete') {
+    handleDelete(id);
+  }
 }
 </script>
 
@@ -222,6 +261,10 @@ function getTriggerTypeLabel(triggerType: number): string {
       :scroll="{ x: 1300 }"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'id'">
+          {{ record.id }}
+        </template>
+
         <template v-if="column.key === 'workflowName'">
           <a-button type="link" @click="detail(record.id)">
             {{ record.workflowName }}
@@ -233,9 +276,19 @@ function getTriggerTypeLabel(triggerType: number): string {
             {{ getTriggerTypeLabel(record.triggerType) }}
           </a-tag>
         </template>
+
+        <template v-else-if="column.key === 'workflowStatus'">
+          <a-tag :color="Number(record.workflowStatus) === 1 ? 'green' : 'default'">
+            {{ getWorkflowStatusLabel(record.workflowStatus) }}
+          </a-tag>
+        </template>
+
+        <template v-else-if="column.key === 'updatedDate'">
+          {{ formatDateTime(record.updatedDate || record.updateDt) }}
+        </template>
         
         <template v-else-if="column.key === 'operation'">
-          <div class="flex-center gap-8px">
+          <div class="operation-actions">
             <a-button type="link" @click="edit(record.id)">
               {{ $t('common.edit') }}
             </a-button>
@@ -244,18 +297,18 @@ function getTriggerTypeLabel(triggerType: number): string {
               {{ $t('common.execute') }}
             </a-button>
             <a-divider type="vertical" />
-            <a-dropdown>
+            <a-dropdown :trigger="['click']" placement="bottomRight">
               <template #overlay>
-                <a-menu>
-                  <a-menu-item key="copy" @click="copy(record.id)">
+                <a-menu @click="({ key }) => handleMoreAction(String(key), record.id)">
+                  <a-menu-item key="copy">
                     {{ $t('common.copy') }}
                   </a-menu-item>
                   <a-menu-divider />
-                  <a-menu-item key="batchList" @click="goToBatch(record.id)">
+                  <a-menu-item key="batchList">
                     {{ $t('common.batchList') }}
                   </a-menu-item>
                   <a-menu-divider />
-                  <a-menu-item key="delete" @click="handleDelete(record.id)">
+                  <a-menu-item key="delete">
                     {{ $t('common.delete') }}
                   </a-menu-item>
                 </a-menu>
@@ -310,5 +363,12 @@ function getTriggerTypeLabel(triggerType: number): string {
 
 .gap-8px {
   gap: 8px;
+}
+
+.operation-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 </style>

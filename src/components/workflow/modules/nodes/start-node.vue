@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
 import { blockStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
+import { getJobPage } from '@/api/job/job';
 import { $t } from '@/locales';
+import { useWorkflowStore } from '@/stores/workflow';
 import StartDetail from '../detail/start-detail.vue';
 import StartDrawer from '../drawer/start-drawer.vue';
 import AddNode from './add-node.vue';
@@ -37,6 +39,7 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>();
+const store = useWorkflowStore();
 const form = ref<NodeDataType>({});
 const nodeData = ref<NodeDataType>({});
 
@@ -52,19 +55,50 @@ watch(
   () => nodeData.value,
   val => {
     emit('update:modelValue', val);
-  }
+  },
+  { deep: true }
 );
 
-// 移除对 store 的依赖
-// watch(
-//   () => nodeData.value?.groupName,
-//   val => {
-//     if (val) {
-//       store.setJobList(val);
-//     }
-//   },
-//   { immediate: true }
-// );
+const fetchJobListByGroup = async (groupName?: string) => {
+  if (!groupName) {
+    store.setJobList([]);
+    return;
+  }
+
+  try {
+    const res: any = await getJobPage({
+      groupName,
+      jobName: '',
+      jobStatus: '',
+      ownerId: '',
+      executorInfo: '',
+      pageNo: 1,
+      pageSize: 1000,
+      sort: '-updatedDate'
+    });
+
+    const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+    store.setJobList(
+      list.map((item: any) => ({
+        id: item?.id,
+        jobName: item?.jobName,
+        executorInfo: item?.executorInfo,
+        taskType: item?.taskType,
+        labels: item?.labels
+      }))
+    );
+  } catch {
+    store.setJobList([]);
+  }
+};
+
+watch(
+  () => nodeData.value?.groupName,
+  val => {
+    fetchJobListByGroup(val);
+  },
+  { immediate: true }
+);
 
 const drawer = ref<boolean>(false);
 const detailDrawer = ref<boolean>(false);
@@ -77,6 +111,38 @@ const show = () => {
   // 简化逻辑，直接显示编辑抽屉
   form.value = JSON.parse(JSON.stringify(nodeData.value));
   drawer.value = true;
+};
+
+const triggerIntervalText = (data: NodeDataType) => {
+  if (!data?.triggerInterval) return '-';
+  return data.triggerType === 2 ? `${data.triggerInterval} 秒` : String(data.triggerInterval);
+};
+
+const wfContextText = (raw: any) => {
+  if (!raw) return '-';
+
+  let parsed = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    return String(parsed);
+  }
+
+  const entries = Object.entries(parsed);
+  if (!entries.length) return '-';
+
+  const text = entries
+    .slice(0, 2)
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join(', ');
+
+  return entries.length > 2 ? `${text} ...` : text;
 };
 </script>
 
@@ -108,7 +174,16 @@ const show = () => {
           <span class="content_label">阻塞策略:&nbsp;</span>
           {{ $t(blockStrategyRecord[nodeData.blockStrategy!]) }}
         </div>
-        <div>.........</div>
+        <div>
+          <span class="content_label">间隔时长:&nbsp;</span>
+          {{ triggerIntervalText(nodeData) }}
+        </div>
+        <div>
+          <a-typography-text class="max-w-132px" :ellipsis="{ tooltip: true }">
+            <span class="content_label">工作流上下文:&nbsp;</span>
+            {{ wfContextText(nodeData.wfContext) }}
+          </a-typography-text>
+        </div>
       </div>
       <div v-else class="content min-h-85px">
         <span class="placeholder">请配置工作流</span>

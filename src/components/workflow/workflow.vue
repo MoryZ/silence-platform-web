@@ -45,6 +45,7 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const slots = useSlots();
+const workflowRef = ref<HTMLDivElement | null>(null);
 
 const zoom = ref<number>(100);
 const nodeData = ref<NodeDataType>({});
@@ -69,7 +70,8 @@ watch(
   () => nodeData.value,
   val => {
     emit('update:modelValue', val);
-  }
+  },
+  { deep: true }
 );
 
 const onZoom = (n: number) => {
@@ -100,11 +102,13 @@ const onZoom = (n: number) => {
 };
 
 const handleWeel = (e: WheelEvent) => {
-  e.preventDefault();
-  // @ts-expect-error ts-migrate(2339)
-  const wheelDelta = e.wheelDelta;
+  // 仅在 Ctrl/Cmd + 滚轮 时缩放，普通滚轮保留页面滚动行为
+  if (!e.ctrlKey && !e.metaKey) {
+    return;
+  }
 
-  if (wheelDelta < 0) {
+  e.preventDefault();
+  if (e.deltaY > 0) {
     onZoom(-1);
   } else {
     onZoom(1);
@@ -112,9 +116,8 @@ const handleWeel = (e: WheelEvent) => {
 };
 
 onMounted(() => {
-  const workflowDom: HTMLDivElement | null = document.querySelector('.workflow');
-  if (workflowDom) {
-    workflowDom.onwheel = (ev: WheelEvent) => handleWeel(ev);
+  if (workflowRef.value) {
+    workflowRef.value.addEventListener('wheel', handleWeel, { passive: false });
   }
 });
 
@@ -134,7 +137,7 @@ const onDragstop = () => {
 </script>
 
 <template>
-  <div class="workflow">
+  <div ref="workflowRef" class="workflow">
     <div class="workflow-affix">
       <a-affix :offset-top="0" class="position-sticky z-2">
         <div class="header">
@@ -200,8 +203,27 @@ const onDragstop = () => {
 
 .workflow {
   padding: 0 !important;
+  height: 100%;
+  min-height: 0;
 
   &-affix {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    > .ant-spin-nested-loading {
+      flex: 1;
+      min-height: 0;
+    }
+
+    > .ant-spin-nested-loading > .ant-spin-container {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -214,7 +236,9 @@ const onDragstop = () => {
   }
 
   &-body {
-    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 
     .active:before {
       outline: none !important;

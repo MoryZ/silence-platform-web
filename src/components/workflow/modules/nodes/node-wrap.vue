@@ -39,7 +39,8 @@ watch(
   () => nodeConfig.value,
   val => {
     emit('update:modelValue', val);
-  }
+  },
+  { deep: true }
 );
 </script>
 

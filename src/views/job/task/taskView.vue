@@ -466,6 +466,24 @@ watch(builtinExecutorType, (val) => {
   }
 });
 
+const triggerIntervalProxy = computed({
+  get() {
+    if (!editingData.value) return '';
+    const rawValue = editingData.value.triggerInterval as unknown;
+    return rawValue === null || rawValue === undefined ? '' : String(rawValue);
+  },
+  set(val: string) {
+    if (!editingData.value) return;
+
+    if (editingData.value.triggerType === 3) {
+      (editingData.value as any).triggerInterval = val;
+      return;
+    }
+
+    (editingData.value as any).triggerInterval = val === '' ? 0 : Number(val);
+  }
+});
+
 // 初始化加载
 fetchData();
 
@@ -701,6 +719,12 @@ function handleExport() {
               </a-button>
             </div>
           </a-form-item>
+          <a-form-item label="接口超时时间">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <a-input-number v-model:value="editingData.executorTimeout" min="1" style="flex:1;" />
+              <span>秒</span>
+            </div>
+          </a-form-item>
         </template>
         <!-- 公共参数区域，始终展示 -->
         <div style="margin-top:24px;">
@@ -727,17 +751,6 @@ function handleExport() {
                   v-model:modelValue="triggerIntervalProxy"
                   :trigger-type="editingData.triggerType"
                 />
-              // 用于 JobTriggerInterval 的 v-model 绑定，保证类型安全和表达式合法
-              const triggerIntervalProxy = computed({
-                get() {
-                  return editingData.value ? String(editingData.value.triggerInterval ?? '') : '';
-                },
-                set(val: string) {
-                  if (editingData.value) {
-                    editingData.value.triggerInterval = val === '' ? 0 : Number(val);
-                  }
-                }
-              });
               </a-form-item>
               <div v-if="editingData.triggerType === 3" style="margin-bottom: 12px;">
                 <!-- 这里可以放最近5次运行时间预览组件或内容，后续可扩展 -->
