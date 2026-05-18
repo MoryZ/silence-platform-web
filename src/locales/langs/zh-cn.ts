@@ -8,6 +8,7 @@ const local = {
     updateCancel: '稍后再说'
   },
   common: {
+    more: '更多',
     action: '操作',
     add: '新增',
     batchAdd: '批量添加',

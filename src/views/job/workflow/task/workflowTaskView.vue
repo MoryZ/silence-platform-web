@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
@@ -227,6 +227,9 @@ function handleMoreAction(action: string, id: string) {
     handleDelete(id);
   }
 }
+onMounted(()=> {
+  getData()
+}) 
 </script>
 
 <template>

@@ -8,6 +8,7 @@ const local = {
     updateCancel: 'Later'
   },
   common: {
+    more: 'More',
     action: 'Action',
     add: 'Add',
     addSuccess: 'Add Success',
