@@ -163,8 +163,8 @@ watch(
   value => {
     if (Array.isArray(value) && value.length === 2) {
       const [start, end] = value;
-      searchParams.value.createdDateStart = start ? dayjs(start).format('YYYY-MM-DD HH:mm:ss') : null;
-      searchParams.value.createdDateEnd = end ? dayjs(end).format('YYYY-MM-DD HH:mm:ss') : null;
+      searchParams.value.createdDateStart = start ? dayjs(start).toISOString() : null;
+      searchParams.value.createdDateEnd = end ? dayjs(end).toISOString() : null;
     } else {
       searchParams.value.createdDateStart = null;
       searchParams.value.createdDateEnd = null;

@@ -94,7 +94,6 @@ async function handleSubmit() {
     v-model:open="visible"
     title="执行工作流"
     width="600px"
-    :footer="null"
   >
     <a-form :model="model" layout="vertical">
       <a-form-item label="工作流上下文">
