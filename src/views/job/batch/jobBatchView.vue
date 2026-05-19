@@ -15,6 +15,8 @@ import { h, resolveComponent } from 'vue';
 import { $t } from '@/locales';
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
+import JsonViewerModal from '@/components/JsonViewerModal.vue';
+import LogDetailModal from '@/components/LogDetailModal.vue';
 
 const loading = ref(false);
 const data = ref<JobBatch[]>([]);
@@ -178,8 +180,21 @@ const tableColumns = computed(() =>
 const detailDrawerVisible = ref(false);
 const detailRecord = ref<Record<string, any> | null>(null);
 const detailActiveTab = ref('base');
+
+// 查看参数的弹窗
+const argsModalVisible = ref(false);
+const argsModalContent = ref('');
+const argsModalLoading = ref(false);
+
+// 查看结果的弹窗
+const resultModalVisible = ref(false);
+const resultModalContent = ref('');
+const resultModalLoading = ref(false);
+
+// 日志详情弹窗
 const logModalVisible = ref(false);
 const logRecord = ref<Record<string, any> | null>(null);
+const logModalLoading = ref(false);
 
 // 详情抽屉列配置
 const detailColumns = [
@@ -217,7 +232,21 @@ const logStatusOptions = [
 
 const logColumns = [
   { title: 'ID', dataIndex: 'id', width: 100 },
-  { title: '日志', dataIndex: 'log' },
+  { 
+    title: '日志', 
+    dataIndex: 'log', 
+    width: 100,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.log) return '-';
+      return h('a', { 
+        style: 'color:#52c41a;cursor:pointer;', 
+        onClick: (e: Event) => {
+          e.stopPropagation();
+          handleViewLogContent(record);
+        }
+      }, '查看');
+    } 
+  },
   { title: '组名称', dataIndex: 'groupName', width: 140 },
   { title: '状态', dataIndex: 'status', width: 100, customRender: ({ record }: { record: any }) => {
       const m = (logStatusEnum as any)[record.status];
@@ -225,8 +254,36 @@ const logColumns = [
       return h('span', { class: 'ant-tag', style: `background:#fff;border-color:${m.color};color:${m.color}` }, m.label);
     } },
   { title: '地址', dataIndex: 'address', width: 180 },
-  { title: '参数', dataIndex: 'args', width: 160 },
-  { title: '结果', dataIndex: 'result', width: 120 },
+  { 
+    title: '参数', 
+    dataIndex: 'args', 
+    width: 100,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.args) return '-';
+      return h('a', { 
+        style: 'color:#1677ff;cursor:pointer;', 
+        onClick: (e: Event) => {
+          e.stopPropagation();
+          handleViewArgs(record);
+        }
+      }, '查看参数');
+    } 
+  },
+  { 
+    title: '结果', 
+    dataIndex: 'result', 
+    width: 100,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.result) return '-';
+      return h('a', { 
+        style: 'color:#1677ff;cursor:pointer;', 
+        onClick: (e: Event) => {
+          e.stopPropagation();
+          handleViewResult(record);
+        }
+      }, '查看结果');
+    } 
+  },
   { title: '重试次数', dataIndex: 'retryTimes', width: 100 },
   { title: '开始执行时间', dataIndex: 'startTime', width: 180 }
 ];
@@ -245,9 +302,62 @@ async function fetchLogList() {
 
     const res: any = await getJobTaskPage(params);
     const records: any[] = Array.isArray(res) ? res : (res?.data || res?.records || res?.list || []);
+    
+    // 解析日志消息数组，提取每个元素的message字段
+    const parseLogMessages = (logData: any): string[] => {
+      if (!logData) return [];
+      try {
+        // 如果是字符串，尝试解析为JSON数组
+        if (typeof logData === 'string') {
+          const parsed = JSON.parse(logData);
+          if (Array.isArray(parsed)) {
+            return parsed.map((item: any) => {
+              // 格式: [timestamp][level] location - message
+              const time = item.time_stamp ? formatTimestamp(item.time_stamp) : '';
+              const level = item.level || '';
+              const location = item.location || '';
+              const message = item.message || '';
+              return `[${time}][${level}] ${location} - ${message}`;
+            });
+          }
+        }
+        // 如果直接是数组
+        if (Array.isArray(logData)) {
+          return logData.map((item: any) => {
+            const time = item.time_stamp ? formatTimestamp(item.time_stamp) : '';
+            const level = item.level || '';
+            const location = item.location || '';
+            const message = item.message || '';
+            return `[${time}][${level}] ${location} - ${message}`;
+          });
+        }
+        return [String(logData)];
+      } catch {
+        return [String(logData || '')];
+      }
+    };
+    
+    // 时间戳格式化
+    const formatTimestamp = (ts: string | number): string => {
+      try {
+        const num = Number(ts);
+        if (num > 1e12) {
+          // 毫秒时间戳
+          return new Date(num).toLocaleTimeString('zh-CN', { hour12: false });
+        } else if (num > 1e9) {
+          // 秒时间戳
+          return new Date(num * 1000).toLocaleTimeString('zh-CN', { hour12: false });
+        }
+        return String(ts);
+      } catch {
+        return String(ts);
+      }
+    };
+    
     logData.value = records.map((r: any) => ({
       id: r.taskBatchId,
       log: r.resultMessage,
+      logMessages: parseLogMessages(r.resultMessage), // 解析后的日志消息数组
       groupName: r.groupName,
       status: r.taskStatus,
       address: r.clientInfo,
@@ -265,6 +375,29 @@ async function fetchLogList() {
 function handleLogSearch() {
   logPagination.current = 1;
   fetchLogList();
+}
+
+// 查看日志内容
+function handleViewLogContent(record: Record<string, any>) {
+  logRecord.value = record;
+  logModalVisible.value = true;
+}
+
+// 刷新日志
+function handleRefreshLog() {
+  fetchLogList();
+}
+
+// 查看参数
+function handleViewArgs(record: Record<string, any>) {
+  argsModalContent.value = record.args || '';
+  argsModalVisible.value = true;
+}
+
+// 查看结果
+function handleViewResult(record: Record<string, any>) {
+  resultModalContent.value = record.result || '';
+  resultModalVisible.value = true;
 }
 
 function handleLogPageChange(page: number, pageSize: number) {
@@ -503,11 +636,32 @@ onMounted(() => {
         </a-tab-pane>
       </a-tabs>
     </a-drawer>
-    <a-modal v-model:open="logModalVisible" title="批次日志" @cancel="logModalVisible=false" :footer="null">
-      <pre style="max-height:420px;overflow:auto;white-space:pre-wrap;">
-        {{ JSON.stringify(logRecord, null, 2) }}
-      </pre>
-    </a-modal>
+
+    <!-- 日志详情弹窗 -->
+    <LogDetailModal
+      v-model:visible="logModalVisible"
+      title="日志详情"
+      :content="logRecord?.log || ''"
+      :loading="logModalLoading"
+      :status="logRecord?.status"
+      @refresh="handleRefreshLog"
+    />
+
+    <!-- 查看参数弹窗 -->
+    <JsonViewerModal
+      v-model:visible="argsModalVisible"
+      title="查看参数"
+      :content="argsModalContent"
+      :loading="argsModalLoading"
+    />
+
+    <!-- 查看结果弹窗 -->
+    <JsonViewerModal
+      v-model:visible="resultModalVisible"
+      title="查看结果"
+      :content="resultModalContent"
+      :loading="resultModalLoading"
+    />
   </div>
 </template>
 
