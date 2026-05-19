@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { operationReasonRecord, taskBatchStatusRecord } from '@/constants/business';
+import { operationReasonRecord, taskBatchStatusRecord, taskBatchStatusRecordOptions } from '@/constants/business';
 import { monthRangeISO8601 } from '@/utils/common';
 import dayjs from 'dayjs';
 import {
@@ -31,8 +31,8 @@ const createDefaultSearchParams = () => {
     workflowId: historyState.workflowId ? String(historyState.workflowId) : null,
     taskBatchStatus: historyState.taskBatchStatus ? String(historyState.taskBatchStatus) : null,
     datetimeRange: range.map(item => dayjs(item)),
-    createdDateStart: range[0],
-    createdDateEnd: range[1]
+    createdDateStart: dayjs(range[0]).toISOString(),
+    createdDateEnd: dayjs(range[1]).toISOString()
   };
 };
 
@@ -86,7 +86,7 @@ const columns = ref([
     width: 120
   },
   {
-    key: 'createDt',
+    key: 'createdDate',
     title: $t('page.workflowBatch.createDt'),
     width: 120
   },
@@ -129,12 +129,10 @@ const searchFields = computed(() => [
     label: $t('page.workflowBatch.taskBatchStatus'),
     type: 'select' as const,
     placeholder: $t('page.workflowBatch.form.taskBatchStatus'),
-    options: [
-      { label: $t('common.running'), value: '1' },
-      { label: $t('common.success'), value: '2' },
-      { label: $t('common.fail'), value: '3' },
-      { label: $t('common.stop'), value: '4' }
-    ]
+    options: taskBatchStatusRecordOptions.map(o => ({
+      label: $t(o.label),
+      value: String(o.value)
+    }))
   },
   {
     key: 'datetimeRange',
@@ -270,6 +268,10 @@ function handlePageChange(pageNo: number, pageSize: number) {
   pagination.pageSize = pageSize;
   getData();
 }
+
+onMounted(() => {
+  getData();
+});
 </script>
 
 <template>
@@ -343,6 +345,9 @@ function handlePageChange(pageNo: number, pageSize: number) {
               </a-button>
             </a-popconfirm>
           </div>
+        </template>
+        <template v-else>
+          {{ record[column.key] ?? record[column.dataIndex] }}
         </template>
       </template>
     </CommonPagination>

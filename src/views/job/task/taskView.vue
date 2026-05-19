@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
-import { createJob, getJobPage, triggerJob, updateJob, deleteJob, importJob, exportJob } from '@/api/job/job';
+import { createJob, getJobPage, triggerJob, updateJob, deleteJob, importJob, exportJob, enableJob, disableJob } from '@/api/job/job';
 import type { Job } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import { fetchSystemUser } from '@/api/job/systemUser';
@@ -101,6 +101,23 @@ function handleCellClick(record: Record<string, any>, column: Record<string, any
   if (column.dataIndex === 'jobName') {
     detailRecord.value = record;
     detailDrawerVisible.value = true;
+  }
+}
+
+async function handleSwitchChange(checked: boolean, record: Record<string, any>, _column: Record<string, any>, done: () => void) {
+  try {
+    if (checked) {
+      await enableJob(String(record.id));
+      message.success('已启用');
+    } else {
+      await disableJob(String(record.id));
+      message.success('已禁用');
+    }
+    fetchData();
+  } catch (e) {
+    message.error('操作失败');
+  } finally {
+    done();
   }
 }
 
@@ -599,6 +616,7 @@ function handleExport() {
         @update:pageSize="val => { pagination.pageSize = val; pagination.current = 1; fetchData(); }"
         @change="handlePageChange"
         @cell-click="handleCellClick"
+        @switch-change="handleSwitchChange"
       >
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'index'">
@@ -607,7 +625,7 @@ function handleExport() {
           <template v-else-if="column.key === 'operation'">
             <a-space size="small">
               <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-              <a-button type="link" @click="handleExecute(record)">执行</a-button>
+              <a-button v-if="record.jobStatus" type="link" @click="handleExecute(record)">执行</a-button>
               <a-dropdown :trigger="['click']" placement="bottomRight">
                 <a-button type="link">更多 <DownOutlined /></a-button>
                 <template #overlay>

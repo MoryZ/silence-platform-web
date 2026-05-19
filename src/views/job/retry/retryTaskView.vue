@@ -437,6 +437,9 @@ onMounted(() => {
             </a-button>
           </div>
         </template>
+        <template v-else>
+          {{ record[column.key] ?? record[column.dataIndex] }}
+        </template>
       </template>
     </CommonPagination>
     

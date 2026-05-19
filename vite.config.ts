@@ -20,7 +20,7 @@ export default defineConfig({
     proxy: {
       '^/(auth|config|job|mq)/api/v1': {
         //target: 'http://110.40.135.216:8086', 
-        target: 'http://127.0.0.1:9900',
+        target: 'http://192.168.50.57:9900',
         changeOrigin: true
       }
     },

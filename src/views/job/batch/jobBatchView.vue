@@ -33,7 +33,15 @@ const fields = [
     type: 'select' as const, 
     label: '组名称', 
     placeholder: '请选择组名称', 
-    options: async () => await getAllGroupConfigs() 
+    options: async () => {
+      const res = await getAllGroupConfigs();
+      const raw = res?.data || res || [];
+      const list = Array.isArray(raw) ? raw : [];
+      return list.map((item: any) => ({
+        label: item.label || item.groupName,
+        value: item.label || item.groupName
+      }));
+    } 
   },
   { 
     key: 'jobName', 
@@ -46,7 +54,7 @@ const fields = [
     type: 'select' as const, 
     label: '任务状态', 
     placeholder: '请选择任务状态', 
-    options: taskBatchStatusRecordOptions.map(o => ({ label: o.label, value: String(o.value) })),
+    options: taskBatchStatusRecordOptions.map(o => ({ label: $t(o.label), value: String(o.value) })),
     mode: 'multiple'
   },
   { 

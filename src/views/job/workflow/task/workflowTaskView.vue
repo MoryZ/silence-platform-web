@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
 import { enableStatusNumberRecord, triggerTypeRecord } from '@/constants/business';
-import { fetchGetWorkflowPageList, fetchBatchDeleteWorkflow } from '@/api/job/workflow';
+import { fetchGetWorkflowPageList, fetchBatchDeleteWorkflow, enableWorkflow, disableWorkflow } from '@/api/job/workflow';
 import { formatDate } from '@/utils/common';
 import WorkflowSearch from './modules/workflow-search.vue';
 import WorkflowTriggerModal from './modules/workflow-trigger-modal.vue';
@@ -17,6 +17,26 @@ type FormMode = 'add' | 'edit' | 'detail' | 'copy';
 const data = ref<any[]>([]);
 const loading = ref(false);
 const checkedRowKeys = ref<string[]>([]);
+const switchLoadingMap = ref<Record<string, boolean>>({});
+
+async function handleEnableSwitch(checked: boolean, id: string) {
+  switchLoadingMap.value[id] = true;
+  try {
+    if (checked) {
+      await enableWorkflow(id);
+      message.success('已启用');
+    } else {
+      await disableWorkflow(id);
+      message.success('已禁用');
+    }
+    getData();
+  } catch (e) {
+    message.error('操作失败');
+  } finally {
+    switchLoadingMap.value[id] = false;
+  }
+}
+
 const searchParams = ref({
   pageNo: 1,
   pageSize: 10,
@@ -281,9 +301,11 @@ onMounted(()=> {
         </template>
 
         <template v-else-if="column.key === 'workflowStatus'">
-          <a-tag :color="Number(record.workflowStatus) === 1 ? 'green' : 'default'">
-            {{ getWorkflowStatusLabel(record.workflowStatus) }}
-          </a-tag>
+          <a-switch
+            :checked="Number(record.workflowStatus) === 1"
+            :loading="switchLoadingMap[record.id]"
+            @change="(checked: boolean) => handleEnableSwitch(checked, record.id)"
+          />
         </template>
 
         <template v-else-if="column.key === 'updatedDate'">

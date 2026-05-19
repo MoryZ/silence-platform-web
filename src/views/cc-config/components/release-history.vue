@@ -82,6 +82,9 @@
                 <template v-else-if="column.key === 'createdDate'">
                   {{ formatDate(record.createdDate) }}
                 </template>
+                <template v-else>
+                  {{ record[column.key] ?? record[column.dataIndex] }}
+                </template>
               </template>
             </a-table>
           </div>

@@ -52,6 +52,16 @@ export function stopJob(id: string) {
   return request.put(`/api/v1/jobs/${id}/stop`);
 }
 
+/** enable Job */
+export function enableJob(id: string) {
+  return request.put(`/api/v1/jobs/${id}/enable`);
+}
+
+/** disable Job */
+export function disableJob(id: string) {
+  return request.put(`/api/v1/jobs/${id}/disable`);
+}
+
 
 /** batch delete Job by id */
 export function deleteJob(data: string[]) {
