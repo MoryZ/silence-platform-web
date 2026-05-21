@@ -15,6 +15,7 @@ import { h, resolveComponent } from 'vue';
 import { $t } from '@/locales';
 import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
+import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, StopOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import JsonViewerModal from '@/components/JsonViewerModal.vue';
 import LogDetailModal from '@/components/LogDetailModal.vue';
 
@@ -195,6 +196,7 @@ const resultModalLoading = ref(false);
 const logModalVisible = ref(false);
 const logRecord = ref<Record<string, any> | null>(null);
 const logModalLoading = ref(false);
+const logDetailModalRef = ref<InstanceType<typeof import('@/components/LogDetailModal.vue').default> | null>(null);
 
 // 详情抽屉列配置
 const detailColumns = [
@@ -355,7 +357,8 @@ async function fetchLogList() {
     };
     
     logData.value = records.map((r: any) => ({
-      id: r.taskBatchId,
+      id: r.id,
+      taskBatchId: r.taskBatchId,
       log: r.resultMessage,
       logMessages: parseLogMessages(r.resultMessage), // 解析后的日志消息数组
       groupName: r.groupName,
@@ -380,7 +383,35 @@ function handleLogSearch() {
 // 查看日志内容
 function handleViewLogContent(record: Record<string, any>) {
   logRecord.value = record;
+  logModalLoading.value = true;
   logModalVisible.value = true;
+  
+  // 解析日志内容并传递给组件
+  nextTick(() => {
+    if (logDetailModalRef.value) {
+      logDetailModalRef.value.clearLog();
+      // 解析日志数组
+      const logContent = record.log || record.resultMessage;
+      if (logContent) {
+        try {
+          let messages = [];
+          if (typeof logContent === 'string') {
+            const parsed = JSON.parse(logContent);
+            messages = Array.isArray(parsed) ? parsed : [parsed];
+          } else if (Array.isArray(logContent)) {
+            messages = logContent;
+          } else {
+            messages = [logContent];
+          }
+          logDetailModalRef.value.setLogList(messages);
+        } catch {
+          // 解析失败，忽略
+        }
+      }
+      logDetailModalRef.value.setFinished();
+    }
+    logModalLoading.value = false;
+  });
 }
 
 // 刷新日志
@@ -427,6 +458,75 @@ function statusStyle(v: number) {
   const info = (taskBatchStatusEnum as any)[v];
   if (!info) return '';
   return `background:#fff;border-color:${info.color};color:${info.color}`;
+}
+
+// 获取操作原因标签
+function getOperationReasonLabel(reason: any): string {
+  if (reason === null || reason === undefined) return '';
+  if (typeof reason === 'number') {
+    const info = (jobOperationReasonEnum as any)[reason];
+    return info ? ($t ? $t(info.name as any) : info.name) : String(reason);
+  }
+  if (typeof reason === 'string') {
+    return $t ? $t(reason as any) : reason;
+  }
+  return String(reason);
+}
+
+// 获取执行时长
+function getExecutionDuration(): string {
+  if (!detailRecord.value) return '-';
+  const start = detailRecord.value.updatedDate ? new Date(detailRecord.value.updatedDate).getTime() : undefined;
+  const end = detailRecord.value.executionAt ? new Date(detailRecord.value.executionAt).getTime() : undefined;
+  if (!start || !end || isNaN(start) || isNaN(end) || end < start) return '-';
+  const seconds = Math.floor((end - start) / 1000);
+  if (seconds < 60) return `${seconds} 秒`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
+  return `${Math.floor(seconds / 3600)} 小时 ${Math.floor((seconds % 3600) / 60)} 分`;
+}
+
+// 获取执行器类型标签
+function getExecutorTypeLabel(type: number | undefined): string {
+  const map: Record<number, string> = {
+    1: 'Java',
+    2: 'Python',
+    3: 'Go'
+  };
+  return map[type ?? 0] || '-';
+}
+
+// 获取执行器类型颜色
+function getExecutorTypeColor(type: number | undefined): string {
+  const map: Record<number, string> = {
+    1: 'purple',
+    2: 'green',
+    3: 'orange'
+  };
+  return map[type ?? 0] || 'default';
+}
+
+// 获取任务类型标签
+function getTaskTypeLabel(type: number | undefined): string {
+  const map: Record<number, string> = {
+    1: '集群',
+    2: '广播',
+    3: '静态分片',
+    4: 'Map',
+    5: 'MapReduce'
+  };
+  return map[type ?? 0] || '-';
+}
+
+// 获取任务类型颜色
+function getTaskTypeColor(type: number | undefined): string {
+  const map: Record<number, string> = {
+    1: 'green',
+    2: 'blue',
+    3: 'purple',
+    4: 'cyan',
+    5: 'geekblue'
+  };
+  return map[type ?? 0] || 'default';
 }
 
 watch(detailActiveTab, (val) => {
@@ -598,29 +698,94 @@ onMounted(() => {
     <a-drawer v-model:open="detailDrawerVisible" title="任务批次详情" width="920" :footer="null">
       <a-tabs v-model:activeKey="detailActiveTab">
         <a-tab-pane key="base" tab="基本信息">
-          <a-descriptions v-if="detailRecord" bordered :column="2" size="middle">
-            <a-descriptions-item label="组名称">{{ detailRecord.groupName || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="任务名称">{{ detailRecord.jobName || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="状态">
-              <span v-if="detailRecord.taskBatchStatus !== undefined" class="ant-tag" :style="statusStyle(detailRecord.taskBatchStatus)">
-                {{ (taskBatchStatusEnum as any)[detailRecord.taskBatchStatus]?.title || detailRecord.taskBatchStatus }}
-              </span>
-              <span v-else> - </span>
-            </a-descriptions-item>
-            <a-descriptions-item label="开始执行时间">{{ detailRecord.updatedDate || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="执行器类型">
-              <span class="ant-tag" style="background:#fff;border-color:#1677ff;color:#1677ff">{{ detailRecord.executorType === 1 ? 'Java' : detailRecord.executorType === 2 ? 'Python' : '-' }}</span>
-            </a-descriptions-item>
-            <a-descriptions-item label="执行器名称">{{ detailRecord.executorName || '-' }}</a-descriptions-item>
-            <a-descriptions-item label="创建时间" :span="2">{{ detailRecord.createdDate || '-' }}</a-descriptions-item>
-          </a-descriptions>
+          <div v-if="detailRecord" class="detail-base-info">
+            <!-- 状态概览卡片 -->
+            <div class="info-overview-card">
+              <div class="overview-status">
+                <a-tag 
+                  v-if="detailRecord.taskBatchStatus !== undefined" 
+                  class="status-tag" 
+                  :style="{
+                    background: taskBatchStatusEnum[detailRecord.taskBatchStatus]?.color + '20',
+                    borderColor: taskBatchStatusEnum[detailRecord.taskBatchStatus]?.color,
+                    color: taskBatchStatusEnum[detailRecord.taskBatchStatus]?.color
+                  }"
+                >
+                  <template #icon>
+                    <CheckCircleOutlined v-if="detailRecord.taskBatchStatus === 3" />
+                    <CloseCircleOutlined v-else-if="detailRecord.taskBatchStatus === 4" />
+                    <ClockCircleOutlined v-else-if="detailRecord.taskBatchStatus === 2" />
+                    <StopOutlined v-else />
+                  </template>
+                  {{ taskBatchStatusEnum[detailRecord.taskBatchStatus]?.title || detailRecord.taskBatchStatus }}
+                </a-tag>
+                <span v-if="detailRecord.operationReason !== undefined && detailRecord.operationReason !== null" class="reason-text">
+                  {{ getOperationReasonLabel(detailRecord.operationReason) }}
+                </span>
+              </div>
+              <div class="overview-time">
+                <span class="time-label">执行时长</span>
+                <span class="time-value">{{ getExecutionDuration() }}</span>
+              </div>
+            </div>
+
+            <!-- 基本信息卡片 -->
+            <a-card title="基本信息" size="small" class="info-card">
+              <a-descriptions :column="2" size="small" :label-style="{ fontWeight: 500, color: '#666' }">
+                <a-descriptions-item label="组名称">
+                  <span class="field-value">{{ detailRecord.groupName || '-' }}</span>
+                </a-descriptions-item>
+                <a-descriptions-item label="任务名称">
+                  <span class="field-value">{{ detailRecord.jobName || '-' }}</span>
+                </a-descriptions-item>
+                <a-descriptions-item label="执行器类型">
+                  <a-tag :color="getExecutorTypeColor(detailRecord.executorType)">
+                    {{ getExecutorTypeLabel(detailRecord.executorType) }}
+                  </a-tag>
+                </a-descriptions-item>
+                <a-descriptions-item label="执行器名称">
+                  <span class="field-value">{{ detailRecord.executorName || '-' }}</span>
+                </a-descriptions-item>
+                <a-descriptions-item label="任务类型">
+                  <a-tag :color="getTaskTypeColor(detailRecord.taskType)">
+                    {{ getTaskTypeLabel(detailRecord.taskType) }}
+                  </a-tag>
+                </a-descriptions-item>
+                <a-descriptions-item label="创建时间">
+                  <span class="field-value">{{ detailRecord.createdDate || '-' }}</span>
+                </a-descriptions-item>
+              </a-descriptions>
+            </a-card>
+
+            <!-- 执行信息卡片 -->
+            <a-card title="执行信息" size="small" class="info-card">
+              <a-descriptions :column="2" size="small" :label-style="{ fontWeight: 500, color: '#666' }">
+                <a-descriptions-item label="开始执行时间">
+                  <span class="field-value">{{ detailRecord.updatedDate || '-' }}</span>
+                </a-descriptions-item>
+                <a-descriptions-item label="结束时间">
+                  <span class="field-value">{{ detailRecord.executionAt || '-' }}</span>
+                </a-descriptions-item>
+              </a-descriptions>
+            </a-card>
+          </div>
         </a-tab-pane>
         <a-tab-pane key="log" tab="日志详情">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <a-select v-model:value="logStatusFilter" allow-clear style="width:180px" placeholder="请选择状态" :options="logStatusOptions" />
-            <div>
-              <a-button style="margin-right:8px;" @click="fetchLogList">刷新</a-button>
-              <a-button @click="handleLogSearch">重试</a-button>
+          <div class="log-toolbar">
+            <div class="toolbar-left">
+              <a-select 
+                v-model:value="logStatusFilter" 
+                allow-clear 
+                style="width:180px" 
+                placeholder="请选择状态" 
+                :options="logStatusOptions" 
+              />
+            </div>
+            <div class="toolbar-right">
+              <a-button @click="fetchLogList">
+                <template #icon><ReloadOutlined /></template>
+                刷新
+              </a-button>
             </div>
           </div>
           <CommonPagination
@@ -639,11 +804,15 @@ onMounted(() => {
 
     <!-- 日志详情弹窗 -->
     <LogDetailModal
+      ref="logDetailModalRef"
       v-model:visible="logModalVisible"
       title="日志详情"
-      :content="logRecord?.log || ''"
       :loading="logModalLoading"
       :status="logRecord?.status"
+      :taskBatchId="logRecord?.taskBatchId"
+      :taskId="logRecord?.id"
+      :enableWebSocket="true"
+      :autoConnect="true"
       @refresh="handleRefreshLog"
     />
 
@@ -741,5 +910,142 @@ onMounted(() => {
 
 :deep(.ant-tag) {
   margin: 0;
+}
+
+/* 日志工具栏 */
+.log-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 基本信息详情样式 */
+.detail-base-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 状态概览卡片 */
+.info-overview-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.overview-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.overview-status .status-tag {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overview-status .reason-text {
+  font-size: 14px;
+  opacity: 0.9;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+.overview-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.overview-time .time-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.overview-time .time-value {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* 信息卡片 */
+.info-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: none;
+}
+
+.info-card :deep(.ant-card-head) {
+  background: #fafafa;
+  border-radius: 8px 8px 0 0;
+  min-height: 40px;
+}
+
+.info-card :deep(.ant-card-head-title) {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.info-card :deep(.ant-card-body) {
+  padding: 16px;
+}
+
+.info-card :deep(.ant-descriptions-item-label) {
+  color: #666;
+  font-weight: 500;
+  width: 100px;
+}
+
+.info-card :deep(.ant-descriptions-item-content) {
+  color: #333;
+}
+
+.field-value {
+  color: #333;
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .info-card :deep(.ant-card-head) {
+    background: #2a2a2a;
+  }
+
+  .info-card :deep(.ant-descriptions-item-label) {
+    color: #999;
+  }
+
+  .field-value {
+    color: #e0e0e0;
+  }
 }
 </style>

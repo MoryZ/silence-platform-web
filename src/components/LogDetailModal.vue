@@ -1,76 +1,135 @@
 <template>
-  <a-modal
+  <a-drawer
     :open="visible"
-    :title="null"
-    :width="modalWidth"
+    :width="isFullscreen ? '100%' : drawerWidth"
     :footer="null"
-    @cancel="handleClose"
-    class="log-detail-modal"
-    :bodyStyle="{ padding: 0, height: '70vh', display: 'flex', flexDirection: 'column' }"
+    :closable="false"
+    class="log-drawer"
+    @close="handleClose"
   >
-    <!-- 自定义头部 -->
-    <div class="log-header">
-      <div class="header-left">
-        <span class="status-dot" :class="statusClass"></span>
-        <span class="header-title">{{ title }}</span>
+    <template #title>
+      <div class="drawer-header">
+        <div class="header-left">
+          <!-- 状态指示 -->
+          <span v-if="finished" class="status-indicator success">
+            <CheckCircleOutlined />
+          </span>
+          <a-spin v-else size="small" class="loading-indicator" />
+          <span class="header-title">{{ title }}</span>
+        </div>
+        <div class="header-right">
+          <!-- 刷新按钮 -->
+          <a-tooltip title="刷新">
+            <a-button type="text" @click="handleRefresh" :loading="loading" class="header-btn">
+              <template #icon><ReloadOutlined /></template>
+            </a-button>
+          </a-tooltip>
+          
+          <!-- 自动滚动切换 -->
+          <a-tooltip :title="isAutoScroll ? '关闭自动滚动' : '开启自动滚动'">
+            <a-button type="text" @click="toggleAutoScroll" class="header-btn" :class="{ 'active': isAutoScroll }">
+              <template #icon>
+                <SyncOutlined v-if="isAutoScroll" :spin="isAutoScroll" />
+                <VerticalAlignBottomOutlined v-else />
+              </template>
+            </a-button>
+          </a-tooltip>
+          
+          <!-- 全屏/半屏切换 -->
+          <a-tooltip :title="isFullscreen ? '半屏' : '全屏'">
+            <a-button type="text" @click="toggleFullscreen" class="header-btn">
+              <template #icon>
+                <FullscreenExitOutlined v-if="isFullscreen" />
+                <FullscreenOutlined v-else />
+              </template>
+            </a-button>
+          </a-tooltip>
+          
+          <!-- 关闭按钮 -->
+          <a-tooltip title="关闭">
+            <a-button type="text" @click="handleClose" class="header-btn">
+              <template #icon><CloseOutlined /></template>
+            </a-button>
+          </a-tooltip>
+        </div>
       </div>
-      <div class="header-right">
-        <a-tooltip title="刷新">
-          <a-button type="text" @click="handleRefresh" :loading="loading" class="header-btn">
-            <template #icon><ReloadOutlined /></template>
-          </a-button>
-        </a-tooltip>
-        <a-tooltip :title="autoScroll ? '关闭自动滚动' : '开启自动滚动'">
-          <a-button type="text" @click="toggleAutoScroll" class="header-btn" :class="{ 'active': autoScroll }">
-            <template #icon><VerticalAlignBottomOutlined /></template>
-          </a-button>
-        </a-tooltip>
-        <a-divider type="vertical" style="margin: 0 4px;" />
-        <a-tooltip title="全屏">
-          <a-button type="text" @click="toggleFullscreen" class="header-btn">
-            <template #icon>
-              <FullscreenOutlined v-if="!isFullscreen" />
-              <FullscreenExitOutlined v-else />
-            </template>
-          </a-button>
-        </a-tooltip>
-        <a-tooltip title="关闭">
-          <a-button type="text" @click="handleClose" class="header-btn">
-            <template #icon><CloseOutlined /></template>
-          </a-button>
-        </a-tooltip>
-      </div>
-    </div>
-
+    </template>
+    
     <!-- 日志内容区域 -->
     <div class="log-content" ref="logContentRef">
-      <template v-if="loading">
+      <!-- WebSocket 连接状态指示 -->
+      <div v-if="enableWebSocket && wsStatus !== 'disconnected'" class="ws-status-bar">
+        <a-tag v-if="wsStatus === 'connected'" color="success">
+          <template #icon><span class="ws-dot"></span></template>
+          实时连接中
+        </a-tag>
+        <a-tag v-else-if="wsStatus === 'connecting'" color="processing">连接中...</a-tag>
+        <a-tag v-else-if="wsStatus === 'error'" color="error">连接失败</a-tag>
+      </div>
+      
+      <template v-if="loading && mergedLogList.length === 0">
         <div class="loading-wrapper">
           <a-spin size="large" />
-          <span style="margin-top: 12px; color: #999;">加载中...</span>
+          <span class="loading-text">日志加载中...</span>
         </div>
       </template>
-      <template v-else-if="logLines.length">
-        <div 
-          v-for="(line, idx) in logLines" 
-          :key="idx" 
-          class="log-line"
-          :class="getLineClass(line)"
-        >
-          <span class="log-time">{{ line.time }}</span>
-          <span class="log-level" :class="`level-${line.level?.toLowerCase()}`">{{ line.level }}</span>
-          <span class="log-location">{{ line.location }}</span>
-          <span class="log-message">{{ line.message }}</span>
-        </div>
-      </template>
-      <template v-else>
+      
+      <template v-else-if="mergedLogList.length === 0 && isFinished">
         <div class="empty-wrapper">
-          <InboxOutlined style="font-size: 48px; color: #ccc;" />
-          <span style="margin-top: 12px; color: #999;">暂无日志</span>
+          <InboxOutlined class="empty-icon" />
+          <span class="empty-text">暂无日志</span>
+        </div>
+      </template>
+      
+      <template v-else>
+        <div class="log-list">
+          <div
+            v-for="item in mergedLogList"
+            :key="item.key"
+            class="log-item"
+          >
+            <!-- 日志头部信息 -->
+            <div class="log-header-row">
+              <span class="log-time">{{ formatTimestamp(item.time_stamp) }}</span>
+              <span class="log-level" :class="`level-${item.level}`">{{ item.level }}</span>
+              <span class="log-host">[{{ item.host }}:{{ item.port }}]</span>
+              <span class="log-thread">[{{ item.thread }}]</span>
+            </div>
+            
+            <!-- 位置信息 -->
+            <div class="log-location">{{ item.location }}:</div>
+            
+            <!-- 消息内容 -->
+            <div class="log-message-wrapper">
+              <template v-if="item.message && item.message.includes('\n')">
+                <a-collapse>
+                  <a-collapse-panel :key="item.key + '-msg'" :header="getFirstLine(item.message)">
+                    <pre class="message-content">{{ getRestContent(item.message) }}</pre>
+                  </a-collapse-panel>
+                </a-collapse>
+              </template>
+              <template v-else>
+                <div class="log-message">- {{ item.message }}</div>
+              </template>
+            </div>
+            
+            <!-- 异常堆栈 -->
+            <template v-if="item.throwable">
+              <div class="log-throwable-wrapper">
+                <a-collapse>
+                  <a-collapse-panel :key="item.key + '-throw'" :header="getFirstLine(item.throwable)">
+                    <pre class="throwable-content">{{ item.throwable }}</pre>
+                  </a-collapse-panel>
+                </a-collapse>
+              </div>
+            </template>
+            
+            <a-divider class="log-divider" />
+          </div>
         </div>
       </template>
     </div>
-  </a-modal>
+  </a-drawer>
 </template>
 
 <script setup lang="ts">
@@ -81,186 +140,257 @@ import {
   FullscreenOutlined, 
   FullscreenExitOutlined,
   VerticalAlignBottomOutlined,
-  InboxOutlined 
+  SyncOutlined,
+  InboxOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons-vue';
+import { generateRandomString } from '@/utils/common';
+import { useWebSocketLog } from '@/hooks/useWebSocketLog';
+import type { JobMessage } from '@/types/websocket';
 
 interface Props {
   visible: boolean;
   title?: string;
-  content?: string;
-  loading?: boolean;
+  taskBatchId?: string | number;
+  taskId?: string | number;
   status?: number;
-}
-
-interface LogLine {
-  time: string;
-  level: string;
-  location: string;
-  message: string;
-  raw: any;
+  loading?: boolean;
+  /** 是否启用 WebSocket 实时日志 */
+  enableWebSocket?: boolean;
+  /** 是否自动连接 WebSocket */
+  autoConnect?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   title: '日志详情',
-  content: '',
+  taskBatchId: undefined,
+  taskId: undefined,
+  status: undefined,
   loading: false,
-  status: undefined
+  enableWebSocket: true,
+  autoConnect: true
 });
 
 const emit = defineEmits<{
   'update:visible': [value: boolean];
   'refresh': [];
+  'websocketConnected': [];
+  'websocketDisconnected': [];
+  'websocketError': [error: Event];
 }>();
 
-const logContentRef = ref<HTMLElement | null>(null);
-const autoScroll = ref(true);
-const isFullscreen = ref(false);
-const modalWidth = ref(1000);
-
-// 状态样式
-const statusClass = computed(() => {
-  switch (props.status) {
-    case 2: return 'status-running';
-    case 3: return 'status-success';
-    case 4: return 'status-error';
-    case 5: return 'status-stopped';
-    case 6: return 'status-cancelled';
-    default: return 'status-default';
+// WebSocket 日志
+const {
+  logList: wsLogList,
+  status: wsStatus,
+  isConnected: wsIsConnected,
+  finished: wsFinished,
+  connect: wsConnect,
+  disconnect: wsDisconnect
+} = useWebSocketLog({
+  maxRetries: 3,
+  retryInterval: 1000,
+  onError: (error) => {
+    emit('websocketError', error);
   }
 });
 
-// 解析日志内容
-const logLines = ref<LogLine[]>([]);
+// 合并日志列表：优先使用 WebSocket 日志，否则使用外部传入的日志
+const mergedLogList = computed<JobMessage[]>(() => {
+  return wsLogList.value.length > 0 ? wsLogList.value : logList.value;
+});
 
-const parseLogContent = (content: any): LogLine[] => {
-  if (!content) return [];
-  
-  try {
-    let arr: any[] = [];
-    
-    // 解析数据
-    if (typeof content === 'string') {
-      const parsed = JSON.parse(content);
-      arr = Array.isArray(parsed) ? parsed : [parsed];
-    } else if (Array.isArray(content)) {
-      arr = content;
-    } else {
-      arr = [content];
-    }
-    
-    return arr.map((item: any) => {
-      const time = item.time_stamp ? formatTimestamp(item.time_stamp) : '';
-      const level = item.level || '';
-      const location = item.location || '';
-      const message = item.message || '';
-      
-      return { time, level, location, message, raw: item };
-    });
-  } catch {
-    // 如果解析失败，直接返回原内容作为一条日志
-    return [{ time: '', level: '', location: '', message: String(content), raw: content }];
+const drawerWidth = ref(800);
+const isFullscreen = ref(true);
+const isAutoScroll = ref(true);
+const finished = ref(true);
+const logContentRef = ref<HTMLElement | null>(null);
+
+// 日志列表
+const logList = ref<JobMessage[]>([]);
+
+// 计算属性：是否已完成（优先使用 WebSocket 的状态）
+const isFinished = computed(() => {
+  if (props.enableWebSocket && wsLogList.value.length > 0) {
+    return wsFinished.value;
   }
-};
+  return finished.value;
+});
 
-// 时间戳格式化
-const formatTimestamp = (ts: string | number): string => {
+// 格式化时间戳
+function formatTimestamp(timestamp: string | number): string {
+  if (!timestamp) return '';
   try {
-    const num = Number(ts);
-    if (num > 1e12) {
-      return new Date(num).toLocaleTimeString('zh-CN', { hour12: false });
-    } else if (num > 1e9) {
-      return new Date(num * 1000).toLocaleTimeString('zh-CN', { hour12: false });
-    }
-    return String(ts);
+    const date = new Date(Number.parseInt(String(timestamp), 10));
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
   } catch {
-    return String(ts);
+    return String(timestamp);
   }
-};
+}
 
-// 获取行样式类
-const getLineClass = (line: LogLine): string => {
-  const level = line.level?.toLowerCase();
-  if (level === 'error' || level === 'err' || level === 'fatal') return 'line-error';
-  if (level === 'warn' || level === 'warning') return 'line-warn';
-  if (level === 'debug') return 'line-debug';
-  return '';
-};
+// 获取第一行
+function getFirstLine(text: string): string {
+  if (!text) return '';
+  const match = text.match(/^.+$/m);
+  return match ? match[0] : text.substring(0, 100);
+}
+
+// 获取剩余内容
+function getRestContent(text: string): string {
+  if (!text) return '';
+  return text.replace(/^.+(\n|$)/m, '').replace(/\n/g, '\n - ');
+}
 
 // 刷新
 const handleRefresh = () => {
+  logList.value = [];
+  finished.value = false;
+  if (props.enableWebSocket) {
+    // 使用 WebSocket 时，重新连接以获取新日志
+    wsConnect(props.taskBatchId, props.taskId);
+  }
   emit('refresh');
 };
 
 // 切换自动滚动
-const toggleAutoScroll = () => {
-  autoScroll.value = !autoScroll.value;
-  if (autoScroll.value) {
+function toggleAutoScroll() {
+  isAutoScroll.value = !isAutoScroll.value;
+  if (isAutoScroll.value) {
     scrollToBottom();
   }
-};
+}
 
 // 滚动到底部
-const scrollToBottom = () => {
+function scrollToBottom() {
   nextTick(() => {
     if (logContentRef.value) {
       logContentRef.value.scrollTop = logContentRef.value.scrollHeight;
     }
   });
-};
+}
 
 // 切换全屏
-const toggleFullscreen = () => {
+function toggleFullscreen() {
   isFullscreen.value = !isFullscreen.value;
-  modalWidth.value = isFullscreen.value ? '100vw' : 1000;
-};
+}
 
 // 关闭
-const handleClose = () => {
-  emit('update:visible', false);
-};
-
-// 监听内容变化
-watch(() => props.content, (newContent) => {
-  logLines.value = parseLogContent(newContent);
-  if (autoScroll.value) {
-    scrollToBottom();
+function handleClose() {
+  // 断开 WebSocket 连接
+  if (props.enableWebSocket) {
+    wsDisconnect();
   }
-}, { immediate: true });
+  emit('update:visible', false);
+}
+
+// 设置日志列表（供父组件调用）
+function setLogList(messages: any[]) {
+  if (Array.isArray(messages)) {
+    messages.forEach((msg: any) => {
+      msg.key = `${msg.time_stamp}-${generateRandomString(16)}`;
+      logList.value.push(msg);
+    });
+    
+    if (isAutoScroll.value) {
+      scrollToBottom();
+    }
+  }
+}
+
+// 标记日志加载完成
+function setFinished() {
+  finished.value = true;
+}
+
+// 清空日志
+function clearLog() {
+  logList.value = [];
+  wsLogList.value = [];
+  finished.value = false;
+  wsFinished.value = false;
+}
+
+// 暴露方法给父组件
+defineExpose({
+  setLogList,
+  setFinished,
+  clearLog,
+  // WebSocket 控制方法
+  connect: wsConnect,
+  disconnect: wsDisconnect,
+  isConnected: wsIsConnected,
+  status: wsStatus
+});
+
+// 监听 visible 变化，自动连接/断开 WebSocket
+watch(() => props.visible, (newVisible) => {
+  if (!newVisible) {
+    // 关闭时清空日志并断开连接
+    logList.value = [];
+    finished.value = true;
+    if (props.enableWebSocket) {
+      wsDisconnect();
+    }
+  } else {
+    // 打开时，如果有 taskBatchId 且启用了 WebSocket，自动连接
+    if (props.enableWebSocket && props.autoConnect && (props.taskBatchId || props.taskId)) {
+      wsConnect(props.taskBatchId, props.taskId);
+    }
+  }
+});
+
+// 监听任务参数变化
+watch([() => props.taskBatchId, () => props.taskId], ([newBatchId, newTaskId]) => {
+  // 如果已连接且参数变化，重新连接
+  if (props.visible && props.enableWebSocket && props.autoConnect && (newBatchId || newTaskId)) {
+    wsConnect(newBatchId, newTaskId);
+  }
+});
+
+// 监听 WebSocket 状态变化
+watch(wsStatus, (newStatus) => {
+  if (newStatus === 'connected') {
+    emit('websocketConnected');
+  } else if (newStatus === 'disconnected' || newStatus === 'error') {
+    emit('websocketDisconnected');
+  }
+});
 
 // 监听自动滚动
-watch(autoScroll, (newVal) => {
+watch(isAutoScroll, (newVal) => {
   if (newVal) {
     scrollToBottom();
   }
 });
 
-// 监听打开状态
-watch(() => props.visible, (newVisible) => {
-  if (newVisible) {
-    logLines.value = parseLogContent(props.content);
-    nextTick(() => scrollToBottom());
+// 监听 WebSocket 日志变化，自动滚动
+watch(() => wsLogList.value.length, () => {
+  if (isAutoScroll.value) {
+    scrollToBottom();
   }
 });
 </script>
 
 <style scoped>
-.log-detail-modal :deep(.ant-modal-content) {
+.log-drawer :deep(.ant-drawer-body) {
   padding: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.log-detail-modal :deep(.ant-modal-close) {
-  display: none;
-}
-
-.log-header {
+.drawer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #1e1e1e;
-  border-bottom: 1px solid #333;
+  width: 100%;
 }
 
 .header-left {
@@ -269,38 +399,59 @@ watch(() => props.visible, (newVisible) => {
   gap: 8px;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #666;
+.status-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
 }
 
-.status-running { background: #1677ff; animation: pulse 1.5s infinite; }
-.status-success { background: #52c41a; }
-.status-error { background: #ff4d4f; }
-.status-stopped { background: #8c8c8c; }
-.status-cancelled { background: #fa8c16; }
-.status-default { background: #666; }
+.status-indicator.success {
+  color: #52c41a;
+}
+
+.loading-indicator {
+  margin-right: 0;
+}
+
+.ws-status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(30, 31, 34, 0.95);
+  padding: 8px 16px;
+  border-bottom: 1px solid #333;
+}
+
+.ws-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #52c41a;
+  margin-right: 6px;
+  animation: pulse 1.5s infinite;
+}
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
 }
 
 .header-title {
-  color: #fff;
   font-size: 14px;
   font-weight: 500;
+  color: #262626;
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 .header-btn {
-  color: #999 !important;
+  color: #666 !important;
   width: 32px;
   height: 32px;
   display: flex;
@@ -309,83 +460,21 @@ watch(() => props.visible, (newVisible) => {
 }
 
 .header-btn:hover {
-  color: #fff !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.08) !important;
 }
 
 .header-btn.active {
   color: #52c41a !important;
 }
 
-.header-right :deep(.ant-divider) {
-  border-color: #333;
-}
-
 .log-content {
   flex: 1;
   overflow: auto;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: #1e1f22;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
-  line-height: 1.8;
-  padding: 8px 0;
-}
-
-.log-line {
-  display: flex;
-  padding: 2px 16px;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.log-line:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-line.line-error {
-  background: rgba(255, 77, 79, 0.1);
-  color: #ff7875;
-}
-
-.log-line.line-warn {
-  background: rgba(250, 140, 22, 0.1);
-  color: #ffc53d;
-}
-
-.log-line.line-debug {
-  color: #8c8c8c;
-}
-
-.log-time {
-  color: #6e6e6e;
-  margin-right: 8px;
-  min-width: 80px;
-}
-
-.log-level {
-  font-weight: 600;
-  margin-right: 8px;
-  min-width: 50px;
-}
-
-.level-info { color: #4ec9b0; }
-.level-warn, .level-warning { color: #dcdcaa; }
-.level-error, .level-fatal { color: #f14c4c; font-weight: 700; }
-.level-debug { color: #6e6e6e; }
-
-.log-location {
-  color: #9cdcfe;
-  margin-right: 8px;
-  min-width: 200px;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.log-message {
-  flex: 1;
-  color: #d4d4d4;
+  font-size: 14px;
+  color: #ffffffe6;
 }
 
 .loading-wrapper,
@@ -395,7 +484,95 @@ watch(() => props.visible, (newVisible) => {
   justify-content: center;
   align-items: center;
   height: 100%;
-  min-height: 200px;
+  min-height: 400px;
+}
+
+.loading-text,
+.empty-text {
+  margin-top: 12px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 48px;
+  color: #666;
+}
+
+.log-list {
+  padding: 8px 16px;
+}
+
+.log-item {
+  margin-bottom: 4px;
+}
+
+.log-header-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.log-time {
+  color: #2db7f5;
+  min-width: 200px;
+}
+
+.log-level {
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.level-DEBUG { color: #2647cc; }
+.level-INFO { color: #5c962c; }
+.level-WARN { color: #da9816; }
+.level-ERROR { color: #dc3f41; }
+
+.log-host,
+.log-thread {
+  color: #00a3a3;
+}
+
+.log-location {
+  color: #a771bf;
+  margin-bottom: 4px;
+  padding-left: 8px;
+}
+
+.log-message-wrapper {
+  padding-left: 8px;
+}
+
+.log-message {
+  color: #ffffffe6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-left: 8px;
+}
+
+.log-throwable-wrapper {
+  margin-top: 4px;
+  padding-left: 8px;
+}
+
+.message-content,
+.throwable-content {
+  background: #2d2d2d;
+  padding: 8px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-size: 13px;
+  color: #ffffffe6;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.log-divider {
+  margin: 12px 0;
+  border-color: #333;
 }
 
 /* 滚动条样式 */
@@ -415,5 +592,33 @@ watch(() => props.visible, (newVisible) => {
 
 .log-content::-webkit-scrollbar-thumb:hover {
   background: #666;
+}
+
+/* Collapse 样式覆盖 */
+:deep(.ant-collapse) {
+  background: transparent;
+  border: none;
+}
+
+:deep(.ant-collapse-item) {
+  border: none;
+}
+
+:deep(.ant-collapse-header) {
+  color: #ffffffe6 !important;
+  padding: 4px 0 !important;
+}
+
+:deep(.ant-collapse-content) {
+  background: transparent;
+  border-top: none;
+}
+
+:deep(.ant-collapse-content-box) {
+  padding: 0 !important;
+}
+
+:deep(.ant-divider) {
+  margin: 12px 0;
 }
 </style>

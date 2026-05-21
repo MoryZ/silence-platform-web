@@ -22,6 +22,11 @@ export default defineConfig({
         //target: 'http://110.40.135.216:8086', 
         target: 'http://127.0.0.1:9900',
         changeOrigin: true
+      },
+      '/websocket': {
+        target: 'http://127.0.0.1:9900',
+        changeOrigin: true,
+        ws: true
       }
     },
   },
