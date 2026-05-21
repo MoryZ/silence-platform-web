@@ -625,7 +625,7 @@ function handleExport() {
           <template v-else-if="column.key === 'operation'">
             <a-space size="small">
               <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-              <a-button v-if="record.jobStatus" type="link" @click="handleExecute(record)">执行</a-button>
+              <a-button type="link" @click="handleExecute(record)">执行</a-button>
               <a-dropdown :trigger="['click']" placement="bottomRight">
                 <a-button type="link">更多 <DownOutlined /></a-button>
                 <template #overlay>
