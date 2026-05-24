@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { operationReasonRecord, taskBatchStatusRecord, taskBatchStatusRecordOptions } from '@/constants/business';
+import { operationReasonRecord, taskBatchStatusRecord, taskBatchStatusRecordOptions, jobOperationReasonEnum } from '@/constants/business';
 import { monthRangeISO8601 } from '@/utils/common';
 import dayjs from 'dayjs';
 import {
@@ -63,6 +63,12 @@ const columns = ref([
     width: 200,
     ellipsis: {
       tooltip: true
+    },
+    customRender: ({ record }: { record: any }) => {
+      return h('a', {
+        style: 'color:#1677ff;cursor:pointer;',
+        onClick: () => router.push({ path: '/workflow/form/batch', query: { id: record.id } })
+      }, record.workflowName);
     }
   },
   {
@@ -73,7 +79,7 @@ const columns = ref([
   {
     key: 'executionAt',
     title: $t('page.workflowBatch.executionAt'),
-    width: 120
+    width: 180
   },
   {
     key: 'taskBatchStatus',
@@ -83,17 +89,17 @@ const columns = ref([
   {
     key: 'operationReason',
     title: $t('page.workflowBatch.operationReason'),
-    width: 120
+    width: 150
   },
   {
     key: 'createdDate',
     title: $t('page.workflowBatch.createDt'),
-    width: 120
+    width: 180
   },
   {
     key: 'operation',
     title: $t('common.operation'),
-    width: 130,
+    width: 200,
     align: 'center'
   }
 ]);
@@ -239,7 +245,7 @@ async function handleStop(id: string) {
 }
 
 function detail(id: string) {
-  router.push({ path: '/workflow/form/batch', query: { id } });
+  router.push({ path: '/job/workflow/form/batch', query: { id } });
 }
 
 function getStatusColor(status: number): string {
@@ -252,6 +258,31 @@ function getStatusColor(status: number): string {
     6: 'orange'
   };
   return tagMap[status] || 'default';
+}
+
+// 格式化日期时间
+function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '-';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch {
+    return '-';
+  }
+}
+
+// 获取操作原因颜色
+function getOperationReasonColor(reason: number | undefined): string {
+  if (reason === undefined || reason === null) return '#8c8c8c';
+  const info = (jobOperationReasonEnum as any)[reason];
+  return info?.color || '#8c8c8c';
 }
 
 function handleSearch() {
@@ -311,6 +342,14 @@ onMounted(() => {
           </a-button>
         </template>
         
+        <template v-else-if="column.key === 'executionAt'">
+          {{ formatDateTime(record.executionAt) }}
+        </template>
+        
+        <template v-else-if="column.key === 'createdDate'">
+          {{ formatDateTime(record.createdDate) }}
+        </template>
+        
         <template v-else-if="column.key === 'taskBatchStatus'">
           <a-tag v-if="record.taskBatchStatus" :color="getStatusColor(record.taskBatchStatus)">
             {{ $t(taskBatchStatusRecord[record.taskBatchStatus]) }}
@@ -318,14 +357,24 @@ onMounted(() => {
         </template>
         
         <template v-else-if="column.key === 'operationReason'">
-          <a-tag v-if="record.operationReason" color="orange">
-            {{ $t(operationReasonRecord[record.operationReason]) }}
-          </a-tag>
+          <template v-if="record.operationReason !== undefined && record.operationReason !== null">
+            <a-tag v-if="record.operationReason === 0" style="background:#f5f5f5;border-color:#d9d9d9;color:#8c8c8c">
+              {{ $t(operationReasonRecord[0]) }}
+            </a-tag>
+            <a-tag v-else :style="`background:#fff;border-color:${getOperationReasonColor(record.operationReason)};color:${getOperationReasonColor(record.operationReason)}`">
+              {{ $t(operationReasonRecord[record.operationReason]) || record.operationReason }}
+            </a-tag>
+          </template>
+          <span v-else>-</span>
         </template>
         
         <template v-else-if="column.key === 'operation'">
           <div class="flex-center gap-8px">
+            <a-button type="link" @click="router.push({ path: '/job/workflow/form/batch', query: { batchId: record.id } })">
+              {{ $t('common.log') || '日志' }}
+            </a-button>
             <template v-if="record.taskBatchStatus === 1 || record.taskBatchStatus === 2">
+              <a-divider type="vertical" />
               <a-popconfirm
                 :title="$t('common.confirmStop')"
                 @confirm="handleStop(record.id)"
@@ -334,8 +383,8 @@ onMounted(() => {
                   {{ $t('common.stop') }}
                 </a-button>
               </a-popconfirm>
-              <a-divider type="vertical" />
             </template>
+            <a-divider type="vertical" />
             <a-popconfirm
               :title="$t('common.deleteConfirm')"
               @confirm="handleDelete(record.id)"

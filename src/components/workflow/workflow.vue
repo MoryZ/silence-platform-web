@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, useSlots, watch } from 'vue';
+import { ref, useSlots, watch } from 'vue';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { $t } from '@/locales';
 import NodeWrap from './modules/nodes/node-wrap.vue';
@@ -100,26 +100,6 @@ const onZoom = (n: number) => {
     zoom.value = 300;
   }
 };
-
-const handleWeel = (e: WheelEvent) => {
-  // 仅在 Ctrl/Cmd + 滚轮 时缩放，普通滚轮保留页面滚动行为
-  if (!e.ctrlKey && !e.metaKey) {
-    return;
-  }
-
-  e.preventDefault();
-  if (e.deltaY > 0) {
-    onZoom(-1);
-  } else {
-    onZoom(1);
-  }
-};
-
-onMounted(() => {
-  if (workflowRef.value) {
-    workflowRef.value.addEventListener('wheel', handleWeel, { passive: false });
-  }
-});
 
 const onDragging = () => {
   const workflowBodyDom: HTMLDivElement | null = document.querySelector('.workflow-design');

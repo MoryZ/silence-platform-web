@@ -135,11 +135,6 @@
   // 获取用户信息
   const userInfo = computed(() => userStore.getUserInfo())
   
-  // 调试：打印一次当前用户信息，便于校验数据来源
-  if (import.meta.env.DEV) {
-    console.debug('[UserDropdown] userInfo =', userInfo.value)
-  }
-  
   // 头像URL处理函数
   const getAvatarUrl = (avatarPath?: string) => {
     if (!avatarPath) return defaultAvatar

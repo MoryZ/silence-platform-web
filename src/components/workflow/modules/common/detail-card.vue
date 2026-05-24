@@ -1,21 +1,23 @@
-<script setup lang="tsx">
-import { nextTick, ref, useSlots, watch } from 'vue';
-import { Tag, message } from 'ant-design-vue';
-// import hljs from 'highlight.js/lib/core';
-// import json from 'highlight.js/lib/languages/json';
-import { jobExecutorEnum, jobOperationReasonEnum, jobStatusEnum, taskBatchStatusEnum } from '@/constants/business';
+<script setup lang="ts">
+import { h, nextTick, ref, watch } from 'vue';
+import { ReloadOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
+import { NSpin, NTabs, NTabPane, NDescriptions, NDescriptionsItem, NTag, NPagination } from 'naive-ui';
+import { executorTypeRecord, taskBatchStatusEnum } from '@/constants/business';
 import { fetchWorkflowNodeRetry } from '@/api/job/workflow';
 import { getJobDetail } from '@/api/job/job';
+import { getJobTaskPage } from '@/api/job/job-task';
 import { findById } from '@/api/job/job-batch';
 import { useWorkflowStore } from '@/stores/workflow';
 import { isNotNull } from '@/utils/common';
 import { $t } from '@/locales';
+import CommonPagination from '@/components/CommonPagination.vue';
+import LogDetailModal from '@/components/LogDetailModal.vue';
+import JsonViewerModal from '@/components/JsonViewerModal.vue';
 
 defineOptions({
   name: 'DetailCard'
 });
-
-// hljs.registerLanguage('json', json);
 
 interface Props {
   id?: string;
@@ -35,32 +37,32 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const slots = useSlots();
-
 const store = useWorkflowStore();
 const visible = ref(false);
-const logOpen = ref(false);
 const spinning = ref(false);
 const currentIndex = ref(1);
 const jobData = ref<Workflow.JobTaskType>({});
+const activeTab = ref('info');
 
-const pagination = ref({
-  page: 1,
-  pageCount: 0,
+// 任务项列表相关
+const taskList = ref<any[]>([]);
+const taskLoading = ref(false);
+const taskStatusFilter = ref<number | undefined>(undefined);
+const taskPagination = ref({
+  current: 1,
   pageSize: 10,
-  showSizePicker: true,
-  pageSizes: [10, 15, 20, 25, 30],
-  onUpdatePage: async (page: number) => {
-    pagination.value.page = page;
-    const id = props.ids[currentIndex.value - 1];
-    getBatchDetail(id);
-  },
-  onUpdatePageSize: async (pageSize: number) => {
-    pagination.value.pageSize = pageSize;
-    const id = props.ids[currentIndex.value - 1];
-    getBatchDetail(id);
-  }
+  total: 0
 });
+
+const taskStatusOptions = [
+  { label: '全部', value: undefined as any },
+  { label: '运行中', value: 1 },
+  { label: '已完成', value: 2 },
+  { label: '处理成功', value: 3 },
+  { label: '处理失败', value: 4 },
+  { label: '任务停止', value: 5 },
+  { label: '取消', value: 6 }
+];
 
 watch(
   () => props.show,
@@ -80,7 +82,9 @@ const onUpdateShow = (show: boolean = false) => {
 async function getDetail(id: string) {
   spinning.value = true;
   try {
-    const data = await getJobDetail(id);
+    const res = await getJobDetail(id);
+    const data = res?.data ?? res;
+    if (!data) return;
     jobData.value = data;
   } catch (error) {
     console.error('获取任务详情失败:', error);
@@ -92,8 +96,9 @@ async function getDetail(id: string) {
 async function getBatchDetail(id: string) {
   spinning.value = true;
   try {
-    const data = await findById(id);
-    // 转换类型以匹配 JobTaskType
+    const res: any = await findById(id);
+    const data = res?.data ?? res;
+    if (!data) return;
     jobData.value = {
       ...data,
       id: data.id?.toString(),
@@ -101,6 +106,8 @@ async function getBatchDetail(id: string) {
       createDt: data.createdDate,
       executionAt: data.updatedDate
     } as Workflow.JobTaskType;
+    // 加载任务项列表
+    fetchTaskList();
   } catch (error) {
     console.error('获取批次详情失败:', error);
   } finally {
@@ -122,13 +129,6 @@ function onLoad() {
     }
   });
 }
-
-const record = ref<Workflow.JobTaskType>({});
-
-const getLogRows = (task: Workflow.JobTaskType) => {
-  record.value = task;
-  logOpen.value = true;
-};
 
 const retry = async () => {
   try {
@@ -153,79 +153,227 @@ const onUpdatePage = (page: number) => {
   const id = props.ids[page - 1];
   getBatchDetail(id);
 };
+
+// 任务项列表的列定义
+const taskColumns = [
+  { title: 'ID', dataIndex: 'id', width: 100 },
+  { 
+    title: '日志', 
+    dataIndex: 'resultMessage', 
+    width: 80,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.resultMessage) return '-';
+      return h('a', { 
+        style: 'color:#52c41a;cursor:pointer;',
+        onClick: () => handleViewLog(record)
+      }, '查看');
+    }
+  },
+  { title: '组名称', dataIndex: 'groupName', width: 120 },
+  { 
+    title: '状态', 
+    dataIndex: 'taskStatus', 
+    width: 100,
+    customRender: ({ record }: { record: any }) => {
+      const status = taskBatchStatusEnum[record.taskStatus];
+      if (!status) return record.taskStatus;
+      return h('span', { 
+        class: 'ant-tag', 
+        style: `background:#fff;border-color:${status.color};color:${status.color}` 
+      }, status.title);
+    }
+  },
+  { title: '地址', dataIndex: 'clientInfo', width: 180 },
+  { 
+    title: '参数', 
+    dataIndex: 'argsStr', 
+    width: 80,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.argsStr) return '-';
+      return h('a', { 
+        style: 'color:#1677ff;cursor:pointer;',
+        onClick: () => handleViewArgs(record)
+      }, '查看');
+    }
+  },
+  { 
+    title: '结果', 
+    dataIndex: 'resultMessage', 
+    width: 80,
+    customRender: ({ record }: { record: any }) => {
+      if (!record.resultMessage) return '-';
+      return h('a', { 
+        style: 'color:#1677ff;cursor:pointer;',
+        onClick: () => handleViewResult(record)
+      }, '查看');
+    }
+  },
+  { title: '重试次数', dataIndex: 'retryCount', width: 100 },
+  { title: '开始执行时间', dataIndex: 'updatedDate', width: 180 }
+];
+
+// 日志弹窗
+const logModalVisible = ref(false);
+const logModalLoading = ref(false);
+const logRecord = ref<any>(null);
+
+// 查看日志
+const handleViewLog = (record: any) => {
+  logRecord.value = record;
+  logModalVisible.value = true;
+};
+
+// 参数弹窗
+const argsModalVisible = ref(false);
+const argsModalContent = ref('');
+
+const handleViewArgs = (record: any) => {
+  argsModalContent.value = record.args || '';
+  argsModalVisible.value = true;
+};
+
+// 结果弹窗
+const resultModalVisible = ref(false);
+const resultModalContent = ref('');
+
+const handleViewResult = (record: any) => {
+  resultModalContent.value = record.result || '';
+  resultModalVisible.value = true;
+};
+
+// 获取任务项列表
+async function fetchTaskList() {
+  taskLoading.value = true;
+  try {
+    const params: any = {
+      taskBatchId: String(jobData.value.taskBatchId ?? jobData.value.id ?? ''),
+      groupName: jobData.value.groupName,
+      pageNo: taskPagination.value.current,
+      pageSize: taskPagination.value.pageSize
+    };
+    if (taskStatusFilter.value !== undefined) {
+      params.taskStatus = Number(taskStatusFilter.value);
+    }
+
+    const res: any = await getJobTaskPage(params);
+    const records: any[] = Array.isArray(res) ? res : (res?.data || res?.records || res?.list || []);
+    taskList.value = records;
+    taskPagination.value.total = res?.total || records.length;
+  } catch (error) {
+    console.error('获取任务列表失败:', error);
+  } finally {
+    taskLoading.value = false;
+  }
+}
+
+function handleTaskPageChange(page: number, pageSize: number) {
+  taskPagination.value.current = page;
+  taskPagination.value.pageSize = pageSize;
+  fetchTaskList();
+}
 </script>
 
 <template>
   <a-drawer
     v-model:open="visible"
-    width="800px"
+    width="1100px"
     title="任务批次详情"
     @after-open-change="(open) => !open && onUpdateShow(false)"
   >
-    <NTabs v-if="idList && idList.length > 0" v-model:value="currentIndex" type="segment" animated>
-      <NTabPane v-for="(item, index) in idList" :key="index" :name="index + 1" :tab="item">
-        <NTabs class="detail-tabs" type="segment" animated>
-          <NTabPane name="info" :tab="$t('page.log.info')">
-            <NSpin :show="spinning">
-              <NDescriptions class="pt-12px" label-placement="left" bordered :column="2">
-                <NDescriptionsItem :label="$t('page.jobBatch.groupName')">{{ jobData?.groupName }}</NDescriptionsItem>
+    <NTabs v-model:value="activeTab" type="line">
+      <!-- 基本信息 -->
+      <NTabPane name="info" tab="基本信息">
+        <NSpin :show="spinning">
+          <NDescriptions label-placement="left" bordered :column="1">
+            <NDescriptionsItem :label="$t('page.jobBatch.groupName')">{{ jobData?.groupName }}</NDescriptionsItem>
+            <NDescriptionsItem :label="$t('page.jobBatch.jobName')">{{ jobData?.jobName }}</NDescriptionsItem>
+            <NDescriptionsItem :label="$t('page.jobBatch.taskBatchStatus')">
+              <NTag
+                v-if="isNotNull(jobData.taskBatchStatus)"
+                :color="getTagColor(taskBatchStatusEnum[jobData.taskBatchStatus!].color)"
+              >
+                {{ taskBatchStatusEnum[jobData.taskBatchStatus!].title }}
+              </NTag>
+            </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('page.jobBatch.operationReason')">
+              {{ jobData?.operationReason ?? '-' }}
+            </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('page.jobBatch.executorType')">
+              <NTag
+                v-if="isNotNull(jobData.executorType)"
+                :color="getTagColor(executorTypeRecord[jobData.executorType!] ? '#52c41a' : '#999')"
+              >
+                {{ executorTypeRecord[jobData.executorType!] ? $t(executorTypeRecord[jobData.executorType!]) : '-' }}
+              </NTag>
+            </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('page.jobBatch.executorInfo')">
+              {{ jobData?.executorInfo }}
+            </NDescriptionsItem>
+            <NDescriptionsItem :label="$t('common.createdDate')">
+              {{ jobData?.createDt }}
+            </NDescriptionsItem>
+          </NDescriptions>
+        </NSpin>
+      </NTabPane>
 
-                <NDescriptionsItem :label="$t('page.jobBatch.jobName')">{{ jobData?.jobName }}</NDescriptionsItem>
-
-                <NDescriptionsItem :label="$t('page.jobBatch.taskBatchStatus')">
-                  <NTag
-                    v-if="isNotNull(jobData.taskBatchStatus)"
-                    :color="getTagColor(taskBatchStatusEnum[jobData.taskBatchStatus!].color )"
-                  >
-                    {{ taskBatchStatusEnum[jobData.taskBatchStatus!].title }}
-                  </NTag>
-                  <NTag
-                    v-if="isNotNull(jobData.jobStatus)"
-                    :color="getTagColor(jobStatusEnum[jobData.jobStatus!].color)"
-                  >
-                    {{ $t(jobStatusEnum[jobData.jobStatus!].name) }}
-                  </NTag>
-                </NDescriptionsItem>
-
-                <NDescriptionsItem :label="$t('page.jobBatch.executionAt')">
-                  {{ jobData?.executionAt }}
-                </NDescriptionsItem>
-
-                <NDescriptionsItem :label="$t('page.jobBatch.operationReason')">
-                  <NTag
-                    v-if="isNotNull(jobData.operationReason)"
-                    :color="getTagColor(jobOperationReasonEnum[jobData.operationReason!].color)"
-                  >
-                    {{ $t(jobOperationReasonEnum[jobData.operationReason!].name) }}
-                  </NTag>
-                </NDescriptionsItem>
-
-                <NDescriptionsItem v-if="!slots.default" :label="$t('page.jobBatch.executorType')">
-                  <NTag
-                    v-if="isNotNull(jobData.executorType)"
-                    :color="getTagColor(jobExecutorEnum[jobData.executorType!].color)"
-                  >
-                    {{ $t(jobExecutorEnum[jobData.executorType!].name) }}
-                  </NTag>
-                </NDescriptionsItem>
-
-                <NDescriptionsItem :label="$t('page.jobBatch.executorInfo')" :span="2">
-                  {{ jobData?.executorInfo }}
-                </NDescriptionsItem>
-                <NDescriptionsItem :label="$t('common.createDt')" :span="2">
-                  {{ jobData?.createDt }}
-                </NDescriptionsItem>
-              </NDescriptions>
-            </NSpin>
-            <slot></slot>
-          </NTabPane>
-          <NTabPane name="task" tab="任务项列表" :disabled="jobData.taskBatchStatus === 99">
-            <JobTaskListTable :row-data="jobData as any" @show-log="getLogRows" @retry="retry" />
-          </NTabPane>
-        </NTabs>
+      <!-- 任务项列表 -->
+      <NTabPane name="task" tab="任务项列表">
+        <div class="task-toolbar">
+          <div class="toolbar-left">
+            <NSelect
+              v-model:value="taskStatusFilter"
+              style="width:180px"
+              placeholder="请选择状态"
+              :options="taskStatusOptions"
+              clearable
+            />
+          </div>
+          <div class="toolbar-right">
+            <a-button @click="fetchTaskList">
+              <template #icon><ReloadOutlined /></template>
+              刷新
+            </a-button>
+          </div>
+        </div>
+        <CommonPagination
+          :columns="taskColumns"
+          :data-source="taskList"
+          :loading="taskLoading"
+          row-key="id"
+          :page-no="taskPagination.current"
+          :page-size="taskPagination.pageSize"
+          :total="taskPagination.total"
+          @change="handleTaskPageChange"
+        />
       </NTabPane>
     </NTabs>
-    <template v-if="ids && ids.length > 1" #footer>
+
+    <!-- 日志详情弹窗 -->
+    <!-- @vue-ignore -->
+    <LogDetailModal
+      v-model:visible="logModalVisible"
+      title="日志详情"
+      :loading="logModalLoading"
+      :status="logRecord?.status"
+      :taskBatchId="logRecord?.taskBatchId"
+      :taskId="logRecord?.id"
+    />
+
+    <!-- 查看参数弹窗 -->
+    <JsonViewerModal
+      v-model:visible="argsModalVisible"
+      title="查看参数"
+      :content="argsModalContent"
+    />
+
+    <!-- 查看结果弹窗 -->
+    <JsonViewerModal
+      v-model:visible="resultModalVisible"
+      title="查看结果"
+      :content="resultModalContent"
+    />
+
+    <template #footer v-if="ids && ids.length > 1">
       <NPagination
         v-model:page="currentIndex"
         class="text-center"
@@ -235,40 +383,23 @@ const onUpdatePage = (page: number) => {
       />
     </template>
   </a-drawer>
-  <FlowLogDrawer v-model:show="logOpen" title="日志详情" :task-data="record" />
 </template>
 
 <style scoped lang="scss">
-.empty {
+.task-toolbar {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  height: calc(100% - 88px);
-}
+  margin-bottom: 16px;
 
-.header-border {
-  margin: 20px 0;
-  border-left: #1366ff 5px solid;
-  font-size: medium;
-  font-weight: bold;
-}
-
-:deep(.n-tabs-nav) {
-  display: none;
-}
-
-:deep(.n-tab-pane) {
-  padding-top: 0 !important;
-}
-
-.detail-tabs {
-  :deep(.n-tabs-nav) {
-    display: flex !important;
+  .toolbar-left {
+    display: flex;
+    gap: 12px;
   }
 
-  :deep(.n-tabs-tab__label) {
-    width: 100%;
-    justify-content: center;
+  .toolbar-right {
+    display: flex;
+    gap: 12px;
   }
 }
 </style>

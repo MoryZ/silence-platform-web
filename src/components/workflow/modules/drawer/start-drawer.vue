@@ -45,8 +45,8 @@ interface Emits {
 onMounted(() => {
   nextTick(() => {
     getNotifyConfigSystemTaskTypeList();
+    getOwnerOptions();
   });
-  getOwnerOptions();
 });
 
 const ensureOptionShape = (
@@ -165,8 +165,14 @@ const normalizeGroupNameToLabel = () => {
 
 watch(
   () => props.open,
-  val => {
+  async val => {
     drawer.value = val;
+    if (val) {
+      await Promise.all([getNotifyConfigSystemTaskTypeList(), getOwnerOptions()]);
+      form.value = normalizeWorkflowForm(props.modelValue || {});
+      normalizeGroupNameToLabel();
+      title = form.value.workflowName || form.value.groupName || '请选择组';
+    }
   },
   { immediate: true }
 );
@@ -174,11 +180,12 @@ watch(
 watch(
   () => props.modelValue,
   val => {
-    form.value = normalizeWorkflowForm(val || {});
-    normalizeGroupNameToLabel();
-    title = form.value.workflowName || form.value.groupName || '请选择组';
-  },
-  { immediate: true }
+    if (drawer.value) {
+      form.value = normalizeWorkflowForm(val || {});
+      normalizeGroupNameToLabel();
+      title = form.value.workflowName || form.value.groupName || '请选择组';
+    }
+  }
 );
 
 watch(
@@ -352,6 +359,8 @@ const rules: Record<RuleKey, any> = {
             v-model:value="form.ownerId"
             placeholder="请选择负责人"
             :options="ownerOptions"
+            value-field="value"
+            label-field="label"
             clearable
             filterable
           />

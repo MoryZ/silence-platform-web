@@ -5,9 +5,11 @@ import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
 import { fetchUpdateWorkflow, fetchWorkflowInfo } from '@/api/job/workflow';
 import Workflow from '@/components/workflow/workflow.vue';
+import { useWorkflowStore } from '@/stores/workflow';
 
 const route = useRoute();
 const router = useRouter();
+const store = useWorkflowStore();
 
 const spinning = ref(false);
 
@@ -17,6 +19,7 @@ const node = ref<any>({});
 
 const getDetail = async () => {
   spinning.value = true;
+  store.setType(0); // 设置为编辑模式
   const { data, error } = await fetchWorkflowInfo(id);
   if (!error) {
     node.value = data;

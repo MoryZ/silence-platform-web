@@ -81,6 +81,8 @@ const filteredMenuList = computed(() => {
         .map(menu => {
           if (!menu) return null
           if (Number(menu.type) === 3) return null
+          // 过滤 meta.show === false 的菜单
+          if (menu.meta && menu.meta.show === false) return null
 
           const next: any = { ...menu }
           if (Array.isArray(next.children) && next.children.length > 0) {
@@ -188,6 +190,7 @@ function getOpenKeysByPath(path: string) {
   const dfs = (menus: any[], ancestors: string[]) => {
     for (const menu of menus) {
       if (Number(menu?.type) === 3) continue
+      if (menu.meta && menu.meta.show === false) continue
       if (!menu || !menu.path) continue;
       const newAncestors = [...ancestors, menu.path];
       if (pathMatches(menu.path, path)) {
@@ -218,6 +221,7 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
     // 首先检查是否是顶级菜单本身
     for (const menu of storedMenus) {
       if (Number(menu?.type) === 3) continue
+      if (menu.meta && menu.meta.show === false) continue
       if (menu.path && path === menu.path) {
         return menu.path;
       }
@@ -226,9 +230,11 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
     // 然后检查是否是顶级菜单的子项
     for (const menu of storedMenus) {
       if (Number(menu?.type) === 3) continue
+      if (menu.meta && menu.meta.show === false) continue
       if (menu.children) {
         for (const child of menu.children) {
           if (Number(child?.type) === 3) continue
+          if (child.meta && child.meta.show === false) continue
           if (child.path && path.startsWith(child.path)) {
             return menu.path || null;
           }
@@ -239,6 +245,7 @@ function isSameTopLevelMenu(path1: string, path2: string): boolean {
     // 最后检查是否是嵌套路径（但只匹配有子菜单的顶级菜单）
     for (const menu of storedMenus) {
       if (Number(menu?.type) === 3) continue
+      if (menu.meta && menu.meta.show === false) continue
       if (menu.path && menu.children && path.startsWith(menu.path + '/')) {
         // 确保这个路径不是其他顶级菜单的直接子项
         let isDirectChild = false;

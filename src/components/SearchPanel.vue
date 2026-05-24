@@ -89,6 +89,8 @@
       showTime?: boolean;
       format?: string;
       defaultRange?: [number, number]; // 默认时间间距（小时）
+      // 转换后的起止时间字段名，如 { startKey: 'createdDateStart', endKey: 'createdDateEnd' }
+      rangeKeys?: { startKey: string; endKey: string };
     };
     // 内部扩展属性
     _options?: Array<{ label: string; value: string }>;
@@ -99,7 +101,7 @@
     modelValue: Record<string, any>,
     fields: FieldConfig[]
   }>();
-  const emit = defineEmits(['update:modelValue', 'search', 'reset']);
+  const emit = defineEmits(['update:modelValue', 'search', 'reset', 'ready']);
   
   const collapsed = ref(false);
   const localForm = ref({ ...props.modelValue });
@@ -138,30 +140,72 @@
       localForm.value[field.key] = [now.subtract(start, 'hour'), now.add(end, 'hour')];
     }
   }
-  
+
+  // 处理日期范围转换，将 {key}: [dayjs, dayjs] 转换为 {key}Start: ISOString, {key}End: ISOString
+  // 只发送转换后的值，不发送原始数组
+  function transformDateRange(formData: Record<string, any>): Record<string, any> {
+    const result: Record<string, any> = {};
+    
+    // 复制非日期范围的字段
+    for (const key in formData) {
+      if (!props.fields.some(f => f.type === 'date-picker' && f.key === key)) {
+        result[key] = formData[key];
+      }
+    }
+    
+    // 转换日期范围字段
+    for (const field of props.fields) {
+      if (field.type === 'date-picker') {
+        const rangeKey = field.key;
+        const rangeValue = formData[rangeKey];
+        
+        // 使用配置的 rangeKeys 或默认的 key + Start/End
+        const startKey = field.dateConfig?.rangeKeys?.startKey || `${rangeKey}Start`;
+        const endKey = field.dateConfig?.rangeKeys?.endKey || `${rangeKey}End`;
+        
+        if (Array.isArray(rangeValue) && rangeValue.length === 2) {
+          const [start, end] = rangeValue;
+          // 转换为 ISO 字符串
+          result[startKey] = start ? dayjs(start).toISOString() : null;
+          result[endKey] = end ? dayjs(end).toISOString() : null;
+        } else {
+          result[startKey] = null;
+          result[endKey] = null;
+        }
+      }
+    }
+    
+    return result;
+  }
+
   // 初始化时设置默认日期范围
-  onMounted(() => {
-    initFieldData();
+  onMounted(async () => {
+    await initFieldData();
     // 设置默认日期范围
     props.fields.forEach(field => {
       if (field.type === 'date-picker' && field.dateConfig?.defaultRange && !localForm.value[field.key]) {
         handleDateChange(field);
       }
     });
+    // 初始化完成后通知父组件
+    const transformedForm = transformDateRange(localForm.value);
+    // 同时发送原始数据用于日期选择器显示
+    emit('ready', { ...localForm.value, ...transformedForm });
   });
-  
+
   // 监听 fields 变化，重新初始化 options/treeData
   watch(() => props.fields, () => {
     initFieldData();
   }, { deep: true });
-  
+
   watch(() => props.modelValue, (val) => {
     localForm.value = { ...val };
   });
 
   
   function emitSearch() {
-    emit('update:modelValue', { ...localForm.value });
+    const transformedForm = transformDateRange(localForm.value);
+    emit('update:modelValue', { ...transformedForm });
     emit('search');
   }
   function emitReset() {

@@ -85,8 +85,8 @@ function createDefaultModel(): Model {
 
 function handleUpdateModelWhenEdit() {
   if (props.operateType === 'add') {
+    // 新增模式：重置表单，但保留当前 tab（如果 tab 是用户主动切换的）
     model.value = createDefaultModel();
-    notifyTabPane.value = '1';
     return;
   }
 

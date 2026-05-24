@@ -41,20 +41,23 @@ const onClose = () => {
 <template>
   <a-drawer v-model:open="visible" width="500px" title="工作流详情" @after-open-change="(open) => !open && onClose()">
     <NDescriptions :column="1" label-placement="left" bordered :label-style="{ width: '120px' }">
-      <NDescriptionsItem label="工作流名称">{{ modelValue.workflowName }}</NDescriptionsItem>
-      <NDescriptionsItem label="组名称">{{ modelValue.groupName }}</NDescriptionsItem>
-      <NDescriptionsItem label="触发类型">{{ $t(triggerTypeRecord[modelValue.triggerType!]) }}</NDescriptionsItem>
+      <NDescriptionsItem label="工作流名称">{{ modelValue?.workflowName }}</NDescriptionsItem>
+      <NDescriptionsItem label="组名称">{{ modelValue?.groupName }}</NDescriptionsItem>
+      <NDescriptionsItem label="触发类型">{{ $t(triggerTypeRecord[modelValue?.triggerType!]) }}</NDescriptionsItem>
 
       <NDescriptionsItem label="触发间隔">
-        {{ modelValue.triggerInterval }} {{ modelValue.triggerType === 2 ? '秒' : null }}
+        {{ modelValue?.triggerInterval }} {{ modelValue?.triggerType === 2 ? '秒' : '' }}
       </NDescriptionsItem>
 
-      <NDescriptionsItem label="执行超时时间">{{ modelValue.executorTimeout }} 秒</NDescriptionsItem>
-      <NDescriptionsItem label="阻塞策略">{{ $t(blockStrategyRecord[modelValue.blockStrategy!]) }}</NDescriptionsItem>
-      <NDescriptionsItem label="工作流上下文">{{ modelValue.wfContext }}</NDescriptionsItem>
+      <NDescriptionsItem label="执行超时时间">{{ modelValue?.executorTimeout || '-' }} 秒</NDescriptionsItem>
+      <NDescriptionsItem label="阻塞策略">{{ $t(blockStrategyRecord[modelValue?.blockStrategy!]) }}</NDescriptionsItem>
+      <NDescriptionsItem label="工作流上下文">{{ modelValue?.wfContext || '-' }}</NDescriptionsItem>
       <NDescriptionsItem label="工作流状态">
-        {{ $t(workFlowNodeStatusRecord[modelValue.workflowStatus!]) }}
+        {{ $t(workFlowNodeStatusRecord[modelValue?.workflowStatus!]) }}
       </NDescriptionsItem>
+      <NDescriptionsItem label="负责人">{{ modelValue?.ownerId || '-' }}</NDescriptionsItem>
+      <NDescriptionsItem label="告警通知">{{ modelValue?.notifyIds?.join(', ') || '-' }}</NDescriptionsItem>
+      <NDescriptionsItem label="描述">{{ modelValue?.description || '-' }}</NDescriptionsItem>
     </NDescriptions>
   </a-drawer>
 </template>

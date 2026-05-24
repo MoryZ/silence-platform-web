@@ -51,21 +51,33 @@ type Model = Pick<
 >;
 const model: Model = reactive(createDefaultModel());
 
+// 监听 props.value 变化，重置表单（仅当有实际数据变化时）
+watch(
+  () => props.value,
+  (newVal) => {
+    if (newVal && Object.keys(newVal).length > 0) {
+      const newModel = createDefaultModel();
+      Object.assign(model, newModel);
+    }
+  },
+  { deep: true }
+);
+
 function createDefaultModel(): Model {
-  const { webhookUrl, contentType, secret } = JSON.parse(props.value.notifyAttribute || '{}') as {
+  const { webhookUrl, contentType, secret } = JSON.parse(props.value?.notifyAttribute || '{}') as {
     webhookUrl: string;
     contentType: string;
     secret: string;
   };
 
   return {
-    id: props.value.id,
-    recipientName: props.value.recipientName,
-    notifyType: 5,
+    id: props.value?.id || '',
+    recipientName: props.value?.recipientName || '',
+    notifyType: props.value?.notifyType || 5,
     contentType: contentType || '',
     webhookUrl: webhookUrl || '',
     secret: secret || '',
-    description: props.value.description || ''
+    description: props.value?.description || ''
   };
 }
 

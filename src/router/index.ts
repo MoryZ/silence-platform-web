@@ -335,6 +335,13 @@ function transformRoutes(routes: any[], parentPath: string = ''): RouteRecordRaw
       if (!route.path) {
         return false;
       }
+
+      // 过滤掉 meta.show === false 的菜单（不显示在导航栏，但路由仍可访问）
+      const meta = route.meta;
+      if (meta && meta.show === false) {
+        return false;
+      }
+
       return true;
     })
     .map(route => {

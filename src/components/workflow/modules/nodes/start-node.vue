@@ -4,6 +4,8 @@ import { blockStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
 import { getJobPage } from '@/api/job/job';
 import { $t } from '@/locales';
 import { useWorkflowStore } from '@/stores/workflow';
+const store = useWorkflowStore();
+
 import StartDetail from '../detail/start-detail.vue';
 import StartDrawer from '../drawer/start-drawer.vue';
 import AddNode from './add-node.vue';
@@ -39,7 +41,6 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>();
-const store = useWorkflowStore();
 const form = ref<NodeDataType>({});
 const nodeData = ref<NodeDataType>({});
 
@@ -108,7 +109,12 @@ const save = (val: NodeDataType) => {
 };
 
 const show = () => {
-  // 简化逻辑，直接显示编辑抽屉
+  // 禁用模式或查看模式都打开详情
+  if (props.disabled || store.type !== 0) {
+    detailDrawer.value = true;
+    return;
+  }
+  // 编辑模式打开编辑抽屉
   form.value = JSON.parse(JSON.stringify(nodeData.value));
   drawer.value = true;
 };
@@ -165,10 +171,8 @@ const wfContextText = (raw: any) => {
       </div>
       <div v-if="nodeData.groupName" class="content">
         <div>
-          <a-typography-text class="max-w-132px" :ellipsis="{ tooltip: true }">
-            <span class="content_label">组名称:&nbsp;</span>
-            {{ nodeData.groupName }}
-          </a-typography-text>
+          <span class="content_label">组名称:&nbsp;</span>
+          {{ nodeData.groupName }}
         </div>
         <div>
           <span class="content_label">阻塞策略:&nbsp;</span>
@@ -179,10 +183,8 @@ const wfContextText = (raw: any) => {
           {{ triggerIntervalText(nodeData) }}
         </div>
         <div>
-          <a-typography-text class="max-w-132px" :ellipsis="{ tooltip: true }">
-            <span class="content_label">工作流上下文:&nbsp;</span>
-            {{ wfContextText(nodeData.wfContext) }}
-          </a-typography-text>
+          <span class="content_label">工作流上下文:&nbsp;</span>
+          {{ wfContextText(nodeData.wfContext) }}
         </div>
       </div>
       <div v-else class="content min-h-85px">

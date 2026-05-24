@@ -15,7 +15,7 @@ export interface JobBatch {
 export interface JobBatchSearchParams {
   groupName: string;
   jobName: string;
-  taskBatchStatuses: string[];
+  jobTaskBatchStatuses: string[];
   createdDateStart: string;
   createdDateEnd: string;
   pageNo: number;

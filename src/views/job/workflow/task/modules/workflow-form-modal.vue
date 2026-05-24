@@ -9,7 +9,7 @@ type FormMode = 'add' | 'edit' | 'detail' | 'copy';
 
 const props = defineProps<{
   mode: FormMode;
-  recordId?: string | null;
+  recordId?: string | number | null;
   visible: boolean;
 }>();
 

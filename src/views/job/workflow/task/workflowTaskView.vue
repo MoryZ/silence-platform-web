@@ -352,7 +352,7 @@ onMounted(()=> {
     <WorkflowFormModal
       v-model:visible="formModalState.visible"
       :mode="formModalState.mode"
-      :record-id="formModalState.recordId"
+      :record-id="String(formModalState.recordId || '')"
       @submitted="getData"
     />
   </div>

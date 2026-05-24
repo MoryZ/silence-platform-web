@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
-import { getJobBatchPage, findById, retryJobBatch, batchDeleteJobBatch } from '@/api/job/job-batch';
+import { getJobBatchPage, findById, stopJobBatch, retryJobBatch, batchDeleteJobBatch } from '@/api/job/job-batch';
 import type { JobBatch, JobBatchSearchParams } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import SearchPanel from '@/components/SearchPanel.vue';
@@ -18,16 +18,18 @@ import { DownOutlined } from '@ant-design/icons-vue';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, StopOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import JsonViewerModal from '@/components/JsonViewerModal.vue';
 import LogDetailModal from '@/components/LogDetailModal.vue';
+import dayjs from 'dayjs';
 
 const loading = ref(false);
 const data = ref<JobBatch[]>([]);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
-const searchForm = ref({ 
-  groupName: '', 
-  jobName: '', 
-  taskBatchStatuses: [] as string[], 
-  createdDateStart: '', 
-  createdDateEnd: '' 
+const searchForm = ref({
+  groupName: '',
+  jobName: '',
+  taskBatchStatuses: [] as string[],
+  createdDateRange: [] as any[],
+  createdDateStart: '',
+  createdDateEnd: ''
 });
 
 const fields = [
@@ -68,7 +70,8 @@ const fields = [
     dateConfig: {
       showTime: true,
       format: 'YYYY-MM-DD HH:mm:ss',
-      defaultRange: [24, 0] as [number, number] // 默认查询最近24小时
+      defaultRange: [24, 0] as [number, number],
+      rangeKeys: { startKey: 'createdDateStart', endKey: 'createdDateEnd' }
     }
   }
 ];
@@ -118,11 +121,15 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
   },
   { title: '任务名称', dataIndex: 'jobName' },
   { title: '开始执行时间', dataIndex: 'updatedDate', type: 'date' },
-  { title: '执行时长(秒)', dataIndex: 'executionAt', customRender: ({ record }: { record: any }) => {
-      const start = record.updatedDate ? new Date(record.updatedDate).getTime() : undefined;
-      const end = record.executionAt ? new Date(record.executionAt).getTime() : undefined;
+  { title: '结束时间', dataIndex: 'executionAt', type: 'date' },
+  { title: '执行时长(秒)', dataIndex: 'duration', width: 100,
+    customRender: ({ record }: { record: any }) => {
+      // 只在成功状态时显示执行时长
+      if (record.taskBatchStatus !== 3) return '-';
+      const start = record.executionAt ? new Date(record.executionAt).getTime() : undefined;
+      const end = record.updatedDate ? new Date(record.updatedDate).getTime() : undefined;
       if (!start || !end || isNaN(start) || isNaN(end) || end < start) return '-';
-      return Math.floor((end - start) / 1000);
+      return Math.round((end - start) / 1000);
     }
   },
   { title: '状态', dataIndex: 'taskBatchStatus', customRender: ({ record }: { record: any }) => {
@@ -136,6 +143,10 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
       const v = record.operationReason;
       if (typeof v === 'number') {
         const info = (jobOperationReasonEnum as any)[v];
+        // 无原因（0）使用特殊样式
+        if (v === 0) {
+          return h('span', { class: 'ant-tag', style: 'background:#f5f5f5;border-color:#d9d9d9;color:#8c8c8c' }, '无');
+        }
         if (!info) return v;
         return h('span', { class: 'ant-tag', style: `background:#fff;border-color:${info.color};color:${info.color}` }, $t ? $t(info.name as any) : info.name);
       }
@@ -157,15 +168,19 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
       return h('span', { class: 'ant-tag', style: `background:#fff;border-color:${info.color};color:${info.color}` }, info.label);
     }
   },
- 
-
+  { title: '执行器名称', dataIndex: 'executorInfo' },
   { title: '创建时间', dataIndex: 'createdDate', type: 'date' },
   { title: '更新时间', dataIndex: 'updatedDate', type: 'date' },
-  { title: '操作', key: 'operation', width: 160, align: 'center',
+  { title: '操作', key: 'operation', width: 200, align: 'center',
     customRender: ({ record }: { record: any }) => {
+      const status = record.taskBatchStatus;
+      const isRunning = status === 1 || status === 2; // 等待中或运行中，可停止
+      const isFailed = status === 4 || status === 5 || status === 6; // 失败、停止、取消，可重试
+      
       return h('div', { style: 'display:flex;gap:8px;justify-content:center;' }, [
         h('a', { onClick: () => handleViewLog(record) }, '日志'),
-        h('a', { onClick: () => handleRetry(record) }, '重试'),
+        isRunning && h('a', { style: 'color:#ff4d4f', onClick: () => handleStop(record) }, '停止'),
+        isFailed && h('a', { onClick: () => handleRetry(record) }, '重试'),
         h('a', { style: 'color:#ff4d4f', onClick: () => handleDelete([String(record.id)]) }, '删除')
       ]);
     }
@@ -205,7 +220,7 @@ const detailColumns = [
   { title: '状态', dataIndex: 'taskBatchStatus', type: 'enum', enumMap: taskBatchStatusEnum },
   { title: '开始执行时间', dataIndex: 'updatedDate', type: 'date' },
   { title: '执行器类型', dataIndex: 'executorType', type: 'enum', enumMap: { 1: { label: 'Java', color: 'blue' }, 2: { label: 'Python', color: 'green' } } },
-  { title: '执行器名称', dataIndex: 'executorName' },
+  { title: '执行器名称', dataIndex: 'executorInfo' },
   { title: '创建时间', dataIndex: 'createdDate', type: 'date' }
 ];
 
@@ -476,10 +491,12 @@ function getOperationReasonLabel(reason: any): string {
 // 获取执行时长
 function getExecutionDuration(): string {
   if (!detailRecord.value) return '-';
-  const start = detailRecord.value.updatedDate ? new Date(detailRecord.value.updatedDate).getTime() : undefined;
-  const end = detailRecord.value.executionAt ? new Date(detailRecord.value.executionAt).getTime() : undefined;
+  // 只在成功状态时显示执行时长
+  if (detailRecord.value.taskBatchStatus !== 3) return '-';
+  const start = detailRecord.value.executionAt ? new Date(detailRecord.value.executionAt).getTime() : undefined;
+  const end = detailRecord.value.updatedDate ? new Date(detailRecord.value.updatedDate).getTime() : undefined;
   if (!start || !end || isNaN(start) || isNaN(end) || end < start) return '-';
-  const seconds = Math.floor((end - start) / 1000);
+  const seconds = Math.round((end - start) / 1000);
   if (seconds < 60) return `${seconds} 秒`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
   return `${Math.floor(seconds / 3600)} 小时 ${Math.floor((seconds % 3600) / 60)} 分`;
@@ -549,7 +566,7 @@ async function fetchData() {
     const params: JobBatchSearchParams = {
       groupName: searchForm.value.groupName,
       jobName: searchForm.value.jobName,
-      taskBatchStatuses: searchForm.value.taskBatchStatuses,
+      jobTaskBatchStatuses: searchForm.value.taskBatchStatuses,
       createdDateStart: searchForm.value.createdDateStart,
       createdDateEnd: searchForm.value.createdDateEnd,
       pageNo: pagination.current,
@@ -581,7 +598,14 @@ function handleSearch() {
 }
 
 const handleSearchFormUpdate = (newForm: any) => {
-  searchForm.value = { ...newForm }
+  // 保留 createdDateRange 用于日期选择器显示，同时更新其他字段
+  const currentDateRange = searchForm.value.createdDateRange;
+  searchForm.value = { ...newForm, createdDateRange: currentDateRange }
+}
+
+const handleSearchPanelReady = (formData: any) => {
+  // SearchPanel 初始化完成后，同步默认值到 searchForm
+  searchForm.value = { ...searchForm.value, ...formData }
 }
 
 function handleReset() {
@@ -589,8 +613,9 @@ function handleReset() {
     groupName: '', 
     jobName: '', 
     taskBatchStatuses: [], 
+    createdDateRange: [],
     createdDateStart: '', 
-    createdDateEnd: '' 
+    createdDateEnd: ''
   };
   handleSearch();
 }
@@ -613,6 +638,16 @@ async function handleRetry(record: JobBatch) {
     fetchData();
   } catch (e) {
     message.error('重试失败');
+  }
+}
+
+async function handleStop(record: JobBatch) {
+  try {
+    await stopJobBatch(String(record.id));
+    message.success('停止成功');
+    fetchData();
+  } catch (e) {
+    message.error('停止失败');
   }
 }
 
@@ -649,6 +684,7 @@ function getStatusColor(status: number) {
 }
 
 onMounted(() => {
+  // 日期默认值由 SearchPanel 设置
   fetchData();
 });
 </script>
@@ -670,6 +706,7 @@ onMounted(() => {
       :fields="fields"
       @search="handleSearch"
       @reset="handleReset"
+      @ready="handleSearchPanelReady"
       @update:model-value="handleSearchFormUpdate"
     />
 
@@ -744,7 +781,7 @@ onMounted(() => {
                   </a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="执行器名称">
-                  <span class="field-value">{{ detailRecord.executorName || '-' }}</span>
+                  <span class="field-value">{{ detailRecord.executorInfo || '-' }}</span>
                 </a-descriptions-item>
                 <a-descriptions-item label="任务类型">
                   <a-tag :color="getTaskTypeColor(detailRecord.taskType)">

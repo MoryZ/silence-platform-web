@@ -282,10 +282,10 @@ export const retryOperationReasonRecord: Record<number, string> = {
 };
 export const retryOperationReasonOptions = transformRecordToNumberOption(retryOperationReasonRecord);
 
-export const jobOperationReasonEnum: Record<number, { name: string; color: string }> = {
+export const jobOperationReasonEnum: Record<number, { name: string; color: string; bgColor?: string }> = {
   0: {
     name: operationReasonRecord[0],
-    color: '#f5f5f5'
+    color: '#8c8c8c'
   },
   1: {
     name: operationReasonRecord[1],

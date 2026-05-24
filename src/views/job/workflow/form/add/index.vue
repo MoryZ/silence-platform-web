@@ -5,8 +5,10 @@ import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
 import { fetchAddWorkflow } from '@/api/job/workflow';
 import Workflow from '@/components/workflow/workflow.vue';
+import { useWorkflowStore } from '@/stores/workflow';
 
 const router = useRouter();
+const store = useWorkflowStore();
 
 const node = ref<any>({
   workflowName: `WF-${new Date().getTime()}`,
@@ -18,14 +20,15 @@ const node = ref<any>({
 });
 
 onMounted(() => {
-  // 初始化工作流数据
+  // 设置为编辑模式
+  store.setType(0);
 });
 
 const closePage = () => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.replace('/workflow/task');
+    router.replace('/job/workflow/task');
   }
 };
 

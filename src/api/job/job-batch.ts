@@ -11,6 +11,11 @@ export function findById(id: string) {
   return request.get<JobBatch>('/api/v1/jobBatches/' + id);
 }
 
+/** stop job batch */
+export function stopJobBatch(id: string) {
+  return request.put<boolean>('/api/v1/jobBatches/' + id + '/stop');
+}
+
 /** retry job */
 export function retryJobBatch(jobId: string) {
   return request.put<boolean>('/api/v1/jobBatches/' + jobId + '/retry');

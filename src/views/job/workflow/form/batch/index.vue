@@ -3,9 +3,11 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ReloadOutlined, DownOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
 import { fetchWorkflowBatchInfo } from '@/api/job/workflow';
+import { useWorkflowStore } from '@/stores/workflow';
 import Workflow from '@/components/workflow/workflow.vue';
 
 const route = useRoute();
+const store = useWorkflowStore();
 
 const spinning = ref(false);
 const id: string = String(route.query.id);
@@ -14,6 +16,11 @@ const syncTime = ref(0);
 const interval = ref<NodeJS.Timeout>();
 const controller = new AbortController();
 const finished = ref<boolean>(true);
+
+// 设置为查看模式（执行模式）
+onMounted(() => {
+  store.setType(1);
+});
 
 const pauseBatch = () => {
   finished.value = true;
@@ -30,15 +37,18 @@ const stopBatch = () => {
 
 const getBatchDetail = async () => {
   spinning.value = true;
-  const { data, error } = await fetchWorkflowBatchInfo(id);
-  if (!error) {
-    node.value = data;
-    finished.value = !(data.workflowBatchStatus && [1, 2].includes(data.workflowBatchStatus)) || syncTime.value === 0;
-    if (!finished.value && syncTime.value !== 0) {
-      clearTimeout(interval.value);
-      interval.value = setTimeout(getBatchDetail, syncTime.value * 1000);
+  try {
+    const res = await fetchWorkflowBatchInfo(id);
+    const data = res?.data ?? res;
+    if (data) {
+      node.value = data;
+      finished.value = !(data.workflowBatchStatus && [1, 2].includes(data.workflowBatchStatus)) || syncTime.value === 0;
+      if (!finished.value && syncTime.value !== 0) {
+        clearTimeout(interval.value);
+        interval.value = setTimeout(getBatchDetail, syncTime.value * 1000);
+      }
     }
-  } else if (error?.code !== 'ERR_CANCELED') {
+  } catch (e) {
     stopBatch();
   }
   spinning.value = false;
@@ -70,6 +80,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopBatch();
+  // 恢复编辑模式
+  store.setType(0);
 });
 
 const syncOptions = ref([

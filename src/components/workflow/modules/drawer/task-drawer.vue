@@ -5,6 +5,7 @@ import { Tag, Tooltip, message } from 'ant-design-vue';
 import { failStrategyOptions, taskTypeRecord, workFlowNodeStatusOptions } from '@/constants/business';
 import type { Job } from '@/types/job';
 import { useWorkflowStore } from '@/stores/workflow';
+import { getJobPage } from '@/api/job/job';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';
 
@@ -51,11 +52,39 @@ watch(
 
 watch(
   () => props.open,
-  val => {
+  async val => {
     drawer.value = val;
+    if (val && store.groupName) {
+      await fetchJobList(store.groupName);
+    }
   },
   { immediate: true }
 );
+
+const fetchJobList = async (groupName: string) => {
+  try {
+    const res: any = await getJobPage({
+      groupName,
+      jobName: '',
+      jobStatus: '',
+      ownerId: '',
+      executorInfo: '',
+      pageNo: 1,
+      pageSize: 1000,
+      sort: '-updatedDate'
+    });
+    const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+    jobList.value = list.map((item: any) => ({
+      id: item?.id,
+      jobName: item?.jobName,
+      executorInfo: item?.executorInfo,
+      taskType: item?.taskType,
+      labels: item?.labels
+    }));
+  } catch {
+    jobList.value = [];
+  }
+};
 
 const normalizeTaskForm = (input: Workflow.ConditionNodeType | undefined) => {
   const normalized = {

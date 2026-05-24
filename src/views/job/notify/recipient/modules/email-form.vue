@@ -44,14 +44,26 @@ const defaultRequiredRule = { required: true, message: '此字段为必填项' }
 type Model = Pick<EmailNotify, 'id' | 'recipientName' | 'notifyType' | 'tos' | 'description'>;
 const model: Model = reactive(createDefaultModel());
 
+// 监听 props.value 变化，重置表单（仅当有实际数据变化时）
+watch(
+  () => props.value,
+  (newVal) => {
+    if (newVal && Object.keys(newVal).length > 0) {
+      const newModel = createDefaultModel();
+      Object.assign(model, newModel);
+    }
+  },
+  { deep: true }
+);
+
 function createDefaultModel(): Model {
-  const { tos } = JSON.parse(props.value.notifyAttribute || '{}') as { tos: string[] };
+  const { tos } = JSON.parse(props.value?.notifyAttribute || '{}') as { tos: string[] };
   return {
-    id: props.value.id,
-    recipientName: props.value.recipientName,
-    notifyType: 2,
+    id: props.value?.id || '',
+    recipientName: props.value?.recipientName || '',
+    notifyType: props.value?.notifyType || 2,
     tos: tos || [],
-    description: props.value.description || ''
+    description: props.value?.description || ''
   };
 }
 
