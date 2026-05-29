@@ -55,9 +55,7 @@ const onClose = () => {
       <NDescriptionsItem label="工作流状态">
         {{ $t(workFlowNodeStatusRecord[modelValue?.workflowStatus!]) }}
       </NDescriptionsItem>
-      <NDescriptionsItem label="负责人">{{ modelValue?.ownerId || '-' }}</NDescriptionsItem>
-      <NDescriptionsItem label="告警通知">{{ modelValue?.notifyIds?.join(', ') || '-' }}</NDescriptionsItem>
-      <NDescriptionsItem label="描述">{{ modelValue?.description || '-' }}</NDescriptionsItem>
+
     </NDescriptions>
   </a-drawer>
 </template>

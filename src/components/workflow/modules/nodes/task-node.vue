@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { failStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
 import { fetchNodeRetry, fetchNodeStop } from '@/api/job/workflow';
@@ -142,7 +142,7 @@ const getClass = (item: any) => {
 const detailId = ref<string>();
 const detailIds = ref<string[]>();
 const cardDrawer = ref(false);
-const detailDrawer = ref<boolean[]>([]);
+const detailDrawer = reactive<Record<string, boolean>>({});
 
 const showDetail = (node: any, detailIndex: number) => {
   detailIds.value = [];
@@ -160,12 +160,12 @@ const showDetail = (node: any, detailIndex: number) => {
       detailId.value = node.jobTask?.jobId?.toString();
     }
     if (!detailIds.value || detailIds.value.length === 0) {
-      detailDrawer.value[detailIndex] = true;
+      detailDrawer[detailIndex] = true;
       return;
     }
     cardDrawer.value = true;
   } else {
-    detailDrawer.value[detailIndex] = true;
+    detailDrawer[detailIndex] = true;
   }
 };
 

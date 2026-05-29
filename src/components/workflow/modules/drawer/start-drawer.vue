@@ -85,8 +85,18 @@ const normalizeWorkflowForm = (input: Workflow.NodeDataType) => {
     normalized.workflowStatus === undefined || normalized.workflowStatus === null ? 1 : normalized.workflowStatus
   );
 
+  if (normalized.ownerId === undefined || normalized.ownerId === null) {
+    normalized.ownerId = undefined;
+  } else {
+    normalized.ownerId = String(normalized.ownerId);
+  }
+
   if (!Array.isArray(normalized.notifyIds)) {
     normalized.notifyIds = [];
+  }
+
+  if (normalized.description === undefined || normalized.description === null) {
+    normalized.description = '';
   }
 
   if (normalized.wfContext) {
@@ -168,8 +178,13 @@ watch(
   async val => {
     drawer.value = val;
     if (val) {
-      await Promise.all([getNotifyConfigSystemTaskTypeList(), getOwnerOptions()]);
+      // 先填充表单数据，保证即使选项 API 失败也能回显已保存的字段值
       form.value = normalizeWorkflowForm(props.modelValue || {});
+      try {
+        await Promise.all([getNotifyConfigSystemTaskTypeList(), getOwnerOptions()]);
+      } catch {
+        // 选项加载失败不影响已保存数据的回显
+      }
       normalizeGroupNameToLabel();
       title = form.value.workflowName || form.value.groupName || '请选择组';
     }

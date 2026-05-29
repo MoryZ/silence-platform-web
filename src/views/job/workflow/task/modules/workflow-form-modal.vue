@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import Workflow from '@/components/workflow/workflow.vue';
 import { fetchAddWorkflow, fetchUpdateWorkflow, fetchWorkflowInfo } from '@/api/job/workflow';
+import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
 
 type FormMode = 'add' | 'edit' | 'detail' | 'copy';
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   (e: 'submitted'): void;
 }>();
 
+const store = useWorkflowStore();
 const spinning = ref(false);
 const saving = ref(false);
 const formModel = ref<any>({});
@@ -129,6 +131,8 @@ function initForm() {
   if (!props.visible) {
     return;
   }
+  // 根据模式设置 store.type：detail 模式为查看(1)，其余为编辑(0)
+  store.setType(props.mode === 'detail' ? 1 : 0);
   if (props.mode === 'add') {
     formModel.value = defaultNode();
     return;
@@ -136,32 +140,16 @@ function initForm() {
   loadDetail();
 }
 
-watch(
-  () => props.visible,
-  visible => {
-    if (visible) {
-      initForm();
-    }
-  }
-);
+// 合并 visible / mode / recordId 三个 watcher，避免同一 flush 中重复触发 initForm
+const loadKey = computed(() => {
+  if (!props.visible) return null;
+  if (props.mode === 'add') return 'add';
+  return `${props.mode}:${props.recordId}`;
+});
 
-watch(
-  () => props.mode,
-  () => {
-    if (props.visible) {
-      initForm();
-    }
-  }
-);
-
-watch(
-  () => props.recordId,
-  () => {
-    if (props.visible && props.mode !== 'add') {
-      initForm();
-    }
-  }
-);
+watch(loadKey, key => {
+  if (key) initForm();
+});
 
 function handleClose() {
   emit('update:visible', false);
