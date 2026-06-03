@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
 import { queryConsumerGroupList } from '@/api/mq/consumer'
 import { queryDLQMessages, resendMessage } from '@/api/mq/dlqMessage'
@@ -19,6 +19,7 @@ const messages = ref<MessageView[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalCount = ref(0)
+const tabsReady = ref(false)
 const activeTab = ref<'consumer' | 'messageId'>('consumer')
 
 const showResendDialog = ref(false)
@@ -207,8 +208,14 @@ const handleTabChange = (key: string) => {
   currentMessageTrackList.value = []
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadConsumerGroups()
+  // 等待 transition 动画完成后再渲染 tabs，避免 keep-alive + transition 组合下
+  // ant-design-vue tabs 在首次挂载时因容器尺寸未稳定导致 ink-bar / 布局计算错乱
+  await nextTick()
+  requestAnimationFrame(() => {
+    tabsReady.value = true
+  })
 })
 
 // Computed
@@ -268,7 +275,8 @@ const delayLevels = [
 <template>
   <div class="dlq-message-page">
     <div class="search-panel">
-      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange" class="top-tabs">
+      <div v-if="!tabsReady" class="tabs-placeholder" />
+      <a-tabs v-else v-model:activeKey="activeTab" @change="handleTabChange" class="top-tabs">
         <a-tab-pane key="consumer" tab="Consumer" />
         <a-tab-pane key="messageId" tab="Message ID" />
       </a-tabs>
@@ -546,17 +554,9 @@ const delayLevels = [
   margin-bottom: 0;
 }
 
-:deep(.top-tabs .ant-tabs-nav-list) {
-  display: flex;
-  flex-direction: row;
-}
-
-:deep(.top-tabs .ant-tabs-tab) {
-  margin-right: 24px !important;
-}
-
-:deep(.top-tabs .ant-tabs-tab + .ant-tabs-tab) {
-  margin-left: 0 !important;
+.tabs-placeholder {
+  height: 48px;
+  margin-bottom: 8px;
 }
 
 .tab-content-form {
@@ -647,20 +647,6 @@ const delayLevels = [
   margin-bottom: 20px;
 }
 
-:deep(.ant-tabs-nav) {
-  margin-bottom: 0;
-}
-
-:deep(.ant-tabs-tab) {
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 32px;
-}
-
-:deep(.ant-tabs-content-holder) {
-  display: none;
-}
-
 @media (max-width: 1200px) {
   .consumer-select,
   .time-picker,
@@ -674,4 +660,34 @@ const delayLevels = [
     width: 100%;
   }
 }
-</style> 
+</style>
+
+<style>
+/* ant-design-vue tabs 穿透样式 —— 放在非 scoped 块中避免首次挂载时 CSS 注入时序导致 tab 错乱 */
+.top-tabs .ant-tabs-nav-list {
+  display: flex;
+  flex-direction: row;
+}
+
+.top-tabs .ant-tabs-tab {
+  margin-right: 24px !important;
+}
+
+.top-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-left: 0 !important;
+}
+
+.dlq-message-page .search-panel .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.dlq-message-page .search-panel .ant-tabs-tab {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 32px;
+}
+
+.dlq-message-page .search-panel .ant-tabs-content-holder {
+  display: none;
+}
+</style>

@@ -26,6 +26,7 @@ use([
 const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
 // State
+const tabsReady = ref(false)
 const activeTab = ref<'messageKey' | 'messageId'>('messageKey')
 const topics = ref<string[]>([])
 const consumerGroups = ref<string[]>([])
@@ -207,8 +208,14 @@ function buildTraceGraphOption(graphRes: any) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadTopics()
+  // 等待 transition 动画完成后再渲染 tabs，避免 keep-alive + transition 组合下
+  // ant-design-vue tabs 在首次挂载时因容器尺寸未稳定导致 ink-bar / 布局计算错乱
+  await nextTick()
+  requestAnimationFrame(() => {
+    tabsReady.value = true
+  })
 })
 
 watch(activeTab, () => {
@@ -221,7 +228,8 @@ watch(activeTab, () => {
 
 <template>
   <div class="trace-page">
-    <a-tabs v-model:activeKey="activeTab" tabPosition="top" type="line">
+    <div v-if="!tabsReady" class="tabs-placeholder" />
+    <a-tabs v-else v-model:activeKey="activeTab" tabPosition="top" type="line">
       <a-tab-pane key="messageKey" tab="MESSAGE KEY" />
       <a-tab-pane key="messageId" tab="MESSAGE ID" />
     </a-tabs>
@@ -362,6 +370,10 @@ watch(activeTab, () => {
   padding: 20px;
 }
 
+.tabs-placeholder {
+  height: 46px;
+}
+
 .search-panel {
   background: white;
   border-radius: 4px;
@@ -478,10 +490,14 @@ watch(activeTab, () => {
   padding: 20px;
 }
 
-:deep(.ant-tabs) {
+</style>
+
+<style>
+/* ant-design-vue tabs 穿透样式 —— 放在非 scoped 块中避免首次挂载时 CSS 注入时序导致 tab 错乱 */
+.trace-page .ant-tabs {
   width: 100%;
 }
-:deep(.ant-tabs-nav) {
+.trace-page .ant-tabs-nav {
   flex-direction: row !important;
 }
 </style> 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { ref, computed, onMounted, watch, reactive, nextTick } from 'vue'
 import { message} from 'ant-design-vue'
 import { queryMessages, viewMessage, findByKeyAndTopic, consumeMessageDirectly } from '@/api/mq/message'
 import type { MessageQuery, Message, MessageView } from '@/types/mq/message'
@@ -41,6 +41,7 @@ const resendLoadingMap = ref<Record<string, boolean>>({})
 const newMessage = ref<MessageRequest>({ topic: '', tag: '', key: '', messageBody: '', traceEnabled: false })
 
 // Tabs
+const tabsReady = ref(false)
 const activeTab = ref<'topic' | 'messageKey' | 'messageId'>('topic')
 
 // Methods
@@ -255,7 +256,7 @@ const resetForm = () => {
   totalCount.value = 0
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadTopics()
   const now = new Date();
   const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
@@ -263,6 +264,12 @@ onMounted(() => {
   searchForm.startTime = dayjs(threeHoursAgo)
   searchForm.endTime = dayjs(now)
 
+  // 等待 transition 动画完成后再渲染 tabs，避免 keep-alive + transition 组合下
+  // ant-design-vue tabs 在首次挂载时因容器尺寸未稳定导致 ink-bar / 布局计算错乱
+  await nextTick()
+  requestAnimationFrame(() => {
+    tabsReady.value = true
+  })
 });
 
 
@@ -323,7 +330,9 @@ const messageTypes = [
 <template>
   <div class="message-page">
     <!-- Tabs -->
+    <div v-if="!tabsReady" class="tabs-placeholder" />
     <a-tabs
+      v-else
       v-model:activeKey="activeTab"
       class="message-tabs"
       tabPosition="top"
@@ -626,13 +635,9 @@ const messageTypes = [
   padding: 20px;
 }
 
-:deep(.message-tabs .ant-tabs-nav-list) {
-  display: flex;
-  flex-direction: row;
-}
-
-:deep(.message-tabs .ant-tabs-tab + .ant-tabs-tab) {
-  margin-left: 32px;
+.tabs-placeholder {
+  height: 46px;
+  margin-bottom: 16px;
 }
 
 .search-card {
@@ -723,4 +728,15 @@ const messageTypes = [
 :deep(.a-table) {
   margin-top: 10px;
 }
-</style> 
+</style>
+
+<style>
+/* ant-design-vue tabs 穿透样式 —— 放在非 scoped 块中避免首次挂载时 CSS 注入时序导致 tab 错乱 */
+.message-tabs .ant-tabs-nav-list {
+  display: flex;
+  flex-direction: row;
+}
+.message-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-left: 32px;
+}
+</style>

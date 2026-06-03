@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import type { ACLConfig, ACLAccount, AclResponse, AclConfig } from '@/types/mq/acl'
 import { message } from 'ant-design-vue'
 import { addAclAccount, queryAclConfigs } from '@/api/mq/acl'
@@ -37,6 +37,7 @@ const globalWhiteRemoteAddressesStr = computed({
   }
 })
 
+const tabsReady = ref(false)
 const activeTab = ref('account')
 const filterAccessKey = ref('')
 
@@ -344,9 +345,15 @@ const handleAddPermission = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadConfig()
   // loadWhiteList() // 如果有白名单接口
+  // 等待 transition 动画完成后再渲染 tabs，避免 keep-alive + transition 组合下
+  // ant-design-vue tabs 在首次挂载时因容器尺寸未稳定导致 ink-bar / 布局计算错乱
+  await nextTick()
+  requestAnimationFrame(() => {
+    tabsReady.value = true
+  })
 })
 </script>
 
@@ -356,7 +363,8 @@ onMounted(() => {
       <h2>ACL Management</h2>
     </div>
 
-    <a-tabs v-model:activeKey="activeTab" type="line">
+    <div v-if="!tabsReady" class="tabs-placeholder" />
+    <a-tabs v-else v-model:activeKey="activeTab" type="line">
       <!-- Tab 1: ACCOUNT INFO -->
       <a-tab-pane key="account" tab="ACCOUNT INFO">
         <div class="acl-header" style="margin-bottom: 16px;">
@@ -666,6 +674,11 @@ onMounted(() => {
 
 .header h2 {
   margin: 0;
+}
+
+.tabs-placeholder {
+  height: 46px;
+  margin-bottom: 20px;
 }
 
 .white-addresses {
