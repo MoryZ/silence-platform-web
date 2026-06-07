@@ -1,10 +1,16 @@
 import { ref, onUnmounted, computed } from 'vue';
 import type { JobMessage, WebSocketStatus } from '@/types/websocket';
 
+export interface UseWebSocketLogOptions {
+  maxRetries?: number;
+  retryInterval?: number;
+  onError?: (error: Event) => void;
+}
+
 export interface UseWebSocketLogReturn {
   logList: ReturnType<typeof ref<JobMessage[]>>;
   status: ReturnType<typeof ref<WebSocketStatus>>;
-  isConnected: ReturnType<typeof computed<boolean>>;
+  isConnected: ReturnType<typeof ref<boolean>>;
   finished: ReturnType<typeof ref<boolean>>;
   connect: (taskBatchId?: string | number, taskId?: string | number) => void;
   disconnect: () => void;
@@ -15,7 +21,11 @@ function generateSid(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
-export function useWebSocketLog(): UseWebSocketLogReturn {
+export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSocketLogReturn {
+  const maxRetries = options.maxRetries ?? 3;
+  const retryInterval = options.retryInterval ?? 1000;
+  const onError = options.onError;
+
   const logList = ref<JobMessage[]>([]);
   const finished = ref(false);
   const status = ref<WebSocketStatus>('disconnected');
@@ -100,6 +110,7 @@ export function useWebSocketLog(): UseWebSocketLogReturn {
       ws.onerror = (e) => {
         console.error('[WS] Error:', e);
         updateStatus('error');
+        onError?.(e);
       };
 
       ws.onclose = () => {
@@ -125,7 +136,7 @@ export function useWebSocketLog(): UseWebSocketLogReturn {
     finished.value = false;
   };
 
-  const isConnected = computed(() => status.value === 'connected');
+  const isConnected = ref(status.value === 'connected');
 
   onUnmounted(() => {
     disconnect();

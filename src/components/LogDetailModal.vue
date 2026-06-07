@@ -159,6 +159,8 @@ interface Props {
   enableWebSocket?: boolean;
   /** 是否自动连接 WebSocket */
   autoConnect?: boolean;
+  /** 初始日志列表 */
+  initLogs?: any[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -169,7 +171,8 @@ const props = withDefaults(defineProps<Props>(), {
   status: undefined,
   loading: false,
   enableWebSocket: true,
-  autoConnect: true
+  autoConnect: true,
+  initLogs: undefined
 });
 
 const emit = defineEmits<{
@@ -196,9 +199,15 @@ const {
   }
 });
 
-// 合并日志列表：优先使用 WebSocket 日志，否则使用外部传入的日志
+// 合并日志列表：优先使用 WebSocket 日志，否则使用外部传入的日志或初始日志
 const mergedLogList = computed<JobMessage[]>(() => {
-  return wsLogList.value.length > 0 ? wsLogList.value : logList.value;
+  if (wsLogList.value.length > 0) {
+    return wsLogList.value;
+  }
+  if (props.initLogs && props.initLogs.length > 0) {
+    return props.initLogs as JobMessage[];
+  }
+  return logList.value;
 });
 
 const drawerWidth = ref(800);
@@ -326,8 +335,7 @@ defineExpose({
   // WebSocket 控制方法
   connect: wsConnect,
   disconnect: wsDisconnect,
-  isConnected: wsIsConnected,
-  status: wsStatus
+  isConnected: wsIsConnected
 });
 
 // 监听 visible 变化，自动连接/断开 WebSocket

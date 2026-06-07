@@ -60,7 +60,7 @@ export function fetchUpdateWorkflow(data: any) {
   return request.put<any>('/api/v1/workflows', data);
 }
 
-export function fetchWorkflowInfo(id: string) {
+export function fetchWorkflowInfo(id: string | number) {
   return request.get<any>(`/api/v1/workflows/${id}`);
 }
 

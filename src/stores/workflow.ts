@@ -22,6 +22,8 @@ interface WorkflowState {
   loading: boolean;
   // 错误信息
   error: string | null;
+  // 分组名称
+  groupName: string;
 }
 
 export const useWorkflowStore = defineStore('workflow', () => {
@@ -33,7 +35,8 @@ export const useWorkflowStore = defineStore('workflow', () => {
     selectedNodeId: null,
     workflowData: null,
     loading: false,
-    error: null
+    error: null,
+    groupName: ''
   });
 
   // Getters
@@ -44,6 +47,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   const workflowData = computed(() => state.value.workflowData);
   const loading = computed(() => state.value.loading);
   const error = computed(() => state.value.error);
+  const groupName = computed(() => state.value.groupName);
 
   // 是否处于编辑模式
   const isEditMode = computed(() => state.value.type === 0);
@@ -142,6 +146,14 @@ export const useWorkflowStore = defineStore('workflow', () => {
   };
 
   /**
+   * 设置分组名称
+   * @param groupName 分组名称
+   */
+  const setGroupName = (groupName: string) => {
+    state.value.groupName = groupName;
+  };
+
+  /**
    * 清除错误信息
    */
   const clearError = () => {
@@ -159,7 +171,8 @@ export const useWorkflowStore = defineStore('workflow', () => {
       selectedNodeId: null,
       workflowData: null,
       loading: false,
-      error: null
+      error: null,
+      groupName: ''
     };
   };
 
@@ -202,6 +215,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     workflowData,
     loading,
     error,
+    groupName,
     
     // 计算属性
     isEditMode,
@@ -218,6 +232,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     setWorkflowData,
     setLoading,
     setError,
+    setGroupName,
     clearError,
     resetWorkflow,
     initWorkflow,

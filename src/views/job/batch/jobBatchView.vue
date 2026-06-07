@@ -18,6 +18,7 @@ import { DownOutlined } from '@ant-design/icons-vue';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, StopOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import JsonViewerModal from '@/components/JsonViewerModal.vue';
 import LogDetailModal from '@/components/LogDetailModal.vue';
+import type { JobMessage } from '@/types/websocket';
 import dayjs from 'dayjs';
 
 const loading = ref(false);
@@ -211,7 +212,7 @@ const resultModalLoading = ref(false);
 const logModalVisible = ref(false);
 const logRecord = ref<Record<string, any> | null>(null);
 const logModalLoading = ref(false);
-const logDetailModalRef = ref<InstanceType<typeof import('@/components/LogDetailModal.vue').default> | null>(null);
+const parsedLogList = ref<JobMessage[]>([]);
 
 // 详情抽屉列配置
 const detailColumns = [
@@ -398,35 +399,26 @@ function handleLogSearch() {
 // 查看日志内容
 function handleViewLogContent(record: Record<string, any>) {
   logRecord.value = record;
-  logModalLoading.value = true;
-  logModalVisible.value = true;
+  logModalLoading.value = false;
   
-  // 解析日志内容并传递给组件
-  nextTick(() => {
-    if (logDetailModalRef.value) {
-      logDetailModalRef.value.clearLog();
-      // 解析日志数组
-      const logContent = record.log || record.resultMessage;
-      if (logContent) {
-        try {
-          let messages = [];
-          if (typeof logContent === 'string') {
-            const parsed = JSON.parse(logContent);
-            messages = Array.isArray(parsed) ? parsed : [parsed];
-          } else if (Array.isArray(logContent)) {
-            messages = logContent;
-          } else {
-            messages = [logContent];
-          }
-          logDetailModalRef.value.setLogList(messages);
-        } catch {
-          // 解析失败，忽略
-        }
+  // 解析日志内容
+  const logContent = record.log || record.resultMessage;
+  let messages: JobMessage[] = [];
+  if (logContent) {
+    try {
+      if (typeof logContent === 'string') {
+        const parsed = JSON.parse(logContent);
+        messages = Array.isArray(parsed) ? parsed : [parsed];
+      } else if (Array.isArray(logContent)) {
+        messages = logContent;
+      } else {
+        messages = [logContent];
       }
-      logDetailModalRef.value.setFinished();
+    } catch {
+      // 解析失败，忽略
     }
-    logModalLoading.value = false;
-  });
+  }
+  parsedLogList.value = messages;
 }
 
 // 刷新日志
@@ -841,7 +833,6 @@ onMounted(() => {
 
     <!-- 日志详情弹窗 -->
     <LogDetailModal
-      ref="logDetailModalRef"
       v-model:visible="logModalVisible"
       title="日志详情"
       :loading="logModalLoading"
@@ -850,6 +841,7 @@ onMounted(() => {
       :taskId="logRecord?.id"
       :enableWebSocket="true"
       :autoConnect="true"
+      :initLogs="parsedLogList"
       @refresh="handleRefreshLog"
     />
 
