@@ -59,7 +59,7 @@ async function fetchData() {
       data.value = res.data || [];
       pagination.total = res.total || data.value.length;
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {
@@ -122,16 +122,8 @@ async function handleDrawerSave() {
     }
     drawerVisible.value = false;
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('操作失败');
-  }
-}
-
-function onCheckColumn(key: string, checked: boolean) {
-  if (checked) {
-    if (!checkedKeys.value.includes(key)) checkedKeys.value.push(key);
-  } else {
-    checkedKeys.value = checkedKeys.value.filter(k => k !== key);
   }
 }
 

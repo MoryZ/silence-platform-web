@@ -24,7 +24,7 @@ html, body {
 }
 
 a {
-  color: #1890ff;
+  color: #1677ff;
   text-decoration: none;
   background-color: transparent;
   outline: none;
@@ -58,4 +58,53 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+/* 圆角语义化变量（第六批） */
+:root {
+  --radius-sm: 4px;       /* 标签、徽标、小型装饰 */
+  --radius-md: 6px;       /* 按钮、输入框、小卡片 */
+  --radius-lg: 8px;       /* 标准卡片、Drawer、Modal、面板 */
+  --radius-pill: 9999px;  /* 胶囊形 */
+}
+
+/*
+ * System A 静态 fallback（第十批：两套 CSS 变量系统合并）
+ *
+ * stores/app.ts 的 applyTheme() 会在 JS 运行后通过 root.style.setProperty()
+ * 覆盖以下值。这里的静态默认值仅用于 JS 注入前的首次渲染，避免 FOUC。
+ * 暗色模式通过 :root[data-theme='dark'] 选择器提供 fallback。
+ */
+:root {
+  --bg-color: #ffffff;
+  --text-color: rgba(0, 0, 0, 0.85);
+  --border-color: #f0f0f0;
+  --component-background: #ffffff;
+  --menu-bg: #ffffff;
+  --menu-item-color: rgba(0, 0, 0, 0.85);
+  --menu-highlight-color: #000;
+  --menu-item-active-bg: #e6f7ff;
+  --menu-item-hover-bg: #f5f5f5;
+  --layout-body-background: #f0f2f5;
+  --layout-header-background: #ffffff;
+  --layout-sider-background: #ffffff;
+  --layout-trigger-background: #002140;
+  --layout-trigger-color: #fff;
+}
+
+:root[data-theme='dark'] {
+  --bg-color: #141414;
+  --text-color: rgba(255, 255, 255, 0.85);
+  --border-color: #303030;
+  --component-background: #1f1f1f;
+  --menu-bg: #1f1f1f;
+  --menu-item-color: rgba(255, 255, 255, 0.65);
+  --menu-highlight-color: #fff;
+  --menu-item-active-bg: #1677ff;
+  --menu-item-hover-bg: rgba(255, 255, 255, 0.08);
+  --layout-body-background: #141414;
+  --layout-header-background: #1f1f1f;
+  --layout-sider-background: #1f1f1f;
+  --layout-trigger-background: #262626;
+  --layout-trigger-color: rgba(255, 255, 255, 0.65);
 } 

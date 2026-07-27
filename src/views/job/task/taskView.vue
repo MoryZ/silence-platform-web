@@ -114,7 +114,7 @@ async function handleSwitchChange(checked: boolean, record: Record<string, any>,
       message.success('已禁用');
     }
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('操作失败');
   } finally {
     done();
@@ -143,7 +143,7 @@ async function fetchData() {
       data.value = res.data || [];
       pagination.total = res.total || data.value.length;
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {
@@ -249,16 +249,8 @@ async function handleDrawerSave() {
     }
     drawerVisible.value = false;
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('操作失败');
-  }
-}
-
-function onCheckColumn(key: string, checked: boolean) {
-  if (checked) {
-    if (!checkedKeys.value.includes(key)) checkedKeys.value.push(key);
-  } else {
-    checkedKeys.value = checkedKeys.value.filter((k: string) => k !== key);
   }
 }
 
@@ -317,12 +309,12 @@ function handleArgsEditorOk() {
   showArgsEditor.value = false;
 }
 
-function onArgsEditorInput(e: any) {
+function onArgsEditorInput(_e: any) {
   if (editingData.value) {
     editingData.value.argsStr = argsEditorValue.value;
   }
 }
-function onArgsInputChange(e: any) {
+function onArgsInputChange(_e: any) {
   if (showArgsEditor.value) {
     argsEditorValue.value = editingData.value?.argsStr || '';
   }
@@ -388,10 +380,6 @@ function removeHeader(idx: number) {
 function openBodyEditor() {
   bodyEditorValue.value = httpBody.value;
   showBodyEditor.value = true;
-}
-function handleBodyEditorOk() {
-  httpBody.value = bodyEditorValue.value;
-  showBodyEditor.value = false;
 }
 
 // 公共字段（始终显示）
@@ -519,7 +507,7 @@ async function handleDoExecute() {
     await triggerJob(currentExecJobId, { tmpArgsStr: tmpArgsStr.value });
     message.success('任务已执行');
     showExecuteModal.value = false;
-  } catch (e) {
+  } catch {
     message.error('执行失败');
   }
 }
@@ -540,7 +528,7 @@ async function handleDelete(record: Job) {
     await deleteJob([record.id]);
     message.success('删除成功');
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('删除失败');
   }
 }

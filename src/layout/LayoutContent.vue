@@ -23,7 +23,7 @@
 .layout-content {
   flex: 1;
   padding: 24px;
-  background: #fff;
+  background: var(--bg-color);
   min-height: 0;
   overflow: auto;
 }

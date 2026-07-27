@@ -25,7 +25,13 @@ import {
   NTabs,
   NTabPane,
   NPagination,
-  NSpin
+  NSpin,
+  // Providers：让 App.vue 模板里的 n-config-provider 等能直接使用
+  NConfigProvider,
+  NLoadingBarProvider,
+  NMessageProvider,
+  NDialogProvider,
+  NNotificationProvider
 } from 'naive-ui';
 
 const naive = create({
@@ -54,7 +60,13 @@ const naive = create({
     NTabs,
     NTabPane,
     NPagination,
-    NSpin
+    NSpin,
+    // 同步注册 provider 组件（与 getNaiveTheme / theme 注入配套）
+    NConfigProvider,
+    NLoadingBarProvider,
+    NMessageProvider,
+    NDialogProvider,
+    NNotificationProvider
   ]
 });
 

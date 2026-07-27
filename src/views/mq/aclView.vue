@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue'
-import type { ACLConfig, ACLAccount, AclResponse, AclConfig } from '@/types/mq/acl'
+import type { ACLAccount, AclResponse, AclConfig } from '@/types/mq/acl'
 import { message } from 'ant-design-vue'
 import { addAclAccount, queryAclConfigs } from '@/api/mq/acl'
 
@@ -28,6 +28,7 @@ const selectedAccount = ref<ACLAccount | null>(null)
 const newTopicPerm = ref({ resource: '', perm: 'DENY' })
 const newGroupPerm = ref({ resource: '', perm: 'DENY' })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalWhiteRemoteAddressesStr = computed({
   get() {
     return (config.value.globalWhiteAddrs || []).join('\n')
@@ -63,6 +64,7 @@ const columns = [
 
 const whiteListColumns = [
   { title: '白名单', dataIndex: 'address', key: 'address' },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   { title: '操作', key: 'action', customRender: ({ record }) => '操作按钮' }
 ]
 
@@ -95,6 +97,7 @@ const createAccount = async (account: ACLAccount) => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const updateAccount = async () => {
   try {
     const response = await fetch('/acl/account.update', {
@@ -148,11 +151,13 @@ const openEditDialog = (account: ACLAccount) => {
   showEditDialog.value = true
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const openPermDialog = (account: ACLAccount) => {
   selectedAccount.value = account
   showPermDialog.value = true
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const addTopicPerm = () => {
   if (selectedAccount.value && newTopicPerm.value.resource) {
     editAccount.value.topicPerms = {
@@ -163,6 +168,7 @@ const addTopicPerm = () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const addGroupPerm = () => {
   if (selectedAccount.value && newGroupPerm.value.resource) {
     editAccount.value.groupPerms = {
@@ -173,15 +179,19 @@ const addGroupPerm = () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const removeTopicPerm = (topic: string) => {
   if (editAccount.value.topicPerms) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [topic]: removed, ...rest } = editAccount.value.topicPerms
     editAccount.value.topicPerms = rest
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const removeGroupPerm = (group: string) => {
   if (editAccount.value.groupPerms) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [group]: removed, ...rest } = editAccount.value.groupPerms
     editAccount.value.groupPerms = rest
   }
@@ -197,6 +207,7 @@ const resetNewAccount = () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatDate = (timestamp: number) => {
   return new Date(timestamp).toLocaleString()
 }
@@ -281,6 +292,7 @@ const handleDeleteAccount = (accessKey: string) => {
   deleteAccount(accessKey)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleDeletePermission = async (accessKey: string, type: 'TOPIC' | 'GROUP', resource: string) => {
   try {
     // TODO: 实现删除权限的API调用

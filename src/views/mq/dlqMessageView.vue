@@ -190,6 +190,7 @@ const resendDlqMessage = async () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const resetForm = () => {
   selectedGroup.value = ''
   beginTime.value = ''
@@ -249,6 +250,7 @@ const trackStatusColor = (trackType?: string) => {
   return 'blue'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const delayLevels = [
   { label: '不延时', value: 0 },
   { label: '1秒', value: 1 },

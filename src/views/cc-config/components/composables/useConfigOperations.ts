@@ -21,19 +21,23 @@ export function useConfigOperations(emit: any) {
    */
   const fetchModifyHistories = async (configItemId: number) => {
     try {
+      // eslint-disable-next-line no-console
       console.log('开始获取修改历史，configItemId:', configItemId);
       const response = await getConfigItemHistories({
         configItemId: configItemId
       });
+      // eslint-disable-next-line no-console
       console.log('获取修改历史响应:', response);
 
       // 使用 requestAnimationFrame 确保在下一个渲染周期更新
       requestAnimationFrame(() => {
         if (response) {
           modifyHistoryList.value = response;
+          // eslint-disable-next-line no-console
           console.log('设置修改历史列表:', response);
         } else {
           modifyHistoryList.value = [];
+          // eslint-disable-next-line no-console
           console.log('响应为空，清空修改历史列表');
         }
       });
@@ -79,7 +83,7 @@ export function useConfigOperations(emit: any) {
       await deleteConfigItem(record.id);
       message.success('删除成功');
       emit('refresh-data');
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -98,6 +102,7 @@ export function useConfigOperations(emit: any) {
       const oldContent = currentEditItem.value.content || '';
       const changeAnalysis = analyzeChanges(oldContent, content);
 
+      // eslint-disable-next-line no-console
       console.log('变更分析结果:', {
         type: changeAnalysis.type,
         summary: changeAnalysis.summary,
@@ -134,7 +139,7 @@ export function useConfigOperations(emit: any) {
 
       showEditor.value = false;
       emit('refresh-data');
-    } catch (error) {
+    } catch {
       message.error('保存失败');
     }
   };

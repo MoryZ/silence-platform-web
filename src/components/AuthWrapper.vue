@@ -10,8 +10,8 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useUserStore } from '../stores/user';
-import { usePermissionStore } from '../stores/permission';
+import { useUserStore } from '@/stores/user';
+import { usePermissionStore } from '@/stores/permission';
 
 const props = defineProps<{
   permission?: string;

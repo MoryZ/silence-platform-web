@@ -440,18 +440,18 @@ const local = {
     },
     about: {
       title: '关于',
-      introduction: `<span style="font-weight: bold; color: #1366ff">Snail Job</span>
+      introduction: `<span style="font-weight: bold; color: #1677ff">Snail Job</span>
  <br />
       是一个功能强大的分布式重试和任务调度平台，为支持提高分布式业务系统一致性和分布式任务调度而设计。具备高度可伸缩性和容错性，还包含完善的权限管理和强大的告警监控功能。
       一次部署即可获得重试和任务调度功能，为开发人员提供了简单而高效的解决方案。
       <br />
       在分布式系统中，任务失败是不可避免的，可能由网络问题、服务故障等原因引起。
       <br />
-      <span style="font-weight: bold; color: #1366ff">分布式重试模块</span> <br />
+      <span style="font-weight: bold; color: #1677ff">分布式重试模块</span> <br />
       旨在帮助开发人员处理这些失败，确保任务能够在失败后正确重试，提升系统稳定性和可靠性。
       高颜值、易用性的用户界面，方便开发人员配置任务的重试策略和调度规则。支持多种重试策略，如指数退避、固定间隔等，开发人员可根据业务需求选择最适合的策略。
       <br />
-      <span style="font-weight: bold; color: #1366ff">分布式任务调度模块</span> <br />
+      <span style="font-weight: bold; color: #1677ff">分布式任务调度模块</span> <br />
       是高性能的任务调度框架，无需依赖外部中间件即可实现秒级任务间隔调度。支持多种执行模式，如集群模式、广播模式和分片模式，同时提供多种阻塞策略，如丢弃、覆盖和并行，以提高任务执行效率。平台还提供监控和日志功能，帮助开发人员实时监控任务执行状态。`,
       projectInfo: {
         title: '项目信息',

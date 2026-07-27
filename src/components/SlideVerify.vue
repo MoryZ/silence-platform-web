@@ -167,7 +167,7 @@ onUnmounted(() => {
     left: 0;
     width: 0;
     height: 100%;
-    background: linear-gradient(90deg, #36D1DC 0%, #5B86E5 100%);
+    background: #1677ff;
     opacity: 0.2;
     transition: width 0.3s;
   }
@@ -188,15 +188,15 @@ onUnmounted(() => {
   left: 0;
   width: 40px;
   height: 100%;
-  background: linear-gradient(90deg, #36D1DC 0%, #5B86E5 100%);
+  background: #1677ff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.3s;
-  
+
   &:hover {
-    background: linear-gradient(90deg, #5bdce6 0%, #7599e8 100%);
+    background: #4096ff;
   }
   
   :deep(.anticon) {

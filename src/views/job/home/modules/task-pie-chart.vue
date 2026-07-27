@@ -66,8 +66,10 @@ const buildOptions = (): EChartsOption => ({
   tooltip: {
     trigger: 'item',
     textStyle: {
+      // eslint-disable-next-line no-restricted-syntax
       color: (themeStore as any).darkMode ? '#dededf' : '#333639'
     },
+    // eslint-disable-next-line no-restricted-syntax
     backgroundColor: (themeStore as any).darkMode ? '#48484e' : '#fff',
     formatter: '{a} <br/>{b}: {d}%'
   },
@@ -80,6 +82,7 @@ const buildOptions = (): EChartsOption => ({
   },
   series: [
     {
+      // eslint-disable-next-line no-restricted-syntax
       color: [getColor('#5da8ff'), getColor('#8e9dff'), getColor('#fedc69'), getColor('#26deca')],
       name: $t('page.home.retryTab.pie.title'),
       type: 'pie',
@@ -87,6 +90,7 @@ const buildOptions = (): EChartsOption => ({
       avoidLabelOverlap: false,
       itemStyle: {
         borderRadius: 10,
+        // eslint-disable-next-line no-restricted-syntax
         borderColor: (themeStore as any).darkMode ? '#18181c' : '#fff',
         borderWidth: 1
       },

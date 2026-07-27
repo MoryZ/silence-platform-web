@@ -51,7 +51,8 @@ export function useConfigComparison() {
       try {
         const response = await getConfigItemById(compareForm.value.sourceConfigItemId);
         targetConfig.value = response;
-      } catch (error) {
+      } catch {
+        // eslint-disable-next-line no-console
         console.log('目标环境中未找到对应的配置项');
         targetConfig.value = null;
       }

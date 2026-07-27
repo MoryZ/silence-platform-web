@@ -79,7 +79,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
-import monaco from '../utils/monaco';
+import monaco from '@/utils/monaco';
 import { ClockCircleOutlined } from '@ant-design/icons-vue';
 import moment from 'moment';
 
@@ -115,6 +115,7 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'save', 'cancel']);
 
 // 监听 historyList 变化
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 watch(() => props.historyList, (newList) => {
   // 可以在这里处理历史列表变化
 }, { immediate: true });
@@ -163,6 +164,7 @@ const initEditor = async () => {
   editor.onDidChangeModelContent(() => {
     if (editor) {
       const content = editor.getValue();
+      // eslint-disable-next-line no-console
       console.log('Editor content changed:', content);
     }
   });

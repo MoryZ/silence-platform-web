@@ -51,6 +51,7 @@ export function transformRecordToNumberOption<T extends Record<number, string>>(
  * @param options
  */
 export function translateOptions(options: Option<string | number>[]) {
+  // eslint-disable-next-line no-console
   console.log('translateOptions input:', options);
   const result = options.map(option => {
     const translatedLabel = $t(option.label as any);
@@ -59,6 +60,7 @@ export function translateOptions(options: Option<string | number>[]) {
       label: translatedLabel
     };
   });
+  // eslint-disable-next-line no-console
   console.log('translateOptions output:', result);
   return result;
 }

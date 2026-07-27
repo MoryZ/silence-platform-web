@@ -123,13 +123,13 @@
 <script lang="ts" setup>
 import { ref, watch, onUnmounted, nextTick, shallowRef, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import monaco from '../../../utils/monaco';
+import monaco from '@/utils/monaco';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { getConfigItemReleaseHistories } from '../../../api/config/configItemReleaseHistory';
-import { getConfigEnvironments } from '../../../api/config/configEnvironment';
-import { getConfigItems } from '../../../api/config/configItem';
+import { getConfigItemReleaseHistories } from '@/api/config/configItemReleaseHistory';
+import { getConfigEnvironments } from '@/api/config/configEnvironment';
+import { getConfigItems } from '@/api/config/configItem';
 import { useConfigStore } from '@/stores/config';
 import { useEnvStore } from '@/stores/env';
 import type { ConfigEnvironment, ConfigItem, ConfigItemReleaseHistory } from '@/types/config';
@@ -568,6 +568,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/env-tabs' as *;
+
 .release-history-page {
   width: 100%;
 }
@@ -598,78 +600,15 @@ onUnmounted(() => {
 
 .environment-selector {
   margin-bottom: 16px;
-
-  .env-tabs-wrapper {
-    background: #fff;
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f0f0f0;
-  }
-
-  .env-tabs-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .env-tab {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    border-radius: 8px;
-    background: #fafafa;
-    border: 1px solid #e8e8e8;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-    &:hover:not(.active) {
-      background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-      border-color: #bfd4f2;
-      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.12);
-      transform: translateY(-1px);
-
-      .env-tab-name {
-        color: #1677ff;
-        font-weight: 500;
-      }
-    }
-
-    &.active {
-      background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
-      border-color: #1677ff;
-      box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
-      transform: translateY(-2px);
-
-      .env-tab-name {
-        color: #fff;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      }
-
-      &:hover {
-        box-shadow: 0 6px 16px rgba(22, 119, 255, 0.4);
-        transform: translateY(-2px) scale(1.02);
-      }
-    }
-
-    .env-tab-name {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.5;
-    }
-  }
+  // mixin env-tabs-base 已注入 env-tabs-wrapper / env-tabs-container / env-tab 基础与 hover/active 态
+  @include env-tabs-base;
 }
 
 .search-bar {
   margin-bottom: 16px;
   padding: 12px;
   background: #fafafa;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 
   .search-controls {
     display: flex;
@@ -702,7 +641,7 @@ onUnmounted(() => {
       }
 
       &.selected-row {
-        box-shadow: inset 4px 0 0 #1677ff;
+        box-shadow: inset 4px 0 0 var(--primary-color);
 
         > td {
           background: #d7ebff !important;

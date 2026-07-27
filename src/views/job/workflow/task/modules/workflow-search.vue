@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { $t } from '@/locales';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { enableStatusNumberOptions } from '@/constants/business';
 import { getAllGroupConfigs } from '@/api/job/group';
 

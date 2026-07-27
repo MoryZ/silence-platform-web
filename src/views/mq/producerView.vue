@@ -60,6 +60,7 @@ const loadTopics = async () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const queryClientByTopicAndGroup = async () => {
   if (!selectedTopic.value || !producerGroup.value) {
     message.warning('请选择Topic和生产者组')

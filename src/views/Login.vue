@@ -232,10 +232,6 @@ import { reactive, ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import {
   UserOutlined,
   LockOutlined,
-  WechatOutlined,
-  QqOutlined,
-  GithubOutlined,
-  GoogleOutlined,
   TranslationOutlined,
   BgColorsOutlined,
   PictureOutlined,
@@ -248,6 +244,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useAppStore } from '@/stores/app';
 import SlideVerify from '@/components/SlideVerify.vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { addUser, registerUser } from '@/api/auth/user';
 import type { User } from '@/types/auth';
 import { ls } from '@/utils/stoarge';
@@ -294,6 +291,7 @@ const currentLang = computed(() => [appStore.language]);
 
 const handleLanguageChange = (e: any) => {
   const selectedLang = e.key;
+  // eslint-disable-next-line no-console
   console.log('Language change triggered:', selectedLang);
   appStore.setLanguage(selectedLang);
   languageVisible.value = false;
@@ -303,6 +301,7 @@ const currentTheme = computed(() => appStore.theme);
 
 const handleThemeChange = (e: any) => {
   const selectedTheme = e.key;
+  // eslint-disable-next-line no-console
   console.log('Theme change triggered:', selectedTheme);
   appStore.setTheme(selectedTheme);
   themeVisible.value = false;
@@ -389,6 +388,7 @@ const getText = computed(() => {
   return i18n['zh_CN'];
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const onFinish = async (values: any) => {
   if (!formState.verify) {
     message.error(getText.value.login.verifyMessage);
@@ -654,6 +654,7 @@ const closeMenus = () => {
 };
 
 // 第三方登录处理
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleOAuthLogin = async (provider: 'github' | 'google' | 'wechat' | 'qq') => {
   try {
     loading.value = true;
@@ -745,6 +746,7 @@ onMounted(() => {
   });
 
   // 监听主题变化事件
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleThemeChange = (event: CustomEvent) => {
     if (backgroundStyle.value.backgroundImage?.includes('linear-gradient')) {
       handleBackgroundChange({ key: 'gradient' });
@@ -872,12 +874,12 @@ onMounted(() => {
 .login-form {
   .custom-input {
     background: var(--component-background);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
-    
+
     &:hover, &:focus {
       background: var(--component-background);
-      border-color: #1890ff;
+      border-color: #1677ff;
     }
     
     input {
@@ -913,13 +915,13 @@ onMounted(() => {
   }
   
   :deep(.ant-checkbox-checked .ant-checkbox-inner) {
-    background-color: #1890ff;
-    border-color: #1890ff;
+    background-color: #1677ff;
+    border-color: #1677ff;
   }
 }
 
 .forgot-link {
-  color: #1890ff;
+  color: #1677ff;
   font-size: 14px;
   
   &:hover {
@@ -931,11 +933,12 @@ onMounted(() => {
   width: 100%;
   height: 44px;
   font-size: 16px;
-  background: linear-gradient(90deg, #36d1dc 0%, #5b86e5 100%);
+  background: #1677ff;
   border: none;
-  
+  border-radius: var(--radius-md);
+
   &:hover {
-    background: linear-gradient(90deg, #5bdce6 0%, #7599e8 100%);
+    background: #4096ff;
   }
 }
 
@@ -985,8 +988,8 @@ onMounted(() => {
   
   &:hover {
     opacity: 1;
-    border-color: #1890ff;
-    color: #1890ff;
+    border-color: #1677ff;
+    color: #1677ff;
   }
 }
 
@@ -1000,7 +1003,7 @@ onMounted(() => {
 
 // 将嵌套的 a 选择器提取出来，避免 CSS 压缩警告
 .register-link a {
-  color: #1890ff;
+  color: #1677ff;
   
   &:hover {
     color: #40a9ff;
@@ -1012,8 +1015,8 @@ onMounted(() => {
   text-align: center;
   padding: 15px;
   background-color: rgba(24, 144, 255, 0.1);
-  border-radius: 8px;
-  
+  border-radius: var(--radius-lg);
+
   p {
     margin-bottom: 10px;
   }
@@ -1045,8 +1048,8 @@ onMounted(() => {
   padding: 0;
   
   &:hover {
-    border-color: #1890ff;
-    color: #1890ff;
+    border-color: #1677ff;
+    color: #1677ff;
   }
 }
 
@@ -1057,7 +1060,7 @@ onMounted(() => {
   min-width: 120px;
   background-color: var(--menu-bg);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;
 

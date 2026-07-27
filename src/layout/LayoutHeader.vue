@@ -30,15 +30,17 @@
 <script setup lang="ts">
 import { h, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import EnvSelector from '../components/EnvSelector.vue'
-import SystemComponentSelector from '../components/SystemComponentSelector.vue'
-import SearchHistoryPopover from '../components/SearchHistoryPopover.vue'
-import NamespaceSelector from '../components/NamespaceSelector.vue'
-import NotificationPopover from '../components/NotificationPopover.vue'
-import UserDropdown from '../components/UserDropdown.vue'
+import EnvSelector from '@/components/EnvSelector.vue'
+import SystemComponentSelector from '@/components/SystemComponentSelector.vue'
+import SearchHistoryPopover from '@/components/SearchHistoryPopover.vue'
+import NamespaceSelector from '@/components/NamespaceSelector.vue'
+import NotificationPopover from '@/components/NotificationPopover.vue'
+import UserDropdown from '@/components/UserDropdown.vue'
 import { AppstoreOutlined } from '@ant-design/icons-vue'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<{ collapsed: boolean }>()
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const emit = defineEmits(['toggleCollapse', 'showAllProducts'])
 const route = useRoute()
 const isCcConfig = computed(() => route.path.startsWith('/cc-config'))
@@ -51,9 +53,9 @@ const isJob = computed(() => route.path.startsWith('/job'))
   justify-content: space-between;
   align-items: center;
   height: 64px;
-  background: #fff;
+  background: var(--layout-header-background);
   box-shadow: 0 2px 8px #f0f1f2;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
   padding: 0 40px;
 }
 .header-left {
@@ -69,14 +71,14 @@ const isJob = computed(() => route.path.startsWith('/job'))
 }
 .logo { width: 32px; height: 32px; }
 .system-title {
-  color: #222;
+  color: var(--text-color);
   font-size: 18px;
   font-weight: 600;
   margin-left: 2px;
   white-space: nowrap;
 }
 .all-products-btn {
-  color: #222;
+  color: var(--text-color);
   font-size: 18px;
   background: none;
   border: none;
@@ -86,7 +88,7 @@ const isJob = computed(() => route.path.startsWith('/job'))
   transition: color 0.2s;
 }
 .all-products-btn:hover {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 .all-products-btn :deep(.anticon) {
   font-size: 20px;
@@ -104,18 +106,18 @@ const isJob = computed(() => route.path.startsWith('/job'))
 }
 .header-right .username {
   margin-left: 6px;
-  color: #222;
+  color: var(--text-color);
   font-weight: 500;
 }
 .trigger {
   font-size: 20px;
   cursor: pointer;
   margin-right: 16px;
-  color: #001529;
+  color: var(--layout-trigger-bg);
   transition: color 0.3s;
 }
 .trigger:hover {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 .breadcrumb {
   margin-left: 24px;

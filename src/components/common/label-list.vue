@@ -30,7 +30,7 @@ const labelEntries = computed(() => {
   try {
     const parsed = JSON.parse(props.labels || '{}');
     return Object.entries(parsed);
-  } catch (error) {
+  } catch {
     console.warn('Failed to parse labels:', props.labels);
     return [];
   }

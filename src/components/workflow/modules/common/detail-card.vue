@@ -130,6 +130,7 @@ function onLoad() {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const retry = async () => {
   try {
     await fetchWorkflowNodeRetry(store.id!, jobData.value.workflowNodeId!);

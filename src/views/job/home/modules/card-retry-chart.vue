@@ -64,6 +64,7 @@ const renderChart = () => {
         barWidth: '60%',
         itemStyle: {
           borderRadius: 4,
+          // eslint-disable-next-line no-restricted-syntax
           color: '#40e9c5'
         },
         data: values

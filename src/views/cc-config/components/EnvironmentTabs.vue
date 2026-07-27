@@ -51,6 +51,7 @@ interface Emits {
   (e: 'add'): void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
@@ -68,67 +69,21 @@ const handleAddTab = () => {
 </script>
 
 <style lang="scss" scoped>
+@use '../styles/env-tabs' as *;
+
 .environment-selector {
   margin-bottom: 24px;
-  
-  .env-tabs-wrapper {
-    background: #fff;
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f0f0f0;
-  }
-  
-  .env-tabs-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  
+  @include env-tabs-base;
+
+  // mixin env-tabs-base 已注入 .env-tabs-wrapper / .env-tabs-container / .env-tab 基础与 hover/active 态
+  // 此处仅追加 .empty 状态、.active 内的关闭按钮、.env-tab-close 基础样式、.env-add-btn 样式
+
   .env-tab {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    border-radius: 8px;
-    background: #fafafa;
-    border: 1px solid #e8e8e8;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    
-    &:hover:not(.empty):not(.active) {
-      background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-      border-color: #bfd4f2;
-      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.12);
-      transform: translateY(-1px);
-      
-      .env-tab-name {
-        color: #1677ff;
-        font-weight: 500;
-      }
-    }
-    
     &.active {
-      background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
-      border-color: #1677ff;
-      box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
-      transform: translateY(-2px);
-      
-      .env-tab-name {
-        color: #fff;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      }
-      
       .env-tab-close {
         color: #fff;
         opacity: 0.9;
-        
+
         &:hover {
           background: rgba(255, 255, 255, 0.25);
           border-radius: 50%;
@@ -136,41 +91,30 @@ const handleAddTab = () => {
           transform: scale(1.1);
         }
       }
-      
-      &:hover {
-        box-shadow: 0 6px 16px rgba(22, 119, 255, 0.4);
-        transform: translateY(-2px) scale(1.02);
-      }
     }
-    
+
     &.empty {
       border: 2px dashed #d9d9d9;
       background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-      
+
       .env-tab-name {
         color: #999;
         font-style: italic;
       }
-      
+
       &:hover {
-        border-color: #1677ff;
+        border-color: var(--primary-color);
         background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
         box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
         transform: translateY(-1px);
-        
+
         .env-tab-name {
-          color: #1677ff;
+          color: var(--primary-color);
           font-style: normal;
         }
       }
     }
-    
-    .env-tab-name {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.5;
-    }
-    
+
     .env-tab-close {
       display: flex;
       align-items: center;
@@ -181,21 +125,21 @@ const handleAddTab = () => {
       transition: all 0.2s;
       border-radius: 50%;
       font-size: 12px;
-      
+
       &:hover {
         background: rgba(0, 0, 0, 0.06);
         color: #333;
       }
     }
   }
-  
+
   .env-add-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     border: 2px dashed #d9d9d9;
     background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
     cursor: pointer;
@@ -205,16 +149,16 @@ const handleAddTab = () => {
     position: relative;
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    
+
     &:hover {
-      border-color: #1677ff;
-      color: #1677ff;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
       background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
       box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
       transform: translateY(-2px) scale(1.05);
       border-width: 2px;
     }
-    
+
     &:active {
       transform: translateY(0) scale(0.98);
       box-shadow: 0 2px 4px rgba(22, 119, 255, 0.2);

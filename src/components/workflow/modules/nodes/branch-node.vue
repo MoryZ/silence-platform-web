@@ -2,10 +2,10 @@
 import { nextTick, ref, watch } from 'vue';
 import { expressionRecord, taskBatchStatusEnum } from '@/constants/business';
 import { $t } from '@/locales';
-import BranchDrawer from '../drawer/branch-drawer.vue';
-import BranchDetail from '../detail/branch-detail.vue';
-import DetailCard from '../common/detail-card.vue';
-import BranchDesc from '../detail/branch-desc.vue';
+import BranchDrawer from '@/components/workflow/modules/drawer/branch-drawer.vue';
+import BranchDetail from '@/components/workflow/modules/detail/branch-detail.vue';
+import DetailCard from '@/components/workflow/modules/common/detail-card.vue';
+import BranchDesc from '@/components/workflow/modules/detail/branch-desc.vue';
 import AddNode from './add-node.vue';
 
 defineOptions({
@@ -131,6 +131,7 @@ const save = (val: any) => {
   emit('update:modelValue', nodeConfig.value);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const show = (index: number) => {
   if (!props.disabled && index !== nodeConfig.value.conditionNodes!.length - 1) {
     currentIndex.value = index;
@@ -413,7 +414,7 @@ const getClass = (item: any) => {
 
 .header-border {
   margin: 20px 0;
-  border-left: #1366ff 5px solid;
+  border-left: var(--primary-color) 5px solid;
   font-size: medium;
   font-weight: bold;
 }

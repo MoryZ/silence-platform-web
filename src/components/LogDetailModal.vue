@@ -468,7 +468,7 @@ watch(() => wsLogList.value.length, () => {
 }
 
 .header-btn:hover {
-  color: #1677ff !important;
+  color: var(--primary-color) !important;
   background: rgba(22, 119, 255, 0.08) !important;
 }
 
@@ -568,7 +568,7 @@ watch(() => wsLogList.value.length, () => {
 .throwable-content {
   background: #2d2d2d;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;

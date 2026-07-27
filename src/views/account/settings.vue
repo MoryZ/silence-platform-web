@@ -244,7 +244,7 @@ const onBasicSubmit = async () => {
     // 这里应该调用API更新用户信息
     await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
     message.success('基本信息更新成功')
-  } catch (error) {
+  } catch {
     message.error('更新失败，请重试')
   } finally {
     basicLoading.value = false
@@ -267,7 +267,7 @@ const onSecuritySubmit = async () => {
     securityForm.currentPassword = ''
     securityForm.newPassword = ''
     securityForm.confirmPassword = ''
-  } catch (error) {
+  } catch {
     message.error('密码修改失败，请重试')
   } finally {
     securityLoading.value = false
@@ -280,7 +280,7 @@ const saveNotificationSettings = async () => {
     // 这里应该调用API保存通知设置
     await new Promise(resolve => setTimeout(resolve, 500)) // 模拟API调用
     message.success('通知设置保存成功')
-  } catch (error) {
+  } catch {
     message.error('保存失败，请重试')
   }
 }
@@ -331,7 +331,7 @@ const saveNotificationSettings = async () => {
       .binding-icon {
         font-size: 24px;
         margin-right: 12px;
-        color: #1890ff;
+        color: #1677ff;
       }
       
       .binding-details {

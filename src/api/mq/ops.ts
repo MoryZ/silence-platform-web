@@ -1,5 +1,5 @@
 import { mqRequest as request } from '@/utils/request';
-import type { ClusterStats, BrokerStats, TopicStats, ConsumerStats, HistoryStatsParams, HistoryStats } from '@/types/mq/opsApi';
+import type { ClusterStats, BrokerStats, TopicStats, ConsumerStats, HistoryStats } from '@/types/mq/opsApi';
 
 // 获取集群统计信息
 export const queryClusterStats = async (): Promise<ClusterStats> => {

@@ -79,8 +79,6 @@ const tableColumns = computed(() =>
   allColumns.value.filter(col => checkedKeys.value.includes(col.key))
 );
 
-// ensure dropdown overlay renders into body to avoid clipping by parent containers
-const getBodyContainer = () => document.body as HTMLElement;
 const columnSettingVisible = ref(false);
 
 async function fetchData() {
@@ -102,7 +100,7 @@ async function fetchData() {
       data.value = res.data || [];
       pagination.total = res.total || data.value.length;
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {
@@ -160,7 +158,7 @@ async function handleDrawerSave() {
   if (!editingData.value) return;
   try {
     // validate
-    // @ts-ignore antd form validate
+    // @ts-expect-error antd form validate
     await formRef.value?.validate?.();
 
     const payload: any = { ...editingData.value };
@@ -218,7 +216,7 @@ async function handleStatusChange(record: GroupConfig, checked: boolean) {
     }
     message.success('状态更新成功');
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('状态更新失败');
     // Revert the switch state
     record.groupStatus = !checked;

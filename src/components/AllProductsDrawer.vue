@@ -75,6 +75,7 @@
   </template>
   
   <script setup lang="ts">
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   import { ref, computed, watch, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { RECENT_VISITED_PRODUCTS, FAVORITE_PRODUCTS } from '@/utils/constant'
@@ -87,6 +88,7 @@
     [key: string]: any
   }
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const props = defineProps({
     open: Boolean
   })
@@ -216,7 +218,7 @@
   </script>
   
   <style scoped>
-  .all-products-drawer { background: #fff; }
+  .all-products-drawer { background: var(--bg-color); }
   .drawer-search { padding: 16px 24px; }
   .drawer-section { padding: 0 24px 16px 24px; }
   .section-title { font-weight: bold; margin-bottom: 8px; }
@@ -227,8 +229,8 @@
     padding: 0 24px;
   }
   .product-group {
-    background: #fafbfc;
-    border-radius: 8px;
+    background: var(--layout-body-background);
+    border-radius: var(--radius-lg);
     padding: 12px 16px 8px 16px;
     min-width: 180px;
     box-sizing: border-box;
@@ -236,7 +238,7 @@
     flex-direction: column;
   }
   .group-title {
-    color: #1890ff;
+    color: var(--primary-color);
     font-weight: bold;
     margin-bottom: 8px;
     font-size: 15px;
@@ -254,7 +256,7 @@
     min-height: 32px;
   }
   .product-item :is(a) {
-    color: #222;
+    color: var(--text-color);
     cursor: pointer;
     flex: 1;
     white-space: nowrap;
@@ -264,18 +266,18 @@
   .star {
     margin-left: 8px;
     font-size: 18px;
-    color: #faad14;
+    color: var(--color-warning);
     cursor: pointer;
     transition: color 0.2s;
     flex-shrink: 0;
   }
   .star:hover {
-    color: #fadb14;
+    color: var(--color-warning);
   }
   .all-products-btn {
     width: 40px;
     height: 40px;
-    background: #fff;
+    background: var(--bg-color);
     border-radius: 8px 8px 0 0;
     display: flex;
     align-items: center;
@@ -285,15 +287,15 @@
   }
   .all-products-btn.active,
   .all-products-btn:hover {
-    background: #1677ff;
+    background: var(--primary-color);
   }
   .all-products-btn .icon-x {
-    color: #1677ff;
+    color: var(--primary-color);
     font-size: 24px;
     transition: color 0.2s;
   }
   .all-products-btn.active .icon-x,
   .all-products-btn:hover .icon-x {
-    color: #fff;
+    color: var(--bg-color);
   }
   </style>

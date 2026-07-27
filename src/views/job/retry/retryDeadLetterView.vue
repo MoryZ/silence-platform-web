@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, computed, onMounted, watch, watchEffect, nextTick } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { $t } from '@/locales';
@@ -189,13 +190,16 @@ async function getData() {
       }
     }
     
+    // eslint-disable-next-line no-console
     console.log('发送API请求，参数:', params);
     const response = await fetchGetRetryDeadLetterPageList(params);
+    // eslint-disable-next-line no-console
     console.log('API响应:', response);
     
     if (response) {
       data.value = response.data || [];
       total.value = response.total || 0;
+      // eslint-disable-next-line no-console
       console.log('设置数据:', { data: data.value, total: total.value });
     }
   } catch (error) {
@@ -324,7 +328,7 @@ async function handleRollback(record: DeadLetter) {
         });
         message.success($t('common.rollbackSuccess'));
         getData();
-      } catch (error) {
+      } catch {
         message.error('回滚失败');
       }
     }
@@ -348,7 +352,7 @@ async function handleViewDetail(record: DeadLetter) {
     }
     
     detailVisible.value = true;
-  } catch (error) {
+  } catch {
     message.error('获取详情失败');
   }
 }
@@ -390,7 +394,7 @@ async function loadSceneNameOptions(groupName?: string) {
     } else {
       sceneNameOptions.value = [];
     }
-  } catch (error) {
+  } catch {
     sceneNameOptions.value = [];
   }
 }

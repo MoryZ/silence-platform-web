@@ -6,9 +6,9 @@ import { fetchNodeRetry, fetchNodeStop } from '@/api/job/workflow';
 import { $t } from '@/locales';
 import { useWorkflowStore } from '@/stores/workflow';
 import LabelList from '@/components/common/label-list.vue';
-import TaskDrawer from '../drawer/task-drawer.vue';
-import TaskDetail from '../detail/task-detail.vue';
-import DetailCard from '../common/detail-card.vue';
+import TaskDrawer from '@/components/workflow/modules/drawer/task-drawer.vue';
+import TaskDetail from '@/components/workflow/modules/detail/task-detail.vue';
+import DetailCard from '@/components/workflow/modules/common/detail-card.vue';
 import AddNode from './add-node.vue';
 
 defineOptions({

@@ -169,7 +169,7 @@ const handleComponentSelect = (component: ConfigComponent) => {
 
 :deep(.system-component-selector-modal .ant-modal-content) {
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -224,7 +224,7 @@ const handleComponentSelect = (component: ConfigComponent) => {
 .close-icon:hover {
   color: #333;
   background: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .component-filter {
@@ -265,7 +265,7 @@ const handleComponentSelect = (component: ConfigComponent) => {
 .system-card, .component-card {
   background: #fff;
   border: 1px solid #d9d9d9;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s;

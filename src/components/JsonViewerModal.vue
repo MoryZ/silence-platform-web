@@ -56,6 +56,7 @@ const emit = defineEmits<{
 const contentRef = ref<HTMLElement | null>(null);
 const isFormatted = ref(true);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const parsedJson = ref<any>(null);
 const isJson = ref(false);
 

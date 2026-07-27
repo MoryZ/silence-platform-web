@@ -1,0 +1,72 @@
+// ===========================================================================
+// 两层 CSS 变量架构（第十批：全量合并文档化）
+// ===========================================================================
+//
+// 本项目存在两套 CSS 变量注入系统，各司其职、互补而非竞争：
+//
+// 【System A — stores/app.ts】布局 / 菜单 / 背景色（直接值格式）
+//   - 注入方式: root.style.setProperty() (inline style)
+//   - 值格式:   hex (#141414) 或 rgba() — 可直接用于 color: var(--xxx)
+//   - 暗色模式: data-theme='dark' 属性 + .dark 类（第十批同步）
+//   - 静态 fallback: main.css :root / :root[data-theme='dark']
+//   - 变量: --bg-color --text-color --border-color --component-background
+//           --menu-* --layout-* (共 14 个)
+//
+// 【System B — stores/theme/】色板 / Naive UI / 语义色（RGB 三元组格式）
+//   - 注入方式: <style id="theme-vars"> 标签 (:root + html.dark)
+//   - 值格式:   'r g b' 三元组 (如 '22 119 255') — 用于 rgb(var(--xxx))
+//               和 rgba(var(--xxx), alpha) 透明度语法
+//   - 暗色模式: html.dark 类 (toggleCssDarkMode)
+//   - 变量: --primary-color --info-color --success-color ...
+//           --primary-50-color ~ --primary-950-color (色阶)
+//           --container-bg-color --base-text-color --layout-bg-color
+//           --header-box-shadow --sider-box-shadow --tab-box-shadow
+//
+// 【命名对照】两套系统中语义相同但命名不同的变量：
+//   System A                    System B                    说明
+//   --component-background  ↔   --container-bg-color        卡片/面板背景
+//   --text-color            ↔   --base-text-color           基础文字色
+//   --layout-body-background ↔  --layout-bg-color           布局层背景
+//
+// 注意：不能简单合并命名，因为值格式不同（直接值 vs RGB 三元组）。
+//       选用规则：
+//   - 需要 rgba(var(--xxx), 0.1) 透明度 → 用 System B
+//   - 直接 color: var(--xxx)       → 用 System A（更简洁）
+//   - 色阶（hover/active 状态）    → 用 System B（有 50-950 色阶）
+//
+// ===========================================================================
+
+// ========== System A: 布局/菜单/背景色（直接值，app.ts 注入） ==========
+$bg-color: var(--bg-color);
+$component-bg: var(--component-background);
+$text-color: var(--text-color);
+$border-color: var(--border-color);
+
+// ========== 主色与菜单 ==========
+$primary-color: var(--primary-color);
+$menu-bg: var(--menu-bg);
+$menu-item-color: var(--menu-item-color);
+$menu-highlight-color: var(--menu-highlight-color);
+$menu-item-active-bg: var(--menu-item-active-bg);
+$menu-item-hover-bg: var(--menu-item-hover-bg);
+
+// ========== 布局层 ==========
+$layout-body-bg: var(--layout-body-background);
+$layout-header-bg: var(--layout-header-background);
+$layout-sider-bg: var(--layout-sider-background);
+$layout-trigger-bg: var(--layout-trigger-background);
+$layout-trigger-color: var(--layout-trigger-color);
+
+// ========== 业务色（保留不变） ==========
+$color-success: #52c41a;
+$color-warning: #faad14;
+$color-error: #ff4d4f;
+$color-purple: #722ed1;
+
+// ========== 圆角语义化（第六批新增） ==========
+// CSS 变量本体在 src/assets/main.css 的 :root 中定义（全局生效）
+// 这里只提供 SCSS 变量别名，便于在 SCSS 块中 @use
+$radius-sm: var(--radius-sm);
+$radius-md: var(--radius-md);
+$radius-lg: var(--radius-lg);
+$radius-pill: var(--radius-pill);

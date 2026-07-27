@@ -1,25 +1,22 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import { getJobBatchPage, findById, stopJobBatch, retryJobBatch, batchDeleteJobBatch } from '@/api/job/job-batch';
+import { getJobBatchPage, stopJobBatch, retryJobBatch, batchDeleteJobBatch } from '@/api/job/job-batch';
 import type { JobBatch, JobBatchSearchParams } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
-import { Checkbox as ACheckbox } from 'ant-design-vue';
 import ColumnSettings from '@/components/ColumnSettings.vue';
 import { getJobTaskPage } from '@/api/job/job-task';
-import { taskBatchStatusRecord, taskBatchStatusRecordOptions, operationReasonRecord, operationReasonOptions, taskBatchStatusEnum, jobOperationReasonEnum } from '@/constants/business';
+import { taskBatchStatusRecordOptions, taskBatchStatusEnum, jobOperationReasonEnum } from '@/constants/business';
 // 直接使用中文文案，避免未配置的国际化key展示在界面
 import { h, resolveComponent } from 'vue';
 import { $t } from '@/locales';
-import DetailDrawer from '@/components/DetailDrawer.vue';
 import { DownOutlined } from '@ant-design/icons-vue';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, StopOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import JsonViewerModal from '@/components/JsonViewerModal.vue';
 import LogDetailModal from '@/components/LogDetailModal.vue';
 import type { JobMessage } from '@/types/websocket';
-import dayjs from 'dayjs';
 
 const loading = ref(false);
 const data = ref<JobBatch[]>([]);
@@ -103,16 +100,21 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
     dataIndex: 'id', width: 100, fixed: 'left',
     customRender: ({ record, index }: { record: any; index: number }) => {
       const idText = (record && (record.id ?? record.batchId ?? record.jobBatchId)) ?? (index + 1);
-      return h('a', { style: 'color:#1677ff;cursor:pointer;', onClick: () => handleIdDetail(record), title: '点击ID查看详情' }, String(idText));
+      return h('a', { style: 'color:var(--primary-color);cursor:pointer;', onClick: () => handleIdDetail(record), title: '点击ID查看详情' }, String(idText));
     }
   },
   { title: '组名称', dataIndex: 'groupName' },
   { title: '任务类型', dataIndex: 'taskType', customRender: ({ record }: { record: any }) => {
       const map: Record<number, { label: string; color: string }> = {
+        // eslint-disable-next-line no-restricted-syntax
         1: { label: '集群', color: '#52c41a' },
+        // eslint-disable-next-line no-restricted-syntax
         2: { label: '广播', color: '#1677ff' },
+        // eslint-disable-next-line no-restricted-syntax
         3: { label: '静态分片', color: '#722ed1' },
+        // eslint-disable-next-line no-restricted-syntax
         4: { label: 'Map', color: '#13c2c2' },
+        // eslint-disable-next-line no-restricted-syntax
         5: { label: 'MapReduce', color: '#2f54eb' }
       };
       const info = map[record.taskType];
@@ -160,8 +162,11 @@ const allColumns = ref<Array<Record<string, any>>>(buildColumns([
   },
   { title: '执行器类型', dataIndex: 'executorType', customRender: ({ record }: { record: any }) => {
       const map: Record<number, { label: string; color: string }> = {
+        // eslint-disable-next-line no-restricted-syntax
         1: { label: 'HTTP', color: '#1677ff' },
+        // eslint-disable-next-line no-restricted-syntax
         2: { label: 'GRPC', color: '#52c41a' },
+        // eslint-disable-next-line no-restricted-syntax
         3: { label: 'Dubbo', color: '#722ed1' }
       };
       const info = map[record.executorType];
@@ -214,17 +219,6 @@ const logRecord = ref<Record<string, any> | null>(null);
 const logModalLoading = ref(false);
 const parsedLogList = ref<JobMessage[]>([]);
 
-// 详情抽屉列配置
-const detailColumns = [
-  { title: '组名称', dataIndex: 'groupName' },
-  { title: '任务名称', dataIndex: 'jobName' },
-  { title: '状态', dataIndex: 'taskBatchStatus', type: 'enum', enumMap: taskBatchStatusEnum },
-  { title: '开始执行时间', dataIndex: 'updatedDate', type: 'date' },
-  { title: '执行器类型', dataIndex: 'executorType', type: 'enum', enumMap: { 1: { label: 'Java', color: 'blue' }, 2: { label: 'Python', color: 'green' } } },
-  { title: '执行器名称', dataIndex: 'executorInfo' },
-  { title: '创建时间', dataIndex: 'createdDate', type: 'date' }
-];
-
 // 日志详情 - 列与数据
 const logLoading = ref(false);
 const logStatusFilter = ref<number | undefined>(undefined);
@@ -233,10 +227,15 @@ const logData = ref<any[]>([]);
 
 // 日志状态枚举（示例编码：运行中=2、成功=3、失败=4、停止=5、取消=6，按你的后端调整）
 const logStatusEnum: Record<number, { label: string; color: string }> = {
+  // eslint-disable-next-line no-restricted-syntax
   2: { label: '运行中', color: '#1677ff' },
+  // eslint-disable-next-line no-restricted-syntax
   3: { label: '处理成功', color: '#52c41a' },
+  // eslint-disable-next-line no-restricted-syntax
   4: { label: '处理失败', color: '#ff4d4f' },
+  // eslint-disable-next-line no-restricted-syntax
   5: { label: '任务停止', color: '#8c8c8c' },
+  // eslint-disable-next-line no-restricted-syntax
   6: { label: '取消', color: '#fa8c16' }
 };
 
@@ -279,7 +278,7 @@ const logColumns = [
     customRender: ({ record }: { record: any }) => {
       if (!record.args) return '-';
       return h('a', { 
-        style: 'color:#1677ff;cursor:pointer;', 
+        style: 'color:var(--primary-color);cursor:pointer;', 
         onClick: (e: Event) => {
           e.stopPropagation();
           handleViewArgs(record);
@@ -294,7 +293,7 @@ const logColumns = [
     customRender: ({ record }: { record: any }) => {
       if (!record.result) return '-';
       return h('a', { 
-        style: 'color:#1677ff;cursor:pointer;', 
+        style: 'color:var(--primary-color);cursor:pointer;', 
         onClick: (e: Event) => {
           e.stopPropagation();
           handleViewResult(record);
@@ -391,11 +390,6 @@ async function fetchLogList() {
   }
 }
 
-function handleLogSearch() {
-  logPagination.current = 1;
-  fetchLogList();
-}
-
 // 查看日志内容
 function handleViewLogContent(record: Record<string, any>) {
   logRecord.value = record;
@@ -459,12 +453,6 @@ function handleIdDetail(record: Record<string, any>) {
   logStatusFilter.value = undefined;
   logPagination.current = 1;
   fetchLogList();
-}
-
-function statusStyle(v: number) {
-  const info = (taskBatchStatusEnum as any)[v];
-  if (!info) return '';
-  return `background:#fff;border-color:${info.color};color:${info.color}`;
 }
 
 // 获取操作原因标签
@@ -576,7 +564,7 @@ async function fetchData() {
       data.value = records;
       pagination.total = Number(res.total ?? records.length ?? 0);
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {
@@ -628,7 +616,7 @@ async function handleRetry(record: JobBatch) {
     await retryJobBatch(String(record.id));
     message.success('重试成功');
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('重试失败');
   }
 }
@@ -638,7 +626,7 @@ async function handleStop(record: JobBatch) {
     await stopJobBatch(String(record.id));
     message.success('停止成功');
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('停止失败');
   }
 }
@@ -648,31 +636,9 @@ async function handleDelete(ids: string[]) {
     await batchDeleteJobBatch(ids);
     message.success('删除成功');
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('删除失败');
   }
-}
-
-function onCheckColumn(key: string, checked: boolean) {
-  if (checked) {
-    if (!checkedKeys.value.includes(key)) checkedKeys.value.push(key);
-  } else {
-    checkedKeys.value = checkedKeys.value.filter((k: string) => k !== key);
-  }
-}
-
-function getStatusColor(status: number) {
-  const colorMap: Record<number, string> = {
-    1: 'blue',    // waiting
-    2: 'processing', // running
-    3: 'success', // success
-    4: 'error',   // fail
-    5: 'default', // stop
-    6: 'default', // cancel
-    98: 'warning', // decisionFailed
-    99: 'default'  // skip
-  };
-  return colorMap[status] || 'default';
 }
 
 onMounted(() => {
@@ -887,7 +853,7 @@ onMounted(() => {
 
 .table-container {
   background: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -949,7 +915,7 @@ onMounted(() => {
   margin-bottom: 16px;
   padding: 12px 16px;
   background: #fafafa;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
 }
 
 .toolbar-left {
@@ -1028,7 +994,7 @@ onMounted(() => {
 
 /* 信息卡片 */
 .info-card {
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: none;
 }

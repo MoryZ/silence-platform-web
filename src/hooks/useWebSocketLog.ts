@@ -1,4 +1,4 @@
-import { ref, onUnmounted, computed } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import type { JobMessage, WebSocketStatus } from '@/types/websocket';
 
 export interface UseWebSocketLogOptions {
@@ -22,8 +22,8 @@ function generateSid(): string {
 }
 
 export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSocketLogReturn {
-  const maxRetries = options.maxRetries ?? 3;
-  const retryInterval = options.retryInterval ?? 1000;
+  const _maxRetries = options.maxRetries ?? 3;
+  const _retryInterval = options.retryInterval ?? 1000;
   const onError = options.onError;
 
   const logList = ref<JobMessage[]>([]);
@@ -33,6 +33,7 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
 
   const updateStatus = (s: WebSocketStatus) => {
     status.value = s;
+    // eslint-disable-next-line no-console
     console.log('[WS] Status:', s);
   };
 
@@ -40,7 +41,9 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
     const sid = generateSid();
     const url = `ws://127.0.0.1:8098/websocket?sid=${sid}&scene=JOB_LOG_SCENE`;
     
+    // eslint-disable-next-line no-console
     console.log('[WS] Connecting to:', url);
+    // eslint-disable-next-line no-console
     console.log('[WS] taskBatchId:', taskBatchId, 'taskId:', taskId);
     
     // 关闭旧连接
@@ -56,6 +59,7 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
       ws = new WebSocket(url);
       
       ws.onopen = () => {
+        // eslint-disable-next-line no-console
         console.log('[WS] Connected!');
         updateStatus('connected');
         
@@ -64,11 +68,13 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
           taskBatchId: taskBatchId,
           taskId: taskId
         });
+        // eslint-disable-next-line no-console
         console.log('[WS] Sending:', msg);
         ws?.send(msg);
       };
 
       ws.onmessage = (event) => {
+        // eslint-disable-next-line no-console
         console.log('[WS] Received:', event.data);
         
         const data = event.data.trim();
@@ -76,6 +82,7 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
         // END 信号
         if (data === '"END"' || data === 'END') {
           finished.value = true;
+          // eslint-disable-next-line no-console
           console.log('[WS] Finished');
           return;
         }
@@ -83,6 +90,7 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
         // 解析 JSON 日志
         try {
           const parsed = JSON.parse(data);
+          // eslint-disable-next-line no-console
           console.log('[WS] Parsed:', parsed);
           
           // 检查是否有日志字段
@@ -100,9 +108,11 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
               throwable: parsed.throwable || ''
             };
             logList.value.push(msg);
+            // eslint-disable-next-line no-console
             console.log('[WS] Added to list, total:', logList.value.length);
           }
-        } catch (e) {
+        } catch {
+          // eslint-disable-next-line no-console
           console.log('[WS] Not JSON or invalid:', data);
         }
       };
@@ -114,6 +124,7 @@ export function useWebSocketLog(options: UseWebSocketLogOptions = {}): UseWebSoc
       };
 
       ws.onclose = () => {
+        // eslint-disable-next-line no-console
         console.log('[WS] Closed');
         updateStatus('disconnected');
       };

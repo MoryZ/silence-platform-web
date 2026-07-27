@@ -1,14 +1,11 @@
 import { mqRequest as request } from '@/utils/request';
 import type {
   TopicType,
-  TopicConfig,
   TopicStats,
   TopicRouteData,
   CreateTopicRequest,
   UpdateTopicRequest,
-  TopicConsumerInfo,
   TopicConsumerGroupInfo,
-  QueueStatInfo,
   TopicConfigInfo,
   MessageRequest,
   GroupList,

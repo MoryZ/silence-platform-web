@@ -58,7 +58,7 @@ const save = async () => {
     await formRef.value?.validate();
     close();
     emit('save', form.value);
-  } catch (error) {
+  } catch {
     message.warning('请检查表单信息');
   }
 };

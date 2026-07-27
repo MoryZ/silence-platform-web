@@ -4,7 +4,7 @@ export const themeSettings: any = {
     grayscale: false,
     colourWeakness: false,
     recommendColor: false,
-    themeColor: '#1366ff',
+    themeColor: '#1677ff',
     otherColor: {
       info: '#2080f0',
       success: '#52c41a',

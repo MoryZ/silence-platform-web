@@ -11,7 +11,7 @@ import { fetchAllGroupName } from '@/api/job/dashboard';
 import { fetchGetNotifyConfigSystemTaskTypeList } from '@/api/job/notify';
 import { fetchSystemUser } from '@/api/job/systemUser';
 import { useWorkflowStore } from '@/stores/workflow';
-import { isNotNull, parseContent, stringToContent, type Option } from '@/utils/common';
+import { isNotNull, parseContent, stringToContent } from '@/utils/common';
 import { $t } from '@/locales';
 import EditableInput from '@/components/common/editable-input.vue';
 import JobTriggerInterval from '@/components/common/job-trigger-interval.vue';
@@ -236,11 +236,12 @@ const save = async () => {
     await formRef.value?.validate();
     normalizeGroupNameToLabel();
     const wfContext = JSON.stringify(parseContent(form.value.wfContexts) || {});
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { wfContexts, ...payload } = form.value;
     payload.wfContext = wfContext;
     close();
     emit('save', payload);
-  } catch (error) {
+  } catch {
     message.warning('请检查表单信息');
   }
 };

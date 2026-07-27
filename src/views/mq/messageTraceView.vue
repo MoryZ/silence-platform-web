@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick, defineAsyncComponent } from 'vue'
-import type { MessageTraceView } from '@/types/mq/messageTrace'
-import { viewTraceMessage, viewTraceMessageDetail, viewMessageTraceGraph } from '@/api/mq/messageTrace'
+import { ref, onMounted, watch, nextTick, defineAsyncComponent } from 'vue'
+import { viewMessageTraceGraph } from '@/api/mq/messageTrace'
 import { queryTopicList } from '@/api/mq/topic'
 import { findByKeyAndTopic, viewMessage } from '@/api/mq/message'
 import { message } from 'ant-design-vue'
@@ -29,12 +28,6 @@ const VChart = defineAsyncComponent(() => import('vue-echarts'))
 const tabsReady = ref(false)
 const activeTab = ref<'messageKey' | 'messageId'>('messageKey')
 const topics = ref<string[]>([])
-const consumerGroups = ref<string[]>([])
-
-const traces = ref<MessageTraceView[]>([])
-const currentPage = ref(1)
-const pageSize = ref(10)
-const totalCount = ref(0)
 
 const searchForm = ref({
   topic: '',
@@ -79,7 +72,7 @@ const loadTopics = async () => {
       .map((item: any) => (typeof item === 'string' ? item : (item?.topicName || item?.topic || '')))
       .filter(Boolean)
       .sort()
-  } catch (e) {
+  } catch {
     message.error('获取Topic失败')
   }
 }
@@ -106,7 +99,7 @@ const search = async () => {
       const result = await viewMessage(searchForm.value.messageId, searchForm.value.topic)
       messages.value = result && result.messageView ? [normalizeMessage(result.messageView)] : []
     }
-  } catch (e) {
+  } catch {
     message.error('查询失败')
   } finally {
     loading.value = false
@@ -131,7 +124,7 @@ const handleViewTraceDetail = async (record: any) => {
 
     showDetailDialog.value = true
     await nextTick()
-  } catch (e) {
+  } catch {
     message.error('获取轨迹详情失败')
   }
 }
@@ -195,6 +188,7 @@ function buildTraceGraphOption(graphRes: any) {
         type: 'bar',
         data: [{
           value: trace.costTime,
+          // eslint-disable-next-line no-restricted-syntax
           itemStyle: { color: '#7ed957' },
           label: {
             show: true,

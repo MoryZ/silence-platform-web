@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const nodeExpression = ref('');
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const theme = ref({
   '.cm-line': {
     fontSize: '18px'

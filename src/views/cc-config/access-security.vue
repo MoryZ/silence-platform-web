@@ -401,7 +401,9 @@ const handleSearch = () => {
     }
   });
 
+  // eslint-disable-next-line no-console
   console.log('搜索参数:', searchParams);
+  // eslint-disable-next-line no-console
   console.log('searchForm.enabled 原始值:', searchForm.enabled);
 
   fetchData(searchParams);
@@ -539,32 +541,11 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use './styles/shared' as *;
+
 .access-security {
   padding: 24px;
-
-  :deep(.ant-btn-link) {
-    padding: 0 4px;
-
-    &[status='danger'] {
-      color: #ff4d4f;
-
-      &:hover {
-        color: #ff7875;
-      }
-    }
-  }
-
-  :deep(.ant-switch) {
-    &.ant-switch-checked {
-      background-color: #1677ff !important;
-      border-color: #1677ff !important;
-    }
-
-    &:not(.ant-switch-checked) {
-      background-color: #d9d9d9 !important;
-      border-color: #d9d9d9 !important;
-    }
-  }
+  @include cc-config-card-shared;
 }
 </style>
 

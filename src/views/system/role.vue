@@ -162,14 +162,11 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { message, Modal } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import { 
   PlusOutlined,
   CheckOutlined,
   CloseOutlined,
-  PlusSquareOutlined,
-  MinusSquareOutlined,
-  ApartmentOutlined
 } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -190,7 +187,7 @@ import {
   enableRole
 } from '@/api/auth/role';
 import { getMenuTree } from '@/api/auth/menu';
-import type { Role, RoleParams, Menu, MenuResponse } from '@/types/auth';
+import type { Role, RoleParams, Menu } from '@/types/auth';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import { ROLE_PERMISSIONS } from '@/utils/permissionConstants';
@@ -414,6 +411,7 @@ const handleCheck = (checkedKeys: string[], e: any) => {
   };
   
   // 递归获取所有父节点
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getAllParents = (permissions: any[], childKey: string): string[] => {
     const parents: string[] = [];
     for (const permission of permissions) {
@@ -465,6 +463,7 @@ const handleSelect = (selectedKeys: string[], e: any) => {
 };
 
 // 获取所有子节点的key
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getChildKeys = (node: any): string[] => {
   const keys: string[] = [];
   const traverse = (node: any) => {
@@ -480,6 +479,7 @@ const getChildKeys = (node: any): string[] => {
 };
 
 // 查找父节点
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const findParentNode = (targetNode: any, tree: any[]): any => {
   for (const node of tree) {
     if (node.children?.length) {
@@ -624,6 +624,7 @@ const handlePermission = async (record: Role) => {
     checkedPermissions.value = permissionIds.map((id: number) => id.toString());
     
     // 检查哪些权限在树中存在
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const existingKeys = permissionIds.map((id: number) => id.toString()).filter((key: string) => 
       allPermissionKeys.value.includes(key)
     );
@@ -754,7 +755,7 @@ onMounted(async () => {
     margin-bottom: 12px;
     padding: 12px;
     background-color: #f8f9fa;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
     .ant-btn {
@@ -762,7 +763,7 @@ onMounted(async () => {
       align-items: center;
       gap: 4px;
       padding: 4px 12px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       transition: all 0.3s;
 
       .anticon {
@@ -775,11 +776,12 @@ onMounted(async () => {
       }
 
       &.ant-btn-primary {
-        background: linear-gradient(45deg, #1890ff, #40a9ff);
+        background: var(--primary-color);
         border: none;
+        border-radius: var(--radius-md);
 
         &:hover {
-          background: linear-gradient(45deg, #40a9ff, #69c0ff);
+          background: #4096ff;
         }
       }
     }
@@ -791,7 +793,7 @@ onMounted(async () => {
     padding: 16px;
     background: #fff;
     border: 1px solid #e8e8e8;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
     &::-webkit-scrollbar {
@@ -819,8 +821,8 @@ onMounted(async () => {
       .ant-tree-treenode {
         padding: 6px 0;
         transition: all 0.3s;
-        border-radius: 4px;
-        
+        border-radius: var(--radius-sm);
+
         &:hover {
           background-color: #f0f5ff;
         }
@@ -850,7 +852,7 @@ onMounted(async () => {
 
         .anticon {
           font-size: 16px;
-          color: #1890ff;
+          color: var(--primary-color);
           transition: all 0.3s;
         }
 
@@ -866,18 +868,18 @@ onMounted(async () => {
 
         &-checked {
           .ant-tree-checkbox-inner {
-            background: #1890ff;
-            border-color: #1890ff;
+            background: var(--primary-color);
+            border-color: var(--primary-color);
           }
         }
 
         &-indeterminate {
           .ant-tree-checkbox-inner {
             background: #e6f7ff;
-            border-color: #1890ff;
+            border-color: var(--primary-color);
 
             &::after {
-              background: #1890ff;
+              background: var(--primary-color);
             }
           }
         }
@@ -890,7 +892,7 @@ onMounted(async () => {
         transition: all 0.3s;
 
         .ant-tree-switcher-icon {
-          color: #1890ff;
+          color: var(--primary-color);
           font-size: 14px;
         }
       }
@@ -904,8 +906,8 @@ onMounted(async () => {
   // 状态切换开关样式优化
   :deep(.ant-switch) {
     &.ant-switch-checked {
-      background-color: #1677ff !important;
-      border-color: #1677ff !important;
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
       
       .ant-switch-handle {
         &::before {

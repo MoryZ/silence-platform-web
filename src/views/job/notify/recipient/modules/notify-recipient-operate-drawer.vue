@@ -104,6 +104,7 @@ async function handleSubmit() {
     try {
       await fetchAddNotifyRecipient({ recipientName, notifyAttribute, notifyType, description });
       // 简化的成功提示
+      // eslint-disable-next-line no-console
       console.log('添加成功');
     } catch (error) {
       console.error('添加失败:', error);
@@ -116,6 +117,7 @@ async function handleSubmit() {
     try {
       await fetchEditNotifyRecipient({ id, recipientName, notifyAttribute, notifyType, description });
       // 简化的成功提示
+      // eslint-disable-next-line no-console
       console.log('更新成功');
     } catch (error) {
       console.error('更新失败:', error);

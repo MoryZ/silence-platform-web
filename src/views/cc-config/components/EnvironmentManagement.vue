@@ -49,9 +49,9 @@
 import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
-import { getConfigEnvironments, createConfigEnvironment, deleteConfigEnvironment } from '../../../api/config/configEnvironment';
+import { getConfigEnvironments, createConfigEnvironment, deleteConfigEnvironment } from '@/api/config/configEnvironment';
 import type { ConfigEnvironment } from '@/types/config';
-import { useEnvStore } from '../../../stores/env';
+import { useEnvStore } from '@/stores/env';
 
 interface Props {
   selectedComponents: number[];
@@ -67,6 +67,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const envStore = useEnvStore();
 
 // 环境标签页相关
@@ -165,7 +166,7 @@ const fetchEnvironments = async () => {
       emit('update:environments', []);
       emit('update:activeTabKey', '');
     }
-  } catch (error) {
+  } catch {
     message.error('获取环境列表失败');
     environments.value = [];
     activeTabKey.value = '';

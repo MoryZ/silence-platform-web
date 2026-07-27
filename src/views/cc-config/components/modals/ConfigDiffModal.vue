@@ -170,8 +170,8 @@ onUnmounted(() => {
     margin-bottom: 16px;
     padding: 12px;
     background-color: #f5f5f5;
-    border-radius: 4px;
-    
+    border-radius: var(--radius-sm);
+
     .compare-info {
       display: flex;
       gap: 24px;
@@ -186,7 +186,7 @@ onUnmounted(() => {
         }
         
         .value {
-          color: #1890ff;
+          color: var(--primary-color);
         }
       }
     }
@@ -202,9 +202,9 @@ onUnmounted(() => {
       display: flex;
       flex-direction: column;
       border: 1px solid #d9d9d9;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      
+
       .editor-title {
         padding: 8px 12px;
         background-color: #fafafa;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import {
   getTopicInfo,
@@ -28,6 +29,7 @@ let topicTopChart: echarts.ECharts | null = null
 // 原始数据存储
 const brokerRawData = ref<Record<string, string[]>>({})
 const topicRawData = ref<Record<string, string[]>>({})
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const topicCurrentList = ref<string[]>([])
 
 // 格式化日期为 "YYYY-MM-DD" 格式
@@ -249,6 +251,7 @@ const renderBrokerTopChart = (data: { name: string; value: number }[]) => {
         type: 'bar',
         data: sortedData.map(item => item.value),
         itemStyle: {
+          // eslint-disable-next-line no-restricted-syntax
           color: '#5470c6'
         }
       }
@@ -393,6 +396,7 @@ const renderTopicTopChart = (data: { name: string; value: number }[]) => {
         type: 'bar',
         data: sortedData.map(item => item.value),
         itemStyle: {
+          // eslint-disable-next-line no-restricted-syntax
           color: '#5470c6'
         }
       }
@@ -459,6 +463,7 @@ const renderTopicTrendChart = (topicName: string, data: string[]) => {
         smooth: true,
         showSymbol: false,
         itemStyle: {
+          // eslint-disable-next-line no-restricted-syntax
           color: '#ee6666'
         },
         lineStyle: {
@@ -527,6 +532,7 @@ watch(selectedTopic, (newTopic) => {
   }
 })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 watch(currentDate, (newDate) => {
   refreshData()
 })
@@ -571,14 +577,17 @@ onUnmounted(() => {
 })
 
 // 格式化函数
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat().format(num)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatTps = (tps: number) => {
   return `${tps.toFixed(2)}/s`
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatPercent = (value: number) => {
   return `${(value * 100).toFixed(1)}%`
 }

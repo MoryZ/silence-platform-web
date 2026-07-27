@@ -1,5 +1,5 @@
 import { mqRequest as request } from '@/utils/request';
-import type { ClusterInfo, BrokerDetail, ClusterData, BrokerConfig } from '@/types/mq/clusterApi';
+import type { BrokerDetail, ClusterData } from '@/types/mq/clusterApi';
 
 // 获取集群列表及详细信息
 export const queryClusterList = async (): Promise<ClusterData> => {

@@ -1,0 +1,33 @@
+// cc-config 共享样式：所有 a-card 内的 link 按钮、switch 统一覆盖
+// 由 access-security.vue / cyberark-security.vue 等管理页使用
+//
+// 使用方式：
+//   <style lang="scss" scoped>
+//     @use './styles/shared' as *;
+//     .my-page { @include cc-config-card-shared; padding: 24px; }
+//   </style>
+@mixin cc-config-card-shared {
+  :deep(.ant-btn-link) {
+    padding: 0 4px;
+
+    &[status='danger'] {
+      color: #ff4d4f;
+
+      &:hover {
+        color: #ff7875;
+      }
+    }
+  }
+
+  :deep(.ant-switch) {
+    &.ant-switch-checked {
+      background-color: #1677ff !important;
+      border-color: #1677ff !important;
+    }
+
+    &:not(.ant-switch-checked) {
+      background-color: #d9d9d9 !important;
+      border-color: #d9d9d9 !important;
+    }
+  }
+}

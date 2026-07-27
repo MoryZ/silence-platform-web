@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { message, Modal, Tag } from 'ant-design-vue';
-import Draggable from 'vuedraggable';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import ColumnSettings from '@/components/ColumnSettings.vue';
@@ -35,15 +34,6 @@ const allColumns = ref([
 ]);
 const checkedKeys = ref(allColumns.value.filter(c => c.visible).map(c => c.key));
 const tableColumns = computed(() => allColumns.value.filter(col => checkedKeys.value.includes(col.key)));
-const columnSettingVisible = ref(false);
-
-function onCheckColumn(key: string, checked: boolean) {
-  if (checked) {
-    if (!checkedKeys.value.includes(key)) checkedKeys.value.push(key);
-  } else {
-    checkedKeys.value = checkedKeys.value.filter(k => k !== key);
-  }
-}
 
 // 选中与批量删除
 const selectedRowKeys = ref<number[]>([]);
@@ -68,7 +58,7 @@ async function handleBatchDelete() {
         message.success('批量删除成功');
         selectedRowKeys.value = [];
         fetchData();
-      } catch (e) {
+      } catch {
         message.error('删除失败');
       }
     }
@@ -112,7 +102,7 @@ async function handleDrawerSave() {
     }
     drawerVisible.value = false;
     fetchData();
-  } catch (e) {
+  } catch {
     message.error('操作失败');
   }
 }
@@ -130,7 +120,7 @@ function handleDelete(record: JobExecutor) {
         await deleteJobExecutor(record.id);
         message.success('删除成功');
         fetchData();
-      } catch (e) {
+      } catch {
         message.error('删除失败');
       }
     }
@@ -158,7 +148,7 @@ async function fetchData() {
       data.value = page.data || [];
       pagination.total = page.total || data.value.length;
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {

@@ -44,7 +44,7 @@ import { ref, watch, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import { createConfigItem } from '@/api/config/configItem';
-import { useConfigEditor } from '../composables/useConfigEditor';
+import { useConfigEditor } from '@/views/cc-config/components/composables/useConfigEditor';
 
 interface Props {
   open: boolean;

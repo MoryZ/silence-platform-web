@@ -290,6 +290,7 @@ watch(() => props.open, (newOpen) => {
 });
 
 // 设置表单初始值
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const setInitialValues = (namespaceId: string) => {
   // 同步配置时不需要设置初始命名空间
 };

@@ -229,7 +229,7 @@ async function getData() {
       data.value = response.data || [];
       total.value = response.total || 0;
     } 
-  } catch (error) {
+  } catch {
     message.error('获取数据失败');
   } finally {
     loading.value = false;

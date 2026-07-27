@@ -423,7 +423,7 @@ async function handleViewDetail(record: Retry) {
     }
     
     detailVisible.value = true;
-  } catch (error) {
+  } catch {
     message.error('获取详情失败');
   }
 }
@@ -565,6 +565,7 @@ function handleBatchAdd() {
 }
 
 // 更新重试状态
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function updateRetryTaskStatus(id: number, status: number) {
   try {
     await fetchUpdateRetryStatus({ id, retryStatus: status });

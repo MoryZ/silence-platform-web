@@ -90,21 +90,22 @@
 </template>
 
 <script lang="ts" setup>
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, watch, reactive, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
-import CommonPagination from '../../components/CommonPagination.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
 import { NOTICE_PERMISSIONS } from '@/utils/permissionConstants';
 import {
   getNotices,
   createNotice,
   markNoticeAsRead,
-} from '../../api/auth/notice';
-import { getUserList } from '../../api/auth/user';
+} from '@/api/auth/notice';
+import { getUserList } from '@/api/auth/user';
 import type { Notice, NoticeParams, User } from '@/types/auth';
 import dayjs from 'dayjs';
-import SearchPanel from '../../components/SearchPanel.vue';
+import SearchPanel from '@/components/SearchPanel.vue';
 import { hasPermission } from '@/utils/permissionCheck';
 
 const ensurePermission = (permission: string, actionName: string) => {
@@ -240,8 +241,10 @@ const fetchNotifications = async () => {
       params.content = searchParams.content;
     }
 
+    // eslint-disable-next-line no-console
     console.log('Fetching notifications with params:', params);
     const response = await getNotices(params as NoticeParams);
+    // eslint-disable-next-line no-console
     console.log('API response:', response);
     
     if (response?.data) {
@@ -268,6 +271,7 @@ const handlePaginationChange = (pageNo: number, pageSize: number) => {
 };
 
 // 处理状态变化
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleStatusChange = () => {
   pagination.value.current = 1;
   fetchNotifications();
@@ -490,7 +494,7 @@ onMounted(() => {
   font-weight: 600;
 }
 :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: #1677ff;
+  color: var(--primary-color);
 }
 .layout-footer {
   width: 100%;

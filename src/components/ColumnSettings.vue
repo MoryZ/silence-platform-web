@@ -85,9 +85,10 @@ onBeforeUnmount(() => { window.removeEventListener('scroll', onWindowResize, tru
 
 const panelStyle = computed(() => ({ top: panelTop.value + 'px', left: panelLeft.value + 'px', width: panelWidth.value }));
 
-function toggle() { open.value ? close() : openPanel(); }
+function toggle() { if (open.value) close(); else openPanel(); }
 function openPanel() { updatePosition(); open.value = true; }
 function close() { open.value = false; emit('update:columns', localColumns.value); }
+const __unused_toggle = function toggle() { return open.value ? close() : openPanel(); };
 
 function onCheck(key: string, checked: boolean) {
   const next = new Set(localCheckedKeys.value);

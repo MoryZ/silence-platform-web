@@ -7,6 +7,7 @@ import type { ProxyNode, ProxyConfig, ProxyStats, ProxyConnection } from '@/type
 const loading = ref(false)
 const proxyNodes = ref<ProxyNode[]>([])
 const proxyStats = ref<ProxyStats[]>([])
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const selectedProxy = ref('')
 const showConfigDialog = ref(false)
 const showConnectionsDialog = ref(false)
@@ -307,9 +308,11 @@ onUnmounted(() => {
         <a-table-column label="Last Heartbeat" :formatter="formatDate" />
         <a-table-column label="Requests" :formatter="formatNumber" />
       </a-table>
-      <span slot="footer" class="dialog-footer">
+      <template v-slot:footer>
+<span  class="dialog-footer">
         <a-button @click="showConnectionsDialog = false">Close</a-button>
       </span>
+</template>
     </a-dialog>
   </div>
 </template>

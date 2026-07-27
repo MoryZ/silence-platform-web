@@ -280,8 +280,10 @@ function formatDateTime(dateStr: string | null | undefined): string {
 
 // 获取操作原因颜色
 function getOperationReasonColor(reason: number | undefined): string {
+  // eslint-disable-next-line no-restricted-syntax
   if (reason === undefined || reason === null) return '#8c8c8c';
   const info = (jobOperationReasonEnum as any)[reason];
+  // eslint-disable-next-line no-restricted-syntax
   return info?.color || '#8c8c8c';
 }
 

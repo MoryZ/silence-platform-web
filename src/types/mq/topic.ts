@@ -1,5 +1,3 @@
-import { number } from "echarts"
-
 export interface TopicData {
   topic: string
   isSys: boolean

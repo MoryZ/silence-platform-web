@@ -8,6 +8,7 @@ import {
   DelayLevel,
   backOffRecord,
   blockStrategyRecord,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enableStatusNumberRecord,
   routeKeyRecord,
   cbTriggerTypeRecord
@@ -407,6 +408,7 @@ async function getData() {
     };
     
     const response: any = await fetchGetRetryScenePageList(params);
+    // eslint-disable-next-line no-console
     console.log('API响应:', response); // 添加调试日志
     
     // 处理不同的响应格式
@@ -593,12 +595,14 @@ function toggleDrawerSize() {
 }
 
 // 获取标签颜色
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getTagColor(value: number | undefined): string {
   if (value === undefined) return 'default';
   return tagColor(value);
 }
 
 // 计算触发间隔描述
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function maxRetryCountUpdate(maxRetryCount: number, backOff: number) {
   if (backOff !== 1) {
     return '';
@@ -636,10 +640,12 @@ onMounted(async () => {
   // 加载组选项
   try {
     const response = await getAllGroupConfigs();
+    // eslint-disable-next-line no-console
     console.log('API返回的完整响应:', response);
     
     // API返回的数据结构是 {code, message, data}
     const groups = response.data || response;
+    // eslint-disable-next-line no-console
     console.log('提取的组数据:', groups);
     
     // 确保groups是数组
@@ -650,6 +656,7 @@ onMounted(async () => {
     
     // API返回的数据已经是 {label, value} 格式，直接使用
     groupOptions.value = groups;
+    // eslint-disable-next-line no-console
     console.log('最终的组选项列表:', groupOptions.value);
   } catch (error) {
     console.error('加载组选项失败:', error);
@@ -1002,7 +1009,7 @@ watch(() => operateForm.value.cbTriggerType, (newType: number, oldType: number) 
                       <a-input :value="cbTriggerIntervalDisplay" readonly>
                         <template #suffix>
                           <a-tooltip title="延迟等级是参考RocketMQ的messageDelayLevel设计实现, 具体延迟时间如下:【10s, 15s, 30s, 35s, 40s, 50s, 1m, 2m, 4m, 6m, 8m, 10m, 20m, 40m, 1h, 2h, 3h, 4h, 5h, 6h, 7h, 8h, 9h, 10h, 11h, 12h】执行逻辑: 第一次执行间隔10s, 第二次执行间隔15s, 第三次执行间隔30s, 依次类推">
-                            <InfoCircleOutlined style="color: #1890ff; cursor: help;" />
+                            <InfoCircleOutlined style="color: #1677ff; cursor: help;" />
                           </a-tooltip>
                         </template>
                       </a-input>
@@ -1228,7 +1235,7 @@ watch(() => operateForm.value.cbTriggerType, (newType: number, oldType: number) 
 
 .cron-preview h4 {
   margin: 0 0 8px 0;
-  color: #1890ff;
+  color: #1677ff;
   font-size: 14px;
 }
 

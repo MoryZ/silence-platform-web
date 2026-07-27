@@ -19,7 +19,7 @@ export function getAllGroupConfigs() {
 }
 
 
-export function getAllGroupNameList(params?:GroupConfigSearchParams) {
+export function getAllGroupNameList(_params?:GroupConfigSearchParams) {
   return request.get<CommonSelectedVO[]>('/api/v1/groupConfigs');
 }
 

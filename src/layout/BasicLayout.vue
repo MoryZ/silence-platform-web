@@ -29,8 +29,8 @@ import LayoutHeader from './LayoutHeader.vue'
 import LayoutSider from './LayoutSider.vue'
 import LayoutContent from './LayoutContent.vue'
 import LayoutFooter from './LayoutFooter.vue'
-import AllProductsDrawer from '../components/AllProductsDrawer.vue'
-import SettingsDrawer from '../components/SettingsDrawer.vue'
+import AllProductsDrawer from '@/components/AllProductsDrawer.vue'
+import SettingsDrawer from '@/components/SettingsDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,6 +66,7 @@ const cachedViews = computed(() => {
   return ['Dashboard', ...extractComponentNames(menus)]
 })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getCurrentModuleByPath(path: string) {
   const allMenus = ls.get(MENUS)
   if (!allMenus || !Array.isArray(allMenus)) return null
@@ -201,6 +202,7 @@ function updateMenuList() {
 }
 
 // 清理菜单数据，移除重复项
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function cleanMenuData(menu: any): any {
   if (!menu) return menu
   
@@ -268,12 +270,12 @@ function onSelectModule(module: any) {
   flex: 1;
   padding: 24px;
   min-height: 0;
-  background: #f6fbfa;
+  background: var(--layout-body-background);
 }
 .layout-sider {
-  background: #ffffff;
+  background: var(--layout-sider-background);
   height: 100vh;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid var(--border-color);
 }
 .side-menu-container {
   height: 100%;

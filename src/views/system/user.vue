@@ -644,8 +644,8 @@ onMounted(() => {
   // 状态切换开关样式优化
   :deep(.ant-switch) {
     &.ant-switch-checked {
-      background-color: #1677ff !important;
-      border-color: #1677ff !important;
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
       
       .ant-switch-handle {
         &::before {

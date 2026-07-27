@@ -139,7 +139,7 @@ onMounted(() => {
 
 :deep(.namespace-selector-modal .ant-modal-content) {
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -190,7 +190,7 @@ onMounted(() => {
 .close-icon:hover {
   color: #333;
   background: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .namespace-options {
@@ -207,7 +207,7 @@ onMounted(() => {
   padding: 12px 16px;
   margin-bottom: 8px;
   border: 1px solid #d9d9d9;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s;
   font-size: 14px;

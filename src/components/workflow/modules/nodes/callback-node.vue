@@ -3,9 +3,9 @@ import { nextTick, ref, watch } from 'vue';
 import { contentTypeRecord, taskBatchStatusEnum } from '@/constants/business';
 import { useWorkflowStore } from '@/stores/workflow';
 import { $t } from '@/locales';
-import CallbackDrawer from '../drawer/callback-drawer.vue';
-import CallbackDetail from '../detail/callback-detail.vue';
-import DetailCard from '../common/detail-card.vue';
+import CallbackDrawer from '@/components/workflow/modules/drawer/callback-drawer.vue';
+import CallbackDetail from '@/components/workflow/modules/detail/callback-detail.vue';
+import DetailCard from '@/components/workflow/modules/common/detail-card.vue';
 import AddNode from './add-node.vue';
 
 defineOptions({
@@ -251,7 +251,7 @@ const getClass = (item: Workflow.ConditionNodeType) => {
 
 .header-border {
   margin: 20px 0;
-  border-left: #1366ff 5px solid;
+  border-left: var(--primary-color) 5px solid;
   font-size: medium;
   font-weight: bold;
 }

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { queryClusterList } from '@/api/mq/cluster';
-import type { ClusterData } from '@/types/mq/clusterApi';
 
 const clusterInfo = ref<string>('')
 

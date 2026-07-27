@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch, h, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryConsumerGroupList,
   queryTopicByConsumer,
   queryConsumerConfig,
@@ -13,7 +14,7 @@ import {
   refreshAllConsumerGroupList,
 } from '@/api/mq/consumer'
 import { queryClusterList } from '@/api/mq/cluster'
-import type { GroupConsumeInfo, ConsumerRunningInfo, ConsumerConnection, ConsumerConfigInfo } from '@/types/mq/consumer'
+import type { GroupConsumeInfo, ConsumerConnection, ConsumerConfigInfo } from '@/types/mq/consumer'
 import type { TopicConsumerInfo } from '@/types/mq/topicApi';
 
 // State
@@ -63,7 +64,6 @@ const brokerOptions = ref<string[]>([])
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(10)
-const totalCount = ref(0)
 
 const handlePageChange = (page: number) => {
   currentPage.value = page
@@ -82,9 +82,12 @@ const filteredConsumerGroups = computed(() => {
     if (!isSystemGroup && !isFIFOGroup && !filterNormal.value) return false
     return true
   })
-  totalCount.value = filtered.length
   return filtered
 })
+
+// totalCount 由 watch 同步赋值（避免 computed 副作用）
+const totalCount = ref(0)
+watch(filteredConsumerGroups, (val) => { totalCount.value = val.length })
 
 // Methods
 const refreshConsumerGroups = async () => {
@@ -393,7 +396,7 @@ const onClusterChange = (val: string[]) => {
             { title: 'consumerClient', dataIndex: 'clientInfo', key: 'clientInfo',
               customRender: ({ text }) => text
                 ? h('a', {
-                    style: 'color:#1890ff;cursor:pointer;',
+                    style: 'color:#1677ff;cursor:pointer;',
                     onClick: () => handleShowClientProps(text)
                   }, text)
                 : ''

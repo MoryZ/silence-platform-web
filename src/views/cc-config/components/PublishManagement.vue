@@ -184,12 +184,13 @@
 import { ref, nextTick, onUnmounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
-import { getConfigItems } from '../../../api/config/configItem';
+import { getConfigItems } from '@/api/config/configItem';
 import type { ConfigItem, ConfigEnvironment } from '@/types/config';
-import { bulkPublishConfig, publishConfig } from '../../../api/config/configPublish';
+import { bulkPublishConfig, publishConfig } from '@/api/config/configPublish';
 import dayjs from 'dayjs';
-import monaco from '../../../utils/monaco';
-import { analyzeChanges, getChangeTypeText, getChangeTypeColor } from '../../../utils/changeAnalyzer';
+import monaco from '@/utils/monaco';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { analyzeChanges, getChangeTypeText, getChangeTypeColor } from '@/utils/changeAnalyzer';
 
 interface Props {
   targetEnvironments: ConfigEnvironment[];
@@ -284,6 +285,7 @@ const selectedItemColumns = [
 
 // 打开发布弹窗
 const openPublishModal = async (record: ConfigItem) => {
+  // eslint-disable-next-line no-console
   console.log('打开发布弹窗，record:', {
     id: record.id,
     namespaceId: record.namespaceId,
@@ -386,7 +388,7 @@ const handleTargetEnvironmentChange = async (value: number) => {
       configEnvironmentId: value
     });
     targetConfigItems.value = response?.data || [];
-  } catch (error) {
+  } catch {
     message.error('获取配置项列表失败');
   }
 };
@@ -574,6 +576,7 @@ const initPublishCompareEditors = async () => {
   // 检查容器尺寸
   const historyRect = historyContentEditor.value.getBoundingClientRect();
   const currentRect = publishCurrentContentEditor.value.getBoundingClientRect();
+  // eslint-disable-next-line no-console
   console.log('容器尺寸:', {
     historyWidth: historyRect.width,
     historyHeight: historyRect.height,
@@ -609,6 +612,7 @@ const initPublishCompareEditors = async () => {
   const currentContent = currentPublishItem.value?.content || '';
   const oldContent = currentPublishItem.value?.oldContent || '';
 
+  // eslint-disable-next-line no-console
   console.log('初始化对比编辑器:', {
     itemId: currentPublishItem.value?.id,
     currentContentLength: currentContent.length,
@@ -649,10 +653,12 @@ const initPublishCompareEditors = async () => {
   setTimeout(() => {
     if (historyCompareEditor) {
       historyCompareEditor.layout();
+      // eslint-disable-next-line no-console
       console.log('历史编辑器布局已更新');
     }
     if (publishCurrentCompareEditor) {
       publishCurrentCompareEditor.layout();
+      // eslint-disable-next-line no-console
       console.log('当前编辑器布局已更新');
     }
   }, 100);

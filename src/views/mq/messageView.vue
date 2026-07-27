@@ -217,6 +217,7 @@ const resendByTrack = async (consumerGroup: string) => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const openSendDialog = () => {
   newMessage.value = {
     topic: searchForm.topic,
@@ -244,6 +245,7 @@ const handleSendMessage = async () => {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const resetForm = () => {
   searchForm.topic = ''
   searchForm.startTime = null
@@ -319,6 +321,7 @@ const formattedProperties = computed(() => {
   }))
 })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const messageTypes = [
   { label: '普通消息', value: 'NORMAL' },
   { label: '顺序消息', value: 'FIFO' },

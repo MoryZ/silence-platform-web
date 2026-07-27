@@ -165,18 +165,18 @@ import {
   createConfigSubsystem,
   updateConfigSubsystem,
   deleteConfigSubsystem,
-} from '../../api/config/configSubsystem';
+} from '@/api/config/configSubsystem';
 import {
   getConfigComponents,
   createConfigComponent,
   updateConfigComponent,
   deleteConfigComponent,
-} from '../../api/config/configComponent';
+} from '@/api/config/configComponent';
 import type { ConfigSubsystem, ConfigSubsystemParams, ConfigComponent } from '@/types/config';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import SearchPanel from '../../components/SearchPanel.vue';
-import CommonPagination from '../../components/CommonPagination.vue';
+import SearchPanel from '@/components/SearchPanel.vue';
+import CommonPagination from '@/components/CommonPagination.vue';
 
 // 表格列定义
 const columns = [

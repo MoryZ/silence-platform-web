@@ -226,6 +226,7 @@ const handleCancelApplication = () => {
 };
 
 // 打开弹窗时加载角色列表
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleOpenRoleModal = () => {
   showRoleModal.value = true;
   if (roleOptions.value.length === 0) {
@@ -260,7 +261,7 @@ onMounted(() => {
   width: 100%;
   max-width: 600px;
   background: var(--component-background);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 48px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -298,11 +299,12 @@ onMounted(() => {
   }
 
   .ant-btn-primary {
-    background: linear-gradient(90deg, #36d1dc 0%, #5b86e5 100%);
+    background: #1677ff;
     border: none;
+    border-radius: var(--radius-md);
 
     &:hover {
-      background: linear-gradient(90deg, #5bdce6 0%, #7599e8 100%);
+      background: #4096ff;
     }
   }
 }

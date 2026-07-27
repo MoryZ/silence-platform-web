@@ -30,6 +30,7 @@ export function initWebSocketUrl(scene: WebSocketScene, sid?: string): string {
   const host = import.meta.env.DEV ? '127.0.0.1:8098' : window.location.host;
   const url = `${wsProtocol}//${host}/websocket?sid=${sessionId}&scene=${scene}`;
   
+  // eslint-disable-next-line no-console
   console.log('[WebSocket] Generated URL:', url);
   return url;
 }

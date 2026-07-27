@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import dayjs, { Dayjs } from 'dayjs';
-import type { SelectProps } from 'ant-design-vue';
 import { $t } from '@/locales';
 
 import { fetchGetWorkflowNameList } from '@/api/job/workflow';

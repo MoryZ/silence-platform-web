@@ -11,8 +11,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import SideMenu from '../components/SideMenu.vue'
+import SideMenu from '@/components/SideMenu.vue'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<{ menuKey: string, menuList: Array<any> }>()
 const route = useRoute()
 const isDashboard = computed(() => route.path === '/dashboard')

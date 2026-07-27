@@ -16,6 +16,7 @@ const isDev = import.meta.env.DEV;
 
 function debugRouteLog(...args: any[]) {
   if (isDev) {
+    // eslint-disable-next-line no-console
     console.log(...args);
   }
 }

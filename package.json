@@ -9,7 +9,11 @@
     "build:no-check": "cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
     "build:fast": "cross-env NODE_OPTIONS=--max-old-space-size=4096 SASS_SILENCE_DEPRECATIONS=legacy-js-api vite build",
     "preview": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "lint:vue": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
+    "lint:style": "stylelint \"src/**/*.{css,scss,vue}\" --ignore-path .gitignore",
+    "lint:style:fix": "stylelint \"src/**/*.{css,scss,vue}\" --fix --ignore-path .gitignore",
+    "lint:fix": "npm run lint && npm run lint:style:fix"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",

@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { blockStrategyRecord, taskBatchStatusEnum } from '@/constants/business';
 import { getJobPage } from '@/api/job/job';
 import { $t } from '@/locales';
 import { useWorkflowStore } from '@/stores/workflow';
 const store = useWorkflowStore();
 
-import StartDetail from '../detail/start-detail.vue';
-import StartDrawer from '../drawer/start-drawer.vue';
+import StartDetail from '@/components/workflow/modules/detail/start-detail.vue';
+import StartDrawer from '@/components/workflow/modules/drawer/start-drawer.vue';
 import AddNode from './add-node.vue';
 
 defineOptions({

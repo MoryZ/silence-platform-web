@@ -544,17 +544,19 @@ const getIconComp = (name: string) => {
     
     if (name.endsWith('TwoTone')) {
       // 双色图标使用双色属性
-      props.twoToneColor = ['#e6f7ff', '#1890ff']
+      // eslint-disable-next-line no-restricted-syntax
+      props.twoToneColor = ['#e6f7ff', '#1677ff']
     } else if (name.endsWith('Filled')) {
       // 实底图标使用主色调
-      props.style = { ...props.style, color: '#1890ff' }
+      // eslint-disable-next-line no-restricted-syntax
+      props.style = { ...props.style, color: '#1677ff' }
     } else {
       // 线框图标使用默认颜色
       props.style = { ...props.style, color: '#666' }
     }
     
     return h(Icon, props)
-  } catch (error) {
+  } catch {
     console.warn(`Icon ${name} not found`)
     return null
   }
@@ -584,6 +586,7 @@ async function syncMenusToLocalStorage() {
     if (data && Array.isArray(data)) {
       // 更新本地存储的菜单数据
       ls.set(MENUS, data)
+      // eslint-disable-next-line no-console
       console.log('菜单数据已同步到本地存储')
     }
   } catch (error) {
@@ -772,7 +775,7 @@ async function handleToggleStatus(record: Menu, checked: boolean) {
     }
     await fetchMenus()
     await syncMenusToLocalStorage()
-  } catch (error) {
+  } catch {
     message.error(checked ? '启用失败' : '禁用失败')
     // 恢复开关状态
     await fetchMenus()
@@ -791,7 +794,7 @@ async function handleDelete(record: Menu) {
     await fetchMenus()
     // 同步更新本地存储的菜单数据，确保左侧导航显示最新数据
     await syncMenusToLocalStorage()
-  } catch (error) {
+  } catch {
     message.error('删除菜单失败')
   }
 }
@@ -981,7 +984,7 @@ function handleIconPageChange(page: number) {
   overflow-y: auto;
   padding: 8px;
   border: 1px solid #f0f0f0;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   margin-bottom: 16px;
   width: 100%;
   table-layout: fixed;
@@ -993,7 +996,7 @@ function handleIconPageChange(page: number) {
   align-items: center;
   padding: 8px 4px;
   border: 1px solid #f0f0f0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
   background: #fff;
@@ -1004,14 +1007,14 @@ function handleIconPageChange(page: number) {
 }
 
 .icon-item:hover {
-  border-color: #1890ff;
+  border-color: var(--primary-color);
   background: #f6ffed;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .icon-item-selected {
-  border-color: #1890ff;
+  border-color: var(--primary-color);
   background: #e6f7ff;
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
 }
@@ -1024,11 +1027,11 @@ function handleIconPageChange(page: number) {
 }
 
 .icon-item:hover .icon-display {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 .icon-item-selected .icon-display {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 /* 不同风格图标的颜色 */
@@ -1037,20 +1040,20 @@ function handleIconPageChange(page: number) {
 }
 
 .icon-filled {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 .icon-twotone {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 .icon-twotone .anticon {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 /* 双色图标的特殊处理 */
 .icon-twotone .anticon :is(svg) {
-  fill: #1890ff;
+  fill: var(--primary-color);
 }
 
 .icon-twotone .anticon :is(svg) path:first-child {
@@ -1058,7 +1061,7 @@ function handleIconPageChange(page: number) {
 }
 
 .icon-twotone .anticon :is(svg) path:last-child {
-  fill: #1890ff;
+  fill: var(--primary-color);
 }
 
 .icon-name {

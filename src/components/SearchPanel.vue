@@ -71,10 +71,8 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, watch, onMounted } from 'vue';
-  import dayjs from 'dayjs';
-  // @ts-ignore
-  import { TreeSelect } from 'ant-design-vue';
+import { ref, watch, onMounted } from 'vue';
+import dayjs from 'dayjs';
   
   interface FieldConfig {
     key: string;
@@ -116,6 +114,7 @@
           // 使用响应式数据来存储选项
           fieldOptions.value[field.key] = options;
           field._options = options;
+          // eslint-disable-next-line no-console
           console.log('SearchPanel设置选项:', field.key, options);
         } else {
           fieldOptions.value[field.key] = field.options || [];

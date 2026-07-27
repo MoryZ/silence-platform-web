@@ -128,6 +128,7 @@ import SyncConfigModal from './modals/SyncConfigModal.vue';
 import ConfigDiffModal from './modals/ConfigDiffModal.vue';
 import { useConfigOperations } from './composables/useConfigOperations';
 import { STATUS_MAP, FORMAT_MAP, TYPE_MAP, TABLE_COLUMNS } from './constants/configConstants';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getConfigItemById, getConfigItemList } from '@/api/config/configItem';
 import type { ConfigItem, ConfigEnvironment } from '@/types/config';
 

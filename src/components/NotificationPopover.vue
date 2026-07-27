@@ -56,7 +56,7 @@
                   @click="viewNotificationDetail(item)"
                 >
                   <div class="avatar">
-                    <a-avatar :style="{ background: '#1890ff' }">
+                    <a-avatar :style="{ background: '#1677ff' }">
                       {{ item.senderName?.[0] || 'N' }}
                     </a-avatar>
                   </div>
@@ -141,6 +141,7 @@ const viewAllNotifications = () => {
   router.replace('/system/notice')
   visible.value = false
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const viewNotificationDetail = (notice: Notice) => {
   // 可扩展为弹窗详情
   visible.value = false
@@ -154,7 +155,7 @@ onMounted(() => fetchNotifications(0))
 .notification-popup {
   position: relative;
   overflow: hidden;
-  background: #fff;
+  background: var(--bg-color);
   padding: 0;
   min-width: 380px;
   max-width: 380px;
@@ -165,7 +166,7 @@ onMounted(() => fetchNotifications(0))
   justify-content: space-between;
   align-items: flex-start;
   padding: 16px 16px 6px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
   background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
 }
 
@@ -183,20 +184,21 @@ onMounted(() => fetchNotifications(0))
   font-size: 18px;
   line-height: 24px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: var(--text-color);
 }
 
 .header-subtitle {
   margin-top: 2px;
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--text-color);
+  opacity: 0.65;
 }
 
 .mark-read-btn {
   padding: 0;
   height: auto;
   font-size: 13px;
-  color: #1677ff;
+  color: var(--primary-color);
 }
 
 .notification-tabs {
@@ -214,9 +216,9 @@ onMounted(() => fetchNotifications(0))
   align-items: flex-start;
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  background: #fff;
+  background: var(--bg-color);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -238,13 +240,13 @@ onMounted(() => fetchNotifications(0))
 
 .title {
   font-weight: 600;
-  color: #262626;
+  color: var(--text-color);
   margin-bottom: 4px;
   line-height: 20px;
 }
 
 .description {
-  color: #595959;
+  color: var(--text-color);
   font-size: 13px;
   line-height: 18px;
   margin-bottom: 6px;
@@ -255,8 +257,9 @@ onMounted(() => fetchNotifications(0))
 }
 
 .time {
-  color: #8c8c8c;
+  color: var(--text-color);
   font-size: 12px;
+  opacity: 0.65;
 }
 
 .status {
@@ -270,7 +273,7 @@ onMounted(() => fetchNotifications(0))
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #1677ff;
+  background: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.12);
 }
 
@@ -280,23 +283,25 @@ onMounted(() => fetchNotifications(0))
 
 .notification-footer {
   padding: 12px 16px 14px 16px;
-  border-top: 1px solid #f0f0f0;
-  background: #fff;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .clear-button {
-  color: #8c8c8c;
+  color: var(--text-color);
   font-size: 14px;
   padding: 0;
   background: none;
   border: none;
   box-shadow: none;
+  opacity: 0.65;
 }
 .clear-button:hover {
-  color: #ff4d4f;
+  color: var(--color-error);
+  opacity: 1;
 }
 
 .view-all-btn {

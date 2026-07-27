@@ -48,7 +48,7 @@ const getBatchDetail = async () => {
         interval.value = setTimeout(getBatchDetail, syncTime.value * 1000);
       }
     }
-  } catch (e) {
+  } catch {
     stopBatch();
   }
   spinning.value = false;
@@ -115,6 +115,7 @@ const syncOptions = ref([
   }
 ]);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getBatchStatusColor(status: number): string {
   const colorMap: Record<number, string> = {
     1: 'blue',
@@ -127,6 +128,7 @@ function getBatchStatusColor(status: number): string {
   return colorMap[status] || 'default';
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getBatchStatusText(status: number): string {
   const statusMap: Record<number, string> = {
     1: '运行中',

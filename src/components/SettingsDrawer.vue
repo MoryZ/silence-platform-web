@@ -335,16 +335,16 @@
 </template>
 
 <script lang="ts" setup>
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, reactive, watch, onMounted, onUnmounted, computed } from 'vue';
 import {
   BulbOutlined,
   SyncOutlined,
   DesktopOutlined,
-  CheckOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { useAppStore } from '../stores/app';
+import { useAppStore } from '@/stores/app';
 
 const open = defineModel<boolean>('open');
 const appStore = useAppStore();
@@ -373,7 +373,8 @@ const contentModes = [
 const settings = reactive({
   darkSider: false,
   darkHeader: false,
-  primaryColor: '#1890ff',
+  // eslint-disable-next-line no-restricted-syntax
+  primaryColor: '#1677ff',
   borderRadius: 0.5,
   darkBlur: false,
   blurRadius: 10,
@@ -433,17 +434,29 @@ const settings = reactive({
   animationMode: 'default',
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const themeColors = [
-  { name: '默认蓝', value: '#1890ff' },
+  // eslint-disable-next-line no-restricted-syntax
+  { name: '默认蓝', value: '#1677ff' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '紫罗兰', value: '#722ed1' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '樱花粉', value: '#eb2f96' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '柠檬黄', value: '#faad14' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '天蓝色', value: '#13c2c2' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '极客蓝', value: '#2f54eb' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '酱红色', value: '#f5222d' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '深绿色', value: '#52c41a' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '深色灰', value: '#666666' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '石板灰', value: '#8c8c8c' },
+  // eslint-disable-next-line no-restricted-syntax
   { name: '中灰色', value: '#bfbfbf' },
   { name: '自定义', value: 'custom' },
 ];
@@ -616,6 +629,7 @@ const applyOtherSettings = () => {
 };
 
 // 监听设置变化
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 watch(settings, (newSettings) => {
   saveToStorage();
   applySettings();
@@ -634,7 +648,7 @@ onMounted(() => {
   
   // 监听系统主题变化
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  const handleChange = (e: MediaQueryListEvent) => {
+  const handleChange = (_e: MediaQueryListEvent) => {
     if (currentTheme.value === 'system') {
       appStore.setTheme('system');
     }
@@ -663,7 +677,7 @@ const saveSettings = () => {
     const settingsStr = JSON.stringify(settings, null, 2);
     navigator.clipboard.writeText(settingsStr);
     message.success('配置已复制到剪贴板');
-  } catch (error) {
+  } catch {
     message.error('复制配置失败');
   }
   open.value = false;
@@ -719,7 +733,7 @@ const clearAndLogout = async () => {
       transform: translateY(-50%);
       width: 3px;
       height: 14px;
-      background: #1890ff;
+      background: var(--primary-color);
       border-radius: 2px;
     }
 
@@ -753,13 +767,13 @@ const clearAndLogout = async () => {
     color: var(--text-color);
 
     &:hover {
-      border-color: #1890ff;
+      border-color: var(--primary-color);
     }
 
     &.active {
-      border-color: #1890ff;
-      background-color: #1890ff1a;
-      color: #1890ff;
+      border-color: var(--primary-color);
+      background-color: rgba(22, 119, 255, 0.1);
+      color: var(--primary-color);
     }
 
     .anticon {
@@ -794,7 +808,7 @@ const clearAndLogout = async () => {
     }
 
     &.active {
-      border-color: #1890ff;
+      border-color: var(--primary-color);
       .anticon {
         color: #fff;
         font-size: 16px;
@@ -903,7 +917,7 @@ const clearAndLogout = async () => {
 }
 
 :deep(.ant-tabs-ink-bar) {
-  background: #1890ff;
+  background: var(--primary-color);
   height: 2px;
 }
 
@@ -911,7 +925,7 @@ const clearAndLogout = async () => {
   background-color: rgba(0, 0, 0, 0.25);
 
   &.ant-switch-checked {
-    background-color: #1890ff;
+    background-color: var(--primary-color);
   }
 }
 
@@ -927,7 +941,7 @@ const clearAndLogout = async () => {
 
     &.active {
       .layout-preview {
-        border: 2px solid #1890ff;
+        border: 2px solid var(--primary-color);
       }
     }
 
@@ -997,7 +1011,7 @@ const clearAndLogout = async () => {
 
     &.active {
       .content-preview {
-        border: 2px solid #1890ff;
+        border: 2px solid var(--primary-color);
       }
     }
 
@@ -1091,12 +1105,12 @@ const clearAndLogout = async () => {
     color: var(--text-color);
 
     &:hover {
-      border-color: #1890ff;
+      border-color: var(--primary-color);
     }
 
     &.active {
-      border-color: #1890ff;
-      background-color: #1890ff1a;
+      border-color: var(--primary-color);
+      background-color: rgba(22, 119, 255, 0.1);
     }
 
     .mode-preview {
@@ -1136,21 +1150,6 @@ const clearAndLogout = async () => {
   transform: translateY(10px);
 }
 
-// 添加深色主题样式
-:root[data-theme='dark'] {
-  --bg-color: #141414;
-  --text-color: rgba(255, 255, 255, 0.85);
-  --border-color: #303030;
-  --component-background: #1f1f1f;
-}
-
-:root[data-theme='light'] {
-  --bg-color: #ffffff;
-  --text-color: rgba(0, 0, 0, 0.85);
-  --border-color: #f0f0f0;
-  --component-background: #ffffff;
-}
-
 // 深色侧边栏样式
 .dark-sider {
   .ant-layout-sider {
@@ -1174,7 +1173,7 @@ const clearAndLogout = async () => {
   left: 0;
   width: 0;
   height: 2px;
-  background: #1890ff;
+  background: var(--primary-color);
   transition: width 0.2s;
   z-index: 9999;
 }

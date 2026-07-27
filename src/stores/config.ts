@@ -49,6 +49,7 @@ export function piniaPluginPersist({ store }: PiniaPluginContext) {
         }
         
         store.$patch(parsedState);
+        // eslint-disable-next-line no-console
         console.log(`从localStorage恢复${store.$id}数据:`, parsedState);
       } catch (error) {
         console.error(`恢复储存的${store.$id}状态失败:`, error);
@@ -57,6 +58,7 @@ export function piniaPluginPersist({ store }: PiniaPluginContext) {
     }
 
     store.$subscribe((mutation, state) => {
+      // eslint-disable-next-line no-console
       console.log(`存储${store.$id}状态到localStorage:`, state);
       localStorage.setItem(`silence-config-${store.$id}`, JSON.stringify(state));
     });

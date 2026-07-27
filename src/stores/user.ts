@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { MenuItem } from "../types/menu";
+import type { MenuItem } from "@/types/menu";
 import { addDynamicRoutes } from "@/router";
 import {
   login as apiLogin,
@@ -13,12 +13,6 @@ import { useRouter } from 'vue-router';
 import { ls } from "@/utils/stoarge";
 import { TOKEN, MENUS, USER_INFO, RECENT_VISITED_PRODUCTS, FAVORITE_PRODUCTS } from "@/utils/constant";
 import { usePermissionStore } from "./permission";
-interface UserState {
-  token: string | null;
-  userInfo: UserInfo | null;
-  dynamicRoutes: MenuItem[];
-  routesLoaded: boolean;
-}
 
 export const useUserStore = defineStore("user", () => {
   const router = useRouter();

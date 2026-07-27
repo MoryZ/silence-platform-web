@@ -10,13 +10,13 @@
 .layout-footer {
   width: 100%;
   text-align: center;
-  color: #4a4a4a;
+  color: var(--text-color);
   font-size: 14px;
   padding: 16px 0;
-  background: #fff;
+  background: var(--component-background);
   letter-spacing: 0.5px;
   user-select: none;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color);
   margin-top: auto;
 }
 </style>

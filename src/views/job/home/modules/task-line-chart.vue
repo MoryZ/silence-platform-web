@@ -52,6 +52,7 @@ const getSeriesNames = () => {
   ];
 };
 
+// eslint-disable-next-line no-restricted-syntax
 const gradientColors = ['#f5b386', '#40e9c5', '#b686d4', '#ec6f6f'];
 
 const buildOptions = (): EChartsOption => {
@@ -64,6 +65,7 @@ const buildOptions = (): EChartsOption => {
     axisPointer: {
       type: 'cross',
       label: {
+        // eslint-disable-next-line no-restricted-syntax
         backgroundColor: '#6a7985'
       }
     }
@@ -99,6 +101,7 @@ const buildOptions = (): EChartsOption => {
           y2: 1,
           colorStops: [
             { offset: 0.2, color: gradientColors[index] },
+            // eslint-disable-next-line no-restricted-syntax
             { offset: 1, color: '#ffffff' }
           ]
         }

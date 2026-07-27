@@ -165,7 +165,7 @@ const handleCancel = () => {
   width: 100%;
   max-width: 480px;
   background: var(--component-background);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 48px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -195,18 +195,19 @@ const handleCancel = () => {
   }
 
   :deep(.ant-input-affix-wrapper) {
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 }
 
 .submit-button {
   height: 44px;
   font-size: 16px;
-  background: linear-gradient(90deg, #36d1dc 0%, #5b86e5 100%);
+  background: #1677ff;
   border: none;
+  border-radius: var(--radius-md);
 
   &:hover {
-    background: linear-gradient(90deg, #5bdce6 0%, #7599e8 100%);
+    background: #4096ff;
   }
 }
 

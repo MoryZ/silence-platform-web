@@ -86,7 +86,7 @@
       try {
         await navigator.clipboard.writeText(String(props.value));
         message.success('Token已复制到剪贴板');
-      } catch (e) {
+      } catch {
         message.error('复制失败');
       }
     }

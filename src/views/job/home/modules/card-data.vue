@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, reactive } from 'vue';
 import { createReusableTemplate } from '@vueuse/core';
-import { $t } from '../../../..//locales';
+import { $t } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useThemeStore } from '@/stores/theme/index';
 import DardRetryChart from './card-retry-chart.vue';
@@ -100,7 +100,7 @@ interface CardData {
   bottom: { label: string; value: number; click?: () => void }[];
 }
 
-// eslint-disable-next-line complexity
+ 
 const cardData = computed<CardData[]>(() => [
   {
     key: 'job_task',
@@ -109,7 +109,9 @@ const cardData = computed<CardData[]>(() => [
     value: props.modelValue?.jobTask.totalNum ?? 0,
     click: () => router.replace('job_task'),
     color: {
+      // eslint-disable-next-line no-restricted-syntax
       start: '#f5b386',
+      // eslint-disable-next-line no-restricted-syntax
       end: '#FFD6BA'
     },
     icon: 'ant-design:profile-outlined',
@@ -144,7 +146,9 @@ const cardData = computed<CardData[]>(() => [
     click: () => router.replace('retry_task'),
     unit: '',
     color: {
+      // eslint-disable-next-line no-restricted-syntax
       start: '#40e9c5',
+      // eslint-disable-next-line no-restricted-syntax
       end: '#BEE3DB'
     },
     icon: 'ant-design:schedule-outlined',
@@ -179,7 +183,9 @@ const cardData = computed<CardData[]>(() => [
     click: () => router.replace('workflow_task'),
     unit: '',
     color: {
+      // eslint-disable-next-line no-restricted-syntax
       start: '#ec6f6f',
+      // eslint-disable-next-line no-restricted-syntax
       end: '#f99797'
     },
     icon: 'typcn:flow-merge',
@@ -214,7 +220,9 @@ const cardData = computed<CardData[]>(() => [
     click: () => router.replace('pods'),
     unit: '',
     color: {
+      // eslint-disable-next-line no-restricted-syntax
       start: '#b686d4',
+      // eslint-disable-next-line no-restricted-syntax
       end: '#c5a5d8'
     },
     icon: 'ant-design:database-outlined',
@@ -246,6 +254,7 @@ function getGradientColor(color: CardData['color']) {
 }
 
 // 获取主题色
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
 
 function getPaletteColorByNumber(baseColor, index = 5) {
@@ -254,7 +263,8 @@ function getPaletteColorByNumber(baseColor, index = 5) {
 }
 
 // 用法
-const color = getPaletteColorByNumber('#1890ff', 7); // 比如 7 是较深的蓝色
+// eslint-disable-next-line no-restricted-syntax
+const _color = getPaletteColorByNumber('#1677ff', 7); // demo: 调色板取色示例
 </script>
 
 <template>
@@ -426,7 +436,7 @@ const color = getPaletteColorByNumber('#1890ff', 7); // 比如 7 是较深的蓝
 }
 
 .home-card-footer:hover {
-  color: #1366ff !important;
+  color: #1677ff !important;
   font-size: 15px;
 }
 

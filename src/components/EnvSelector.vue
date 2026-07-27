@@ -71,7 +71,7 @@ const handleEnvSelect = (envValue: string) => {
 
 :deep(.env-selector-modal .ant-modal-content) {
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -122,7 +122,7 @@ const handleEnvSelect = (envValue: string) => {
 .close-icon:hover {
   color: #333;
   background: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .env-options {
@@ -137,7 +137,7 @@ const handleEnvSelect = (envValue: string) => {
   padding: 16px;
   text-align: center;
   border: 1px solid #d9d9d9;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s;
   font-size: 14px;

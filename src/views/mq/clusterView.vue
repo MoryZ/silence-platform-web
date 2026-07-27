@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { queryClusterList, queryBrokerConfig } from '@/api/mq/cluster';
-import type { ClusterData, BrokerDetail, BrokerConfig } from '@/types/mq/clusterApi';
 
 const selectedCluster = ref('DefaultCluster')
 const clusterData = ref<any>(null)
@@ -9,6 +8,7 @@ const loading = ref(false)
 const statusDialogVisible = ref(false)
 const configDialogVisible = ref(false)
 const currentBrokerDetail = ref<any>(null)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const currentBrokerConfig = ref<any>(null)
 
 const statusItems = computed(() => {
@@ -93,6 +93,7 @@ const tableData = computed(() => {
     console.error('处理表格数据出错:', err);
   }
   
+  // eslint-disable-next-line no-console
   console.log('处理后的表格数据:', result);
   return result;
 });
@@ -124,6 +125,7 @@ const loadClusterData = async () => {
   loading.value = true
   try {
     const response = await queryClusterList()
+    // eslint-disable-next-line no-console
     console.log('原始API响应:', response);
     
     // 无论响应格式如何，都确保它可以被安全处理
@@ -149,6 +151,7 @@ const showBrokerConfig = async (brokerAddr: string) => {
   try {
     // 获取broker配置
     const response = await queryBrokerConfig(brokerAddr)
+    // eslint-disable-next-line no-console
     console.log('Broker config API response:', response);
     
     // 直接处理对象
@@ -177,6 +180,7 @@ onMounted(() => {
 })
 
 // 不需要额外处理
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleConfigDialogOpen = () => {
   // 配置已在showBrokerConfig中处理完成
 }

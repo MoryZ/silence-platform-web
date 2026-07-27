@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { message, Modal, DatePicker } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import {
   queryTopicList,
   queryTopicStats,
@@ -287,7 +287,7 @@ const openAddDialog = async () => {
     if (res?.brokerServer) {
       brokerOptions.value = Object.keys(res.brokerServer)
     }
-  } catch (e) {
+  } catch {
     message.error('获取集群/消息类型失败')
   }
   showAddDialog.value = true
@@ -417,6 +417,7 @@ const exportData = () => {
 }
 
 // Reset all filters except the provided one
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleFilterClick = (filterName: string) => {
   filterNormal.value = filterName === 'normal'
   filterDelay.value = filterName === 'delay'
@@ -447,10 +448,12 @@ const formatTimestamp = (timestamp: number): string => {
 // Update the showRoute function to better handle errors
 const showRoute = async (topic: string) => {
   try {
+    // eslint-disable-next-line no-console
     console.log('Fetching route for topic:', topic)
     const response = await queryTopicRoute(topic)
     
     if (response) {
+      // eslint-disable-next-line no-console
       console.log('Route data received:', response)
       routeData.value = response
       
@@ -468,6 +471,7 @@ const showRoute = async (topic: string) => {
 }
 
 // Add a helper function to calculate consumer progress percentage
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const calculateConsumeProgress = (record: any): number => {
   if (!record || typeof record.diffTotal === 'undefined' || typeof record.consumeTPS === 'undefined') {
     return 0
@@ -516,6 +520,7 @@ const openTopicConfigDialog = async (topic: string) => {
     // Load topic config
     const configResponse = await examineTopicConfig(topic)
     if (configResponse) {
+      // eslint-disable-next-line no-console
       console.log('Topic config data:', configResponse)
       
       // If configResponse is an array, take the first item
@@ -541,6 +546,7 @@ const openTopicConfigDialog = async (topic: string) => {
     // Load clusters and brokers
     const clustersResponse = await queryClusterList()
     if (clustersResponse && clustersResponse.brokerServer) {
+      // eslint-disable-next-line no-console
       console.log('Clusters data:', clustersResponse)
       
       // Extract brokers list
@@ -589,6 +595,7 @@ const handleConfigSubmit = async () => {
     };
     
     topicData.brokerNameList.push(selectedBroker.value)
+    // eslint-disable-next-line no-console
     console.log('Updating topic with data:', topicData);
     const response = await updateTopic(topicData);
     
@@ -623,6 +630,7 @@ const showSendMessage = (topic: string) => {
 const handleSendMessage = async () => {
   loading.value = true
   try {
+    // eslint-disable-next-line no-console
     console.log('Sending message:', messageInfo.value)
     const response = await sendMessage(messageInfo.value)
     if (response) {
@@ -713,6 +721,7 @@ const showSkipAccumulate = async (topic: string) => {
 }
 
 // Add a function to handle skip accumulate submission
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleSkipAccumulate = async (topic: string) => {
   loading.value = true
   try {
@@ -720,6 +729,7 @@ const handleSkipAccumulate = async (topic: string) => {
       ? [selectedConsumerGroupForSkip.value] 
       : [];
     
+    // eslint-disable-next-line no-console
     console.log('Skipping accumulate:', skipAccumulateInfo.value)
     const response = await skipAccumulate(skipAccumulateInfo.value)
     if (response) {
@@ -752,10 +762,12 @@ const handleResetOffset = async () => {
     ? [selectedConsumerGroup.value] 
     : [];
 
+  // eslint-disable-next-line no-console
   console.log('Submitting with timestamp:', resetOffsetInfo.value.resetTime);
 
   loading.value = true;
   try {
+    // eslint-disable-next-line no-console
     console.log('Resetting offset with data:', resetOffsetInfo.value);
     const response = await resetOffset({
       ...resetOffsetInfo.value,
@@ -776,7 +788,9 @@ const handleResetOffset = async () => {
 }
 
 // Define getRowKey and getConsumerRowKey functions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getRowKey = (record: { topicName: string }) => record.topicName;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getConsumerRowKey = (record: { groupName?: string; id?: string }) => record.groupName || record.id || Math.random().toString();
 
 onMounted(async () => {

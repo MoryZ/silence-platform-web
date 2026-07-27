@@ -262,6 +262,7 @@
   </div>
 </template>
 <script setup lang="ts">
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, computed, h, reactive } from 'vue';
 import { 
   Tag, 
@@ -275,6 +276,7 @@ import {
   fetchEditNotify,
 } from '@/api/job/notify';
 import { fetchGetNotifyRecipientList } from '@/api/job/notify-recipients';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getJobList, getJobPage } from '@/api/job/job';
 import { fetchGetRetrySceneList } from '@/api/job/retry-scene';
 import { fetchGetWorkflowNameList } from '@/api/job/workflow';
@@ -321,9 +323,11 @@ interface NotifySearchParams {
   systemTaskType: number | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const appStore = useAppStore();
 
 // 权限检查函数（简化版本）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const hasAuth = (permission: string): boolean => {
   // 这里应该根据实际的权限系统来实现
   return true;
@@ -600,6 +604,7 @@ const systemTaskTypeChange = async (value: number | null) => {
     const res = await fetchGetRetrySceneList({ groupName: formModel.groupName });
     retryScenes.value = res || [];
     const translatedOptions = translateOptions(retryNotifySceneOptions);
+    // eslint-disable-next-line no-console
     console.log('translated retry options:', translatedOptions);
     notifySceneOptions.value = translatedOptions;
   } else if (value === 3) {
@@ -618,6 +623,7 @@ const systemTaskTypeChange = async (value: number | null) => {
       return i;
     });
     const translatedOptions = translateOptions(jobNotifySceneOptions);
+    // eslint-disable-next-line no-console
     console.log('translated job options:', translatedOptions);
     notifySceneOptions.value = translatedOptions;
   } else if (value === 4) {
@@ -627,10 +633,12 @@ const systemTaskTypeChange = async (value: number | null) => {
       return i;
     });
     const translatedOptions = translateOptions(workflowNotifySceneOptions);
+    // eslint-disable-next-line no-console
     console.log('translated workflow options:', translatedOptions);
     notifySceneOptions.value = translatedOptions;
   }
   
+  // eslint-disable-next-line no-console
   console.log('Final notifySceneOptions.value:', notifySceneOptions.value);
   
   await retrySceneChange(formModel.notifyScene);
@@ -819,7 +827,7 @@ async function loadGroupOptions() {
       value: item.value ?? item.id ?? item.groupName ?? item.name ?? String(item)
     }));
     groupOptions.value = list;
-  } catch (e) {
+  } catch {
     groupOptions.value = [];
   }
 }

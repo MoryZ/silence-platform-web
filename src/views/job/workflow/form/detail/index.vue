@@ -28,6 +28,7 @@ onMounted(() => {
   getDetail();
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getBlockStrategyText(strategy: number): string {
   const strategyMap: Record<number, string> = {
     1: '单机串行',

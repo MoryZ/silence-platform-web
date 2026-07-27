@@ -215,7 +215,7 @@ const getTokenFromField = (field: CronFieldState, meta: CronFieldMeta) => {
 };
 
 const buildCronExpression = () => {
-  let dayToken = getTokenFromField(cronFields.day, fieldMeta[3]);
+  const dayToken = getTokenFromField(cronFields.day, fieldMeta[3]);
   let weekToken = getTokenFromField(cronFields.week, fieldMeta[5]);
   if (dayToken !== '?' && weekToken !== '?') {
     weekToken = '?';
@@ -433,6 +433,7 @@ watch(cronFields, () => {
   refreshPreview();
 }, { deep: true });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 watch(() => props.triggerType, (newType, oldType) => {
   if (newType === 2) {
     cronDialogVisible.value = false;
@@ -491,7 +492,7 @@ watch(() => props.triggerType, (newType, oldType) => {
 
   .assign-grid {
     border: 1px solid #f0f0f0;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     padding: 12px;
 
     .assign-items {
@@ -515,7 +516,7 @@ watch(() => props.triggerType, (newType, oldType) => {
   .next-runs {
     margin-top: 14px;
     border: 1px solid #f0f0f0;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     padding: 10px 12px;
     background: #fafafa;
 

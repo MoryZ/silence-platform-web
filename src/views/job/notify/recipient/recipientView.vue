@@ -8,6 +8,7 @@ import { alarmTypeRecord } from '@/constants/business';
 // 下载功能（简化版本）
 const downloadFile = (url: string, data: any, filename: string) => {
   // 这里应该实现实际的下载逻辑
+  // eslint-disable-next-line no-console
   console.log('Download:', url, data, filename);
   message.info('导出功能待实现');
 };
@@ -19,6 +20,7 @@ import NotifyRecipientDetailDrawer from './modules/notify-recipient-detail-drawe
 
 
 // 权限检查函数（简化版本）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const hasAuth = (permission: string): boolean => {
   return true;
 };

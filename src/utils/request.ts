@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { message } from 'ant-design-vue';
 import { ls } from './stoarge';
 import { TOKEN } from './constant';

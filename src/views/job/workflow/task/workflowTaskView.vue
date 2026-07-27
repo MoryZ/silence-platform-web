@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { $t } from '@/locales';
-import { enableStatusNumberRecord, triggerTypeRecord } from '@/constants/business';
+import { triggerTypeRecord } from '@/constants/business';
 import { fetchGetWorkflowPageList, fetchBatchDeleteWorkflow, enableWorkflow, disableWorkflow } from '@/api/job/workflow';
 import { formatDate } from '@/utils/common';
 import WorkflowSearch from './modules/workflow-search.vue';
@@ -30,7 +30,7 @@ async function handleEnableSwitch(checked: boolean, id: string) {
       message.success('已禁用');
     }
     getData();
-  } catch (e) {
+  } catch {
     message.error('操作失败');
   } finally {
     switchLoadingMap.value[id] = false;
@@ -220,12 +220,6 @@ function getTriggerTypeColor(triggerType: number): string {
 
 function getTriggerTypeLabel(triggerType: number): string {
   const key = triggerTypeRecord[triggerType];
-  return key ? $t(key) : '-';
-}
-
-function getWorkflowStatusLabel(status: number | boolean | null | undefined): string {
-  const numeric = typeof status === 'boolean' ? Number(status) : Number(status);
-  const key = enableStatusNumberRecord[numeric as 0 | 1];
   return key ? $t(key) : '-';
 }
 

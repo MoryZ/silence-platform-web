@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { message, Tag } from 'ant-design-vue';
 import SearchPanel from '@/components/SearchPanel.vue';
 import CommonPagination from '@/components/CommonPagination.vue';
 import { getJobPods } from '@/api/job/pods';
 import type { JobPodParams } from '@/types/job';
 import { getAllGroupConfigs } from '@/api/job/group';
-import { formatDate } from '@/utils/common';
 
 // 搜索与分页
 const loading = ref(false);
@@ -65,7 +63,7 @@ async function fetchData() {
       data.value = page.data || [];
       pagination.total = page.total || (data.value?.length || 0);
     }
-  } catch (e) {
+  } catch {
     data.value = [];
     pagination.total = 0;
   } finally {

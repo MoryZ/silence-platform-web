@@ -166,20 +166,21 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/styles/theme-map' as *;
 .workbench-container {
   padding: 24px;
-  background-color: #f0f2f5;
+  background-color: $bg-color;
 
   .section {
     background: #fff;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 24px;
     margin-bottom: 24px;
 
     .section-title {
       font-size: 16px;
       font-weight: 500;
-      color: rgba(0, 0, 0, 0.85);
+      color: $text-color;
       margin-bottom: 16px;
     }
   }
@@ -195,14 +196,14 @@ onMounted(async () => {
         align-items: center;
         gap: 4px;
         padding: 4px 12px;
-        background: #f0f2f5;
+        background: $bg-color;
         border: none;
         cursor: pointer;
         transition: all 0.3s;
 
         &:hover {
           color: var(--primary-color);
-          background: #e6f7ff;
+          background: $menu-item-active-bg;
         }
 
         .anticon {
@@ -221,13 +222,13 @@ onMounted(async () => {
       .stats-card {
         background: #fff;
         border: 1px solid #e8e8e8;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
 
         .card-header {
           padding: 12px 16px;
-          background: #e6f7ff;
-          color: #1677ff;
+          background: $menu-item-active-bg;
+          color: var(--primary-color);
           font-weight: 500;
           border-radius: 4px 4px 0 0;
         }
@@ -242,7 +243,7 @@ onMounted(async () => {
 
             .stats-value {
               font-size: 24px;
-              color: #1890ff;
+              color: var(--primary-color);
               font-weight: 500;
               line-height: 1.2;
             }
@@ -271,11 +272,11 @@ onMounted(async () => {
         gap: 16px;
 
         .more-link {
-          color: #1890ff;
+          color: var(--primary-color);
           text-decoration: none;
 
           &:hover {
-            color: #40a9ff;
+            color: $menu-highlight-color;
           }
         }
       }
@@ -287,7 +288,7 @@ onMounted(async () => {
       .monitor-chart {
         height: 300px;
         background: #fafafa;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -309,10 +310,10 @@ onMounted(async () => {
             height: 8px;
             border-radius: 50%;
 
-            &.warning { background-color: #faad14; }
-            &.error { background-color: #ff4d4f; }
-            &.success { background-color: #52c41a; }
-            &.info { background-color: #1890ff; }
+            &.warning { background-color: $color-warning; }
+            &.error { background-color: $color-error; }
+            &.success { background-color: $color-success; }
+            &.info { background-color: var(--primary-color); }
             &.default { background-color: #d9d9d9; }
           }
         }

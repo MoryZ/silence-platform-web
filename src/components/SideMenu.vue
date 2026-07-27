@@ -36,6 +36,7 @@ import {
   BarsOutlined
 } from '@ant-design/icons-vue';
 import * as Icons from '@ant-design/icons-vue'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ref, computed, onMounted, watch, nextTick, h, defineComponent, PropType, isVNode, resolveComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MENUS } from '@/utils/constant';
@@ -50,7 +51,7 @@ const props = defineProps({
   },
   menuList: {
     type: Array as () => MenuItem[],
-    default: []
+    default: () => []
   },
   menuKey: {
     type: String,
@@ -131,7 +132,7 @@ const filteredMenuList = computed(() => {
     const cleanedMenus = stripButtonNodes(props.menuList)
     const result = deduplicateMenus(cleanedMenus);
     return result;
-  } catch (error) {
+  } catch {
     menuError.value = true;
     return [];
   }
@@ -367,12 +368,15 @@ const getIcon = (icon?: string) => {
       
       if (icon.endsWith('TwoTone')) {
         // 双色图标使用双色属性
-        props.twoToneColor = ['#e6f7ff', '#1890ff']
+        // eslint-disable-next-line no-restricted-syntax
+        props.twoToneColor = ['#e6f7ff', '#1677ff']
       } else if (icon.endsWith('Filled')) {
         // 实底图标使用主色调
-        props.style = { ...props.style, color: '#1890ff' }
+        // eslint-disable-next-line no-restricted-syntax
+        props.style = { ...props.style, color: '#1677ff' }
       } else {
         // 线框图标使用默认颜色（在浅色主题下使用深色）
+        // eslint-disable-next-line no-restricted-syntax
         props.style = { ...props.style, color: '#666666' }
       }
       
@@ -390,13 +394,16 @@ const getIcon = (icon?: string) => {
     }
     
     if (shortcutMap[icon]) {
+      // eslint-disable-next-line no-restricted-syntax
       return h(shortcutMap[icon], { style: { fontSize: '16px', color: '#666666' } })
     }
     
     // 兜底
+    // eslint-disable-next-line no-restricted-syntax
     return h(AppstoreOutlined, { style: { fontSize: '16px', color: '#666666' } })
-  } catch (error) {
+  } catch {
     console.warn(`Icon ${icon} not found in SideMenu`)
+    // eslint-disable-next-line no-restricted-syntax
     return h(AppstoreOutlined, { style: { fontSize: '16px', color: '#666666' } })
   }
 }
@@ -529,7 +536,7 @@ const MenuRecursiveItem = defineComponent({
   padding: 16px;
   display: flex;
   align-items: center;
-  background-color: #001529;
+  background-color: var(--layout-trigger-bg);
 
   :is(img) {
     width: 32px;
@@ -538,7 +545,7 @@ const MenuRecursiveItem = defineComponent({
 
   :is(h1) {
     margin: 0 0 0 12px;
-    color: white;
+    color: var(--layout-trigger-color);
     font-weight: 600;
     font-size: 18px;
     line-height: 32px;
@@ -549,15 +556,15 @@ const MenuRecursiveItem = defineComponent({
 /* 自定义菜单样式 */
 :deep(.custom-menu) {
   /* 浅色主题背景 */
-  background-color: #ffffff;
-  
+  background-color: var(--menu-bg);
+
   /* 自定义选中状态 */
   .ant-menu-item-selected {
-    background-color: #e6f7ff !important;
-    color: #1890ff !important;
+    background-color: var(--menu-item-active-bg) !important;
+    color: var(--primary-color) !important;
     font-weight: bold;
     position: relative;
-    
+
     /* 左侧添加蓝色边框标记 */
     &::before {
       content: '';
@@ -566,38 +573,38 @@ const MenuRecursiveItem = defineComponent({
       top: 0;
       bottom: 0;
       width: 3px;
-      background-color: #1890ff;
+      background-color: var(--primary-color);
     }
-    
+
     &::after {
       display: none; /* 移除默认的右边框指示器 */
     }
-    
+
     /* 选中项悬停状态增强 */
     &:hover {
-      background-color: #bae7ff !important;
-      box-shadow: 0 0 8px rgba(24, 144, 255, 0.2);
+      background-color: var(--menu-item-active-bg) !important;
+      box-shadow: 0 0 8px rgba(22, 119, 255, 0.2);
       transform: translateX(2px);
-      
+
       /* 悬停时左侧边框加粗 */
       &::before {
         width: 4px;
-        background-color: #1890ff;
+        background-color: var(--primary-color);
       }
     }
-    
+
     /* 选中项的图标颜色 */
     .anticon {
-      color: #1890ff !important;
+      color: var(--primary-color) !important;
     }
   }
-  
+
   /* 鼠标悬停状态 */
   .ant-menu-item:hover:not(.ant-menu-item-selected) {
-    background-color: rgba(24, 144, 255, 0.05) !important;
-    color: #1890ff !important;
+    background-color: var(--menu-item-hover-bg) !important;
+    color: var(--primary-color) !important;
   }
-  
+
   /* 增加子菜单的缩进（父级和子级保持一致） */
   .ant-menu-sub .ant-menu-item,
   .ant-menu-sub .ant-menu-submenu-title {
@@ -607,25 +614,25 @@ const MenuRecursiveItem = defineComponent({
   .ant-menu-sub .ant-menu-sub .ant-menu-submenu-title {
     padding-left: 56px !important;
   }
-  
+
   /* 子菜单被选中时的样式 */
   .ant-menu-submenu-selected > .ant-menu-submenu-title {
-    color: #1890ff !important;
+    color: var(--primary-color) !important;
     font-weight: bold;
-    background-color: #f0f8ff !important;
-    
+    background-color: var(--menu-item-active-bg) !important;
+
     /* 子菜单标题悬停效果 */
     &:hover {
-      color: #40a9ff !important;
-      background-color: #e6f7ff !important;
+      color: var(--primary-color) !important;
+      background-color: var(--menu-item-active-bg) !important;
     }
   }
-  
+
   /* 菜单项的过渡效果 */
   .ant-menu-item, .ant-menu-submenu {
     transition: all 0.2s ease;
   }
-  
+
   /* 增强悬停时的动画效果 */
   .ant-menu-item:active, .ant-menu-submenu-title:active {
     transform: scale(0.98);
@@ -634,10 +641,10 @@ const MenuRecursiveItem = defineComponent({
 
 /* 额外添加自定义激活状态样式 */
 .active-menu-item {
-  background-color: #1890ff !important;
+  background-color: var(--primary-color) !important;
   color: white !important;
   position: relative;
-  
+
   /* 左侧添加亮色边框标记 */
   &::before {
     content: '';
@@ -648,13 +655,13 @@ const MenuRecursiveItem = defineComponent({
     width: 3px;
     background-color: #ffffff;
   }
-  
+
   /* 激活项悬停状态 */
   &:hover {
-    background-color: #40a9ff !important;
-    box-shadow: 0 0 8px rgba(24, 144, 255, 0.5);
+    background-color: var(--primary-color) !important;
+    box-shadow: 0 0 8px rgba(22, 119, 255, 0.5);
     transform: translateX(2px);
-    
+
     &::before {
       width: 4px;
     }
@@ -663,10 +670,10 @@ const MenuRecursiveItem = defineComponent({
 
 :deep(.ant-menu-item-selected),
 .active-menu-item {
-  background-color: #1677ff !important;
+  background-color: var(--primary-color) !important;
   color: #fff !important;
   font-weight: bold;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(22, 119, 255, 0.08);
 }
 
@@ -683,13 +690,13 @@ const MenuRecursiveItem = defineComponent({
 .layout-content {
   flex: 1;
   padding: 24px;
-  background: #f6fbfa;
+  background: var(--layout-body-background);
   min-height: 0;
 }
 .layout-footer {
   width: 100%;
   text-align: center;
-  color: #222;
+  color: var(--text-color);
   font-size: 14px;
   opacity: 0.7;
   padding: 16px 0 8px 0;
@@ -698,15 +705,15 @@ const MenuRecursiveItem = defineComponent({
   user-select: none;
 }
 .layout-sider {
-  background: #001529;
+  background: var(--layout-trigger-bg);
 }
 
 .menu-error {
   padding: 20px;
   text-align: center;
-  color: #ff4d4f;
+  color: var(--color-error);
   background: rgba(255, 77, 79, 0.1);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin: 20px;
 }
 </style>
