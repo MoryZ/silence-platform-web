@@ -804,7 +804,7 @@ onMounted(() => {
   margin: 0;
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(90deg, #36d1dc 0%, #5b86e5 100%);
+  background: linear-gradient(90deg, #fa8c16 0%, #ff7a45 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -820,11 +820,8 @@ onMounted(() => {
   font-size: 36px;
   font-weight: 600;
   line-height: 1.4;
-  background: linear-gradient(90deg, var(--text-color) 0%, var(--text-color) 100%);
+  color: var(--text-color);
   opacity: 0.85;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .login-desc p {
@@ -879,7 +876,7 @@ onMounted(() => {
 
     &:hover, &:focus {
       background: var(--component-background);
-      border-color: #1677ff;
+      border-color: rgb(var(--primary-color));
     }
     
     input {
@@ -915,17 +912,17 @@ onMounted(() => {
   }
   
   :deep(.ant-checkbox-checked .ant-checkbox-inner) {
-    background-color: #1677ff;
-    border-color: #1677ff;
+    background-color: rgb(var(--primary-color));
+    border-color: rgb(var(--primary-color));
   }
 }
 
 .forgot-link {
-  color: #1677ff;
+  color: rgb(var(--primary-color));
   font-size: 14px;
-  
+
   &:hover {
-    color: #40a9ff;
+    color: #ff7a45;
   }
 }
 
@@ -933,12 +930,12 @@ onMounted(() => {
   width: 100%;
   height: 44px;
   font-size: 16px;
-  background: #1677ff;
+  background: rgb(var(--primary-color));
   border: none;
   border-radius: var(--radius-md);
 
   &:hover {
-    background: #4096ff;
+    background: #ff7a45;
   }
 }
 
@@ -988,8 +985,8 @@ onMounted(() => {
   
   &:hover {
     opacity: 1;
-    border-color: #1677ff;
-    color: #1677ff;
+    border-color: rgb(var(--primary-color));
+    color: rgb(var(--primary-color));
   }
 }
 
@@ -1003,10 +1000,10 @@ onMounted(() => {
 
 // 将嵌套的 a 选择器提取出来，避免 CSS 压缩警告
 .register-link a {
-  color: #1677ff;
-  
+  color: rgb(var(--primary-color));
+
   &:hover {
-    color: #40a9ff;
+    color: #ff7a45;
   }
 }
 
@@ -1014,7 +1011,7 @@ onMounted(() => {
   margin: 20px 0;
   text-align: center;
   padding: 15px;
-  background-color: rgba(24, 144, 255, 0.1);
+  background-color: rgba(var(--primary-color), 0.1);
   border-radius: var(--radius-lg);
 
   p {
@@ -1048,8 +1045,8 @@ onMounted(() => {
   padding: 0;
   
   &:hover {
-    border-color: #1677ff;
-    color: #1677ff;
+    border-color: rgb(var(--primary-color));
+    color: rgb(var(--primary-color));
   }
 }
 

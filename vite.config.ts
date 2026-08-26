@@ -19,8 +19,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '^/(auth|config|job|mq)/api/v1': {
-        //target: 'http://110.40.135.216:8086', 
-        target: 'http://localhost:9900',
+        target: 'http://101.43.51.13:9900',
         changeOrigin: true
       },
       '/websocket': {
@@ -42,6 +41,14 @@ export default defineConfig({
       less: {
         // Less 配置
         javascriptEnabled: true,
+        modifyVars: {
+          // 统一主色为橙色（用户偏好：橙色按钮 / 克制配色）
+          // Ant Design Vue 全局主题 token，影响 button / link / input-focus / checkbox 等
+          'primary-color': '#fa8c16',
+          'link-color': '#fa8c16',
+          'link-hover-color': '#ff7a45',
+          'info-color': '#fa8c16',
+        },
       },
     },
   },

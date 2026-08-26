@@ -158,7 +158,6 @@ async function handleDrawerSave() {
   if (!editingData.value) return;
   try {
     // validate
-    // @ts-expect-error antd form validate
     await formRef.value?.validate?.();
 
     const payload: any = { ...editingData.value };

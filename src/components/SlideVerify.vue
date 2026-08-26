@@ -145,7 +145,8 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #1f1f1f;
+  background: var(--component-background);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -157,9 +158,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #808080;
+  color: var(--text-color);
+  opacity: 0.45;
   font-size: 14px;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -167,7 +169,7 @@ onUnmounted(() => {
     left: 0;
     width: 0;
     height: 100%;
-    background: #1677ff;
+    background: rgb(var(--primary-color));
     opacity: 0.2;
     transition: width 0.3s;
   }
@@ -188,7 +190,7 @@ onUnmounted(() => {
   left: 0;
   width: 40px;
   height: 100%;
-  background: #1677ff;
+  background: rgb(var(--primary-color));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -196,9 +198,9 @@ onUnmounted(() => {
   transition: background 0.3s;
 
   &:hover {
-    background: #4096ff;
+    background: #ff7a45;
   }
-  
+
   :deep(.anticon) {
     color: #fff;
     font-size: 16px;
@@ -206,11 +208,11 @@ onUnmounted(() => {
 }
 
 .success .verify-slider {
-  background: #52c41a;
+  background: rgb(var(--primary-color));
   cursor: default;
-  
+
   &:hover {
-    background: #52c41a;
+    background: rgb(var(--primary-color));
   }
 }
 </style> 

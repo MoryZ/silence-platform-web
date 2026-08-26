@@ -93,6 +93,24 @@ const constantRoutes: RouteRecordRaw[] = [
           requiresAuth: true
         }
       },
+      {
+        path: 'approval-center',
+        name: 'ApprovalCenter',
+        component: () => import('@/views/ApprovalCenter.vue'),
+        meta: {
+          title: '审批中心',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'my-applications',
+        name: 'MyApplications',
+        component: () => import('@/views/MyApplications.vue'),
+        meta: {
+          title: '我的申请',
+          requiresAuth: true
+        }
+      },
     ]
   }
   // 注意：404和通配符路由将在所有动态路由加载后再添加

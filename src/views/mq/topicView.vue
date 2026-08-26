@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   queryTopicList,
@@ -7,12 +8,12 @@ import {
   queryTopicRoute,
   queryTopicConsumers,
   examineTopicConfig,
-  createTopic,
   updateTopic,
   deleteTopic,
   sendMessage,
   queryTopicConsumerInfo
 } from '@/api/mq/topic'
+import { createTopicApproval } from '@/api/mq/permission'
 import { resetOffset, skipAccumulate } from '@/api/mq/consumer'
 import { queryClusterList } from '@/api/mq/cluster'
 import type { TopicConfig, TopicConsumerGroupInfo } from '@/types/mq/topicApi';
@@ -74,6 +75,9 @@ const totalCount = ref(0)
 
 const showAddDialog = ref(false)
 const showUpdateDialog = ref(false)
+// 创建 Topic 审批：申请理由
+const requestReason = ref('')
+const router = useRouter()
 const showStatsDialog = ref(false)
 const showConsumerDialog = ref(false)
 const showRouteDialog = ref(false)
@@ -276,6 +280,7 @@ const openAddDialog = async () => {
     clusterNameList: [],
     messageType: 'NORMAL'
   }
+  requestReason.value = ''
   // 2. 拉取集群、broker
   try {
     const res = await queryClusterList()
@@ -296,30 +301,52 @@ const openAddDialog = async () => {
 
 const handleSubmit = async (isUpdate: boolean) => {
   try {
-    const topicData = {
-      ...currentTopic.value,
-      topic: currentTopic.value.topicName,
-      brokerNameList: currentTopic.value.brokerNameList,
-      clusterNameList: currentTopic.value.clusterNameList,
-      messageType: currentTopic.value.messageType || "NORMAL"
-    };
-    
-    const response = isUpdate
-      ? await updateTopic(topicData)
-      : await createTopic(topicData);
+    if (isUpdate) {
+      // 更新：走原直接更新接口
+      const topicData = {
+        ...currentTopic.value,
+        topic: currentTopic.value.topicName,
+        brokerNameList: currentTopic.value.brokerNameList,
+        clusterNameList: currentTopic.value.clusterNameList,
+        messageType: currentTopic.value.messageType || "NORMAL"
+      };
+      const response = await updateTopic(topicData);
+      if (response !== undefined) {
+        message.success('更新Topic成功');
+        showUpdateDialog.value = false;
+        loadTopicList();
+      } else {
+        console.error('更新Topic返回空');
+        message.error('更新Topic失败');
+      }
+      return;
+    }
 
-    if (response !== undefined) {
-      message.success(`${isUpdate ? '更新' : '创建'}Topic成功`);
+    // 创建：改为发起审批（不再直接入库）
+    if (!requestReason.value.trim()) {
+      message.warning('请填写申请理由');
+      return;
+    }
+    const approvalCommand = {
+      topicName: currentTopic.value.topicName,
+      readQueueNums: currentTopic.value.readQueueNums ?? 8,
+      writeQueueNums: currentTopic.value.writeQueueNums ?? 8,
+      messageType: currentTopic.value.messageType || 'NORMAL',
+      requestReason: requestReason.value.trim()
+    };
+    const permissionRequestId = await createTopicApproval(approvalCommand);
+    if (permissionRequestId !== undefined && permissionRequestId !== null) {
+      message.success('已提交审批，等待审批通过后自动创建');
       showAddDialog.value = false;
-      showUpdateDialog.value = false;
-      loadTopicList();
+      // 不刷新 Topic 列表（此时 Topic 还未创建），跳转到"我的申请"
+      router.push('/my-applications');
     } else {
-      console.error(`${isUpdate ? '更新' : '创建'}Topic返回空`);
-      message.error(`${isUpdate ? '更新' : '创建'}Topic失败`);
+      console.error('创建Topic审批返回空');
+      message.error('提交审批失败');
     }
   } catch (error: any) {
-    console.error(`${isUpdate ? '更新' : '创建'}Topic错误:`, error);
-    message.error(error.message || `${isUpdate ? '更新' : '创建'}Topic失败`);
+    console.error('创建Topic审批错误:', error);
+    message.error(error.message || '提交审批失败');
   }
 }
 
@@ -946,8 +973,9 @@ onMounted(async () => {
     <!-- Add/Update Topic Dialog -->
     <a-modal
       v-model:open="showAddDialog"
-      title="创建Topic"
+      title="创建Topic（发起审批）"
       :width="500"
+      okText="提交审批"
       @ok="handleSubmit(false)"
       @cancel="showAddDialog = false"
     >
@@ -1001,6 +1029,15 @@ onMounted(async () => {
               {{ type.label }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item label="申请理由" required>
+          <a-textarea
+            v-model:value="requestReason"
+            placeholder="请填写创建 Topic 的理由（审批人可见）"
+            :rows="3"
+            :maxlength="200"
+            show-count
+          />
         </a-form-item>
       </a-form>
     </a-modal>

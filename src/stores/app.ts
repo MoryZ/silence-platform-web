@@ -50,11 +50,11 @@ export const useAppStore = defineStore('app', () => {
 
     // 同步 .dark 类（与 stores/theme 的 toggleCssDarkMode 保持一致）
     // 两套系统共用同一个暗色标记，避免 data-theme 和 .class 不同步
+    const isDark = effectiveTheme === 'dark';
     const { add: addDark, remove: removeDark } = toggleHtmlClass(DARK_CLASS);
     if (isDark) addDark(); else removeDark();
 
     // 更新 CSS 变量
-    const isDark = effectiveTheme === 'dark';
     // 注意：--primary-color 由 stores/theme 系统统一注入（rgb 三元组格式），
     // 这里不再注入 hex 格式，避免覆盖导致 CodeEditor.vue 等处 rgba(var(--primary-color), 0.1) 失效
     const cssVars = {
@@ -65,7 +65,7 @@ export const useAppStore = defineStore('app', () => {
       '--menu-bg': isDark ? '#1f1f1f' : '#ffffff',
       '--menu-item-color': isDark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.85)',
       '--menu-highlight-color': isDark ? '#fff' : '#000',
-      '--menu-item-active-bg': isDark ? '#1677ff' : '#e6f7ff',
+      '--menu-item-active-bg': isDark ? 'rgba(250, 140, 22, 0.85)' : '#fff7e6',
       '--menu-item-hover-bg': isDark ? 'rgba(255, 255, 255, 0.08)' : '#f5f5f5',
       '--layout-body-background': isDark ? '#141414' : '#f0f2f5',
       '--layout-header-background': isDark ? '#1f1f1f' : '#ffffff',
